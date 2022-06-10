@@ -179,8 +179,8 @@ RunICP <- function(normalized.data = NULL,k = 15, d = 0.3, r = 5, C = 5,
     res_model <- res$model
     
     
-    names(res$res_prediction) <- colnames(normalized_data_whole)
-    rownames(res$res_prediction) <- colnames(normalized_data_whole)
+    names(res_prediction$predictions) <- colnames(normalized_data_whole)
+    rownames(res_prediction$probabilities) <- colnames(normalized_data_whole)
     
     # Projected cluster probabilities
     probs <- res_prediction$probabilities
