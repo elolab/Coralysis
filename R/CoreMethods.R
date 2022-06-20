@@ -139,6 +139,8 @@ setMethod("PrepareILoReg2", signature(object = "SingleCellExperiment"),
 #' to randomly select for each ICP run from the complete data set. 
 #' This is a new feature intended to speed up the process
 #' with larger data sets. Default is \code{Inf}, which means using all cells.
+#' @param verbose A logical value to print verbose during the ICP run in case 
+#' of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'. 
 #'
 #' @name RunParallelICP
 #'
@@ -168,7 +170,8 @@ setMethod("PrepareILoReg2", signature(object = "SingleCellExperiment"),
 #'
 RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
                                                 reg.type, max.iter,
-                                                threads,icp.batch.size){
+                                                threads,icp.batch.size, 
+                                                verbose){
 
   if (!is(object,"SingleCellExperiment")) {
     stop("object must of 'sce' class")
@@ -256,7 +259,11 @@ RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
     message("Parallelism disabled, because threads = 1")
     parallelism <- FALSE
   } else {
-    cl<-makeCluster(threads)
+    if (verbose) {
+        cl<-makeCluster(threads, outfile="")
+    } else {
+        cl<-makeCluster(threads) 
+        }
     # registerDoParallel(cl)
     registerDoSNOW(cl)
   }
