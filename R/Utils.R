@@ -72,6 +72,13 @@ RunICP <- function(normalized.data = NULL,k = 15, d = 0.3, r = 5, C = 5,
   
   if ((!is.infinite(icp.batch.size)) & icp.batch.size > 2)
   {
+    if (ncol(normalized.data) < icp.batch.size) {
+      message(cat("WARNING: the number of cells in current batch is", 
+                   ncol(normalized.data), "lower than the 'icp.batch.size' -", 
+                   icp.batch.size, "\nUsing all the available cells instead:", 
+                ncol(normalized.data)))
+      icp.batch.size <- ncol(normalized.data)
+    }
     normalized_data_whole <- normalized.data
     randinds_batch <- sample(seq_len(ncol(normalized.data)),
                              size = icp.batch.size,replace = FALSE)
