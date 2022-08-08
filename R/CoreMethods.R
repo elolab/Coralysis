@@ -263,7 +263,7 @@ RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
         cl<-makeCluster(threads, outfile="")
     } else {
         cl<-makeCluster(threads) 
-        }
+    }
     # registerDoParallel(cl)
     registerDoSNOW(cl)
   }
@@ -280,6 +280,7 @@ RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
                    .maxcombine = 1000,
                    .inorder = FALSE,
                    .multicombine = TRUE,
+                   .packages=c("ILoReg2", "foreach", "rngtools"),
                    .options.snow = opts)  %dorng% {
                      try({
                        RunICP(normalized.data = dataset, k = k, d = d, r = r,
