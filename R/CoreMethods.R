@@ -148,7 +148,7 @@ setMethod("PrepareILoReg2", signature(object = "SingleCellExperiment"),
 #'
 #' @keywords iterative clustering projection ICP logistic regression LIBLINEAR
 #'
-#' @importFrom parallel makeCluster detectCores stopCluster
+#' @importFrom parallel makeCluster detectCores stopCluster clusterCall
 #' @importFrom foreach foreach %dopar%
 #' @importFrom doRNG %dorng%
 #' @importFrom S4Vectors metadata metadata<-
@@ -246,8 +246,6 @@ RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
     }
     
   }
-  
-  
 
   parallelism <- TRUE
 
@@ -266,6 +264,7 @@ RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
     }
     # registerDoParallel(cl)
     registerDoSNOW(cl)
+    clusterCall(cl, function(x) .libPaths(x), .libPaths()) # Exporting .libPaths from master to the workers
   }
 
   dataset <- logcounts(object)
@@ -280,12 +279,16 @@ RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
                    .maxcombine = 1000,
                    .inorder = FALSE,
                    .multicombine = TRUE,
-                   .packages=c("ILoReg2", "foreach", "rngtools"),
+                   .packages=c("ILoReg2", "parallel"),
                    .options.snow = opts)  %dorng% {
-                     try({
+                     tryCatch(expr = {
                        RunICP(normalized.data = dataset, k = k, d = d, r = r,
                               C = C, reg.type = reg.type, max.iter = max.iter,
                               icp.batch.size=icp.batch.size)
+                     }, error = function(e){ # Stop progress bar & workers if 'foreach()' loop terminates/exit with error
+                         message("'foreach()' loop terminated unexpectedly.\nPlease read the error message or use the 'verbose=TRUE' option.\nShutting down workers...")
+                         close(pb)
+                         stopCluster(cl)
                      })
                    }
     close(pb)
