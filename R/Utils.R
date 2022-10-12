@@ -29,7 +29,7 @@
 #' between the clustering and its projection by logistic regression.
 #'
 #' @param normalized.data A sparse matrix (dgCMatrix) containing
-#' normalized gene expression data with genes in rows and cells in columns.
+#' normalized gene expression data with cells in rows and genes in columns.
 #' Default is \code{NULL}.
 #' @param k A positive integer greater or equal to 2, denoting the number of
 #' clusters in ICP. Default is \code{15}.
@@ -70,43 +70,42 @@ RunICP <- function(normalized.data = NULL,k = 15, d = 0.3, r = 5, C = 5,
   probs <- NULL
   
   
-  if ((!is.infinite(icp.batch.size)) & icp.batch.size > 2)
-  {
-    if (ncol(normalized.data) < icp.batch.size) {
+  if ((!is.infinite(icp.batch.size)) & icp.batch.size > 2) {
+    if (nrow(normalized.data) < icp.batch.size) {
       message(cat("WARNING: the number of cells in current batch is", 
-                   ncol(normalized.data), "lower than the 'icp.batch.size' -", 
-                   icp.batch.size, "\nUsing all the available cells instead:", 
-                ncol(normalized.data)))
-      icp.batch.size <- ncol(normalized.data)
+                  nrow(normalized.data), "lower than the 'icp.batch.size' -", 
+                  icp.batch.size, "\nUsing all the available cells instead:", 
+                  nrow(normalized.data)))
+      icp.batch.size <- nrow(normalized.data)
     }
     normalized_data_whole <- normalized.data
-    randinds_batch <- sample(seq_len(ncol(normalized.data)),
+    randinds_batch <- sample(seq_len(nrow(normalized.data)),
                              size = icp.batch.size,replace = FALSE)
-    normalized.data <- normalized.data[,randinds_batch]
+    normalized.data <- normalized.data[randinds_batch,]
   }
 
   while (TRUE) {
 
     # Step 1: initialize clustering (ident_1) randomly, ARI=0 and r=0
     if (first_round) {
-      ident_1 <- factor(sample(seq_len(k),ncol(normalized.data),replace = TRUE))
-      names(ident_1) <- colnames(normalized.data)
+      ident_1 <- factor(sample(seq_len(k), nrow(normalized.data), replace = TRUE))
+      names(ident_1) <- row.names(normalized.data)
       idents[[1]] <- ident_1
       ari <- 0
       reiterations <- 0
     }
 
     # Step 2: train logistic regression model
-    res <- LogisticRegression(training.sparse.matrix = t(normalized.data),
+    res <- LogisticRegression(training.sparse.matrix = normalized.data,
                               training.ident = ident_1, C = C,
                               reg.type=reg.type,
-                              test.sparse.matrix = t(normalized.data), d=d)
+                              test.sparse.matrix = normalized.data, d=d)
     
     res_prediction <- res$prediction
     res_model <- res$model
     
-    names(res_prediction$predictions) <- colnames(normalized.data)
-    rownames(res_prediction$probabilities) <- colnames(normalized.data)
+    names(res_prediction$predictions) <- row.names(normalized.data)
+    rownames(res_prediction$probabilities) <- row.names(normalized.data)
 
     # Projected cluster probabilities
     probs <- res_prediction$probabilities
@@ -170,24 +169,22 @@ RunICP <- function(normalized.data = NULL,k = 15, d = 0.3, r = 5, C = 5,
       break
     }
   }
-  if (is.infinite(icp.batch.size))
-  {
+  if (is.infinite(icp.batch.size)) {
     # Step 5: Return result
     return(list(probabilities=probs, metrics=metrics,model=res_model))
-    
   } else {
     cat("projecting the whole data set...")
-    res <- LogisticRegression(training.sparse.matrix = t(normalized.data),
+    res <- LogisticRegression(training.sparse.matrix = normalized.data,
                               training.ident = ident_1, C = C,
                               reg.type=reg.type,
-                              test.sparse.matrix = t(normalized_data_whole), d=d)
+                              test.sparse.matrix = normalized_data_whole, d=d)
     
     res_prediction <- res$prediction
     res_model <- res$model
     
     
-    names(res_prediction$predictions) <- colnames(normalized_data_whole)
-    rownames(res_prediction$probabilities) <- colnames(normalized_data_whole)
+    names(res_prediction$predictions) <- row.names(normalized_data_whole)
+    rownames(res_prediction$probabilities) <- row.names(normalized_data_whole)
     
     # Projected cluster probabilities
     probs <- res_prediction$probabilities

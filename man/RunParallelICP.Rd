@@ -16,7 +16,8 @@ RunParallelICP.SingleCellExperiment(
   reg.type,
   max.iter,
   threads,
-  icp.batch.size
+  icp.batch.size,
+  verbose
 )
 
 \S4method{RunParallelICP}{SingleCellExperiment}(
@@ -29,7 +30,8 @@ RunParallelICP.SingleCellExperiment(
   reg.type = "L1",
   max.iter = 200,
   threads = 0,
-  icp.batch.size = Inf
+  icp.batch.size = Inf,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -84,6 +86,9 @@ available threas except one. Default is \code{0}.}
 to randomly select for each ICP run from the complete data set. 
 This is a new feature intended to speed up the process
 with larger data sets. Default is \code{Inf}, which means using all cells.}
+
+\item{verbose}{A logical value to print verbose during the ICP run in case 
+of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'.}
 }
 \value{
 an object of \code{SingleCellExperiment} class

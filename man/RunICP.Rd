@@ -17,7 +17,7 @@ RunICP(
 }
 \arguments{
 \item{normalized.data}{A sparse matrix (dgCMatrix) containing
-normalized gene expression data with genes in rows and cells in columns.
+normalized gene expression data with cells in rows and genes in columns.
 Default is \code{NULL}.}
 
 \item{k}{A positive integer greater or equal to 2, denoting the number of

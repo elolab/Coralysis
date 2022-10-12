@@ -267,7 +267,7 @@ RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
     clusterCall(cl, function(x) .libPaths(x), .libPaths()) # Exporting .libPaths from master to the workers
   }
 
-  dataset <- logcounts(object)
+  dataset <- t(logcounts(object))
 
   if (parallelism) {
     pb <- txtProgressBar(min = 1, max = L, style = 3)
