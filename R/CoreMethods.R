@@ -282,6 +282,7 @@ RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
                    .packages=c("ILoReg2", "parallel"),
                    .options.snow = opts)  %dorng% {
                      tryCatch(expr = {
+                       message(paste0("\nICP run: ",task))
                        RunICP(normalized.data = dataset, k = k, d = d, r = r,
                               C = C, reg.type = reg.type, max.iter = max.iter,
                               icp.batch.size=icp.batch.size)
