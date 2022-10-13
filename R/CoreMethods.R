@@ -267,7 +267,7 @@ RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
     clusterCall(cl, function(x) .libPaths(x), .libPaths()) # Exporting .libPaths from master to the workers
   }
 
-  dataset <- logcounts(object)
+  dataset <- t(logcounts(object))
 
   if (parallelism) {
     pb <- txtProgressBar(min = 1, max = L, style = 3)
@@ -282,6 +282,7 @@ RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
                    .packages=c("ILoReg2", "parallel"),
                    .options.snow = opts)  %dorng% {
                      tryCatch(expr = {
+                       message(paste0("\nICP run: ",task))
                        RunICP(normalized.data = dataset, k = k, d = d, r = r,
                               C = C, reg.type = reg.type, max.iter = max.iter,
                               icp.batch.size=icp.batch.size)
