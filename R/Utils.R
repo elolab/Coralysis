@@ -131,9 +131,9 @@ RunICP <- function(normalized.data = NULL,k = 15, d = 0.3, r = 5, C = 5,
     message(paste0("EPOCH: ",iterations))
     message(paste0("current clustering = ",paste(table(ident_1),collapse = " ")))
     message(paste0("projected clustering = ",paste(table(ident_2),collapse = " ")))
-    
     comp_clust <- clustComp(c1 = ident_1, c2 = ident_2)
-
+    message(paste0("ARI=",as.character(comp_clust$ARI)))
+    
     if(first_round & comp_clust$ARI <= 0) {
       next
     }
@@ -145,7 +145,6 @@ RunICP <- function(normalized.data = NULL,k = 15, d = 0.3, r = 5, C = 5,
     # Step 3.2: If ARI increased, proceed to next iteration round
     else {
       # Update clustering to the predicted clusters
-      message(paste0("ARI=",as.character(comp_clust$ARI)))
       ident_1 <- ident_2
       first_round <- FALSE
       metrics <- cbind(metrics,comp_clust)
@@ -163,7 +162,8 @@ RunICP <- function(normalized.data = NULL,k = 15, d = 0.3, r = 5, C = 5,
       break
     }
   }
-  message("ICP converged at EPOCH ", iterations, ".\nMaximum ARI reached: ", as.character(comp_clust$ARI),".")
+  message("\nICP converged at EPOCH ", ncol(metrics), ".\nMaximum ARI reached: ", 
+          metrics["ARI",ncol(metrics)],".\n")
   if (is.infinite(icp.batch.size)) {
     # Step 5: Return result
     return(list(probabilities=probs, metrics=metrics,model=res_model))
