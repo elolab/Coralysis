@@ -11,7 +11,8 @@ LogisticRegression(
   C = 0.3,
   reg.type = "L1",
   test.sparse.matrix = NULL,
-  d = 0.3
+  d = 0.3,
+  batch.label = NULL
 )
 }
 \arguments{
@@ -35,6 +36,11 @@ Default is \code{NULL}.}
 that determines how many cells per cluster should be
 down- and oversampled (d in N/k*d), where N is the total number of cells
 and k the number of clusters. Default is \code{0.3}.}
+
+\item{batch.label}{A character vector with batch labels corresponding to the cells
+given in \code{training.ident}. The character batch labels need to be named
+with the cells names given in \code{training.ident}.  By default \code{NULL}, 
+i.e., cells are sampled evenly regardless their batch.}
 }
 \value{
 a list containing the output of the LiblineaR prediction

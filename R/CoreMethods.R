@@ -98,6 +98,10 @@ setMethod("PrepareILoReg2", signature(object = "SingleCellExperiment"),
 #' in ~ 2 h and ~ 1 h with 3 and 12 logical processors (threads), respectively.
 #'
 #' @param object An object of \code{SingleCellExperiment} class.
+#' @param batch.label A variable name (of class \code{character}) available 
+#' in the cell metadata \code{colData(object)} with the batch labels (\code{character} 
+#' or \code{factor}) to use. The variable provided must not contain \code{NAs}.
+#' By default \code{NULL}, i.e., cells are sampled evenly regardless their batch. 
 #' @param k A positive integer greater or equal to \code{2}, denoting
 #' the number of clusters in Iterative Clustering Projection (ICP).
 #' Decreasing \code{k} leads to smaller cell populations diversity
@@ -168,7 +172,8 @@ setMethod("PrepareILoReg2", signature(object = "SingleCellExperiment"),
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,r=1,k=5)
 #'
-RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
+RunParallelICP.SingleCellExperiment <- function(object, batch.label, 
+                                                k, d, L, r, C,
                                                 reg.type, max.iter,
                                                 threads,icp.batch.size, 
                                                 verbose){
@@ -233,9 +238,12 @@ RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
   } else {
     metadata(object)$iloreg$threads <- threads
   }
-  
-  
-
+    
+  if (!is.null(batch.label)) {
+    batch.label <- as.character(object[[batch.label]])
+    names(batch.label) <- colnames(object)
+  }
+    
   if (!is.infinite(icp.batch.size))
   {
     if (!is.numeric(icp.batch.size) | icp.batch.size <= 2 | icp.batch.size%%1 != 0)
@@ -283,9 +291,9 @@ RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
                    .options.snow = opts)  %dorng% {
                      tryCatch(expr = {
                        message(paste0("\nICP run: ",task))
-                       RunICP(normalized.data = dataset, k = k, d = d, r = r,
-                              C = C, reg.type = reg.type, max.iter = max.iter,
-                              icp.batch.size=icp.batch.size)
+                       RunICP(normalized.data = dataset, batch.label = batch.label, 
+                              k = k, d = d, r = r, C = C, reg.type = reg.type, 
+                              max.iter = max.iter, icp.batch.size = icp.batch.size)
                      }, error = function(e){ # Stop progress bar & workers if 'foreach()' loop terminates/exit with error
                          message("'foreach()' loop terminated unexpectedly.\nPlease read the error message or use the 'verbose=TRUE' option.\nShutting down workers...")
                          close(pb)
@@ -301,9 +309,9 @@ RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
     for (l in seq_len(L)) {
       try({
         message(paste0("ICP run: ",l))
-        res <- RunICP(normalized.data = dataset, k = k, d = d, r = r,
-                      C = C, reg.type = reg.type, max.iter = max.iter,
-                      icp.batch.size=icp.batch.size)
+        res <- RunICP(normalized.data = dataset, batch.label = batch.label, 
+                      k = k, d = d, r = r, C = C, reg.type = reg.type, 
+                      max.iter = max.iter, icp.batch.size = icp.batch.size)
         out[[l]] <- res
       })
     }

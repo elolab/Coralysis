@@ -6,7 +6,7 @@ setGeneric("PrepareILoReg2",signature = "object",
 
 #' @export
 setGeneric("RunParallelICP",signature = "object",
-           function(object, k = 15, d = 0.3, L = 200, r = 5, C = 0.3, reg.type = "L1", max.iter = 200, threads = 0,icp.batch.size=Inf, verbose=FALSE) {
+           function(object, batch.label = NULL, k = 15, d = 0.3, L = 200, r = 5, C = 0.3, reg.type = "L1", max.iter = 200, threads = 0,icp.batch.size=Inf, verbose=FALSE) {
              standardGeneric("RunParallelICP")
            })
 

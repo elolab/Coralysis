@@ -8,6 +8,7 @@
 \usage{
 RunParallelICP.SingleCellExperiment(
   object,
+  batch.label,
   k,
   d,
   L,
@@ -22,6 +23,7 @@ RunParallelICP.SingleCellExperiment(
 
 \S4method{RunParallelICP}{SingleCellExperiment}(
   object,
+  batch.label = NULL,
   k = 15,
   d = 0.3,
   L = 200,
@@ -36,6 +38,11 @@ RunParallelICP.SingleCellExperiment(
 }
 \arguments{
 \item{object}{An object of \code{SingleCellExperiment} class.}
+
+\item{batch.label}{A variable name (of class \code{character}) available 
+in the cell metadata \code{colData(object)} with the batch labels (\code{character} 
+or \code{factor}) to use. The variable provided must not contain \code{NAs}.
+By default \code{NULL}, i.e., cells are sampled evenly regardless their batch.}
 
 \item{k}{A positive integer greater or equal to \code{2}, denoting
 the number of clusters in Iterative Clustering Projection (ICP).

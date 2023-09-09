@@ -12,7 +12,8 @@ RunICP(
   C = 5,
   reg.type = "L1",
   max.iter = 200,
-  icp.batch.size = Inf
+  icp.batch.size = Inf,
+  batch.label = NULL
 )
 }
 \arguments{
@@ -43,6 +44,11 @@ iterations performed until the algorithm ends. Default is \code{200}.}
 to randomly select for each ICP run from the complete data set. 
 This is a new feature intended to speed up the process
 with larger data sets. Default is \code{Inf}, which means using all cells.}
+
+\item{batch.label}{A character vector with batch labels corresponding to the cells
+given in \code{normalized.data}. The character batch labels need to be named
+with the cells names given in the rows of \code{normalized.data}. 
+By default \code{NULL}, i.e., cells are sampled evenly regardless their batch.}
 }
 \value{
 A list that includes the probability matrix and the clustering

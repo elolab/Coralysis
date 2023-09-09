@@ -31,6 +31,10 @@
 #' @param normalized.data A sparse matrix (dgCMatrix) containing
 #' normalized gene expression data with cells in rows and genes in columns.
 #' Default is \code{NULL}.
+#' @param batch.label A character vector with batch labels corresponding to the cells
+#' given in \code{normalized.data}. The character batch labels need to be named
+#' with the cells names given in the rows of \code{normalized.data}. 
+#' By default \code{NULL}, i.e., cells are sampled evenly regardless their batch. 
 #' @param k A positive integer greater or equal to 2, denoting the number of
 #' clusters in ICP. Default is \code{15}.
 #' @param d A numeric that defines how many cells per cluster should be
@@ -48,7 +52,7 @@
 #' to randomly select for each ICP run from the complete data set. 
 #' This is a new feature intended to speed up the process
 #' with larger data sets. Default is \code{Inf}, which means using all cells.
-
+#' 
 #' @return A list that includes the probability matrix and the clustering
 #' similarity measures: ARI, NMI, etc.
 #'
@@ -61,7 +65,8 @@
 #'
 #'
 RunICP <- function(normalized.data = NULL,k = 15, d = 0.3, r = 5, C = 5,
-                   reg.type = "L1", max.iter = 200,icp.batch.size=Inf) {
+                   reg.type = "L1", max.iter = 200,icp.batch.size=Inf, 
+                   batch.label = NULL) {
 
   first_round <- TRUE
   metrics <- NULL
@@ -99,7 +104,8 @@ RunICP <- function(normalized.data = NULL,k = 15, d = 0.3, r = 5, C = 5,
     res <- LogisticRegression(training.sparse.matrix = normalized.data,
                               training.ident = ident_1, C = C,
                               reg.type=reg.type,
-                              test.sparse.matrix = normalized.data, d=d)
+                              test.sparse.matrix = normalized.data, d=d, 
+                              batch.label = batch.label)
     
     res_prediction <- res$prediction
     
@@ -214,6 +220,28 @@ DownOverSampling <- function(x, n = 50) {
   return(res)
 }
 
+#' @title Down- and oversample data evenly batches
+#'
+#' @description
+#' The function down- and over-samples cluster cells evenly by batch.¸
+#'
+#' @param x A character or numeric vector of data to down-and oversample.
+#' @param batch A character vector with batch labels corresponding to \code{x}.
+#' @param n How many cells to include per cluster.
+#'
+#' @return a list containing the output of the LiblineaR prediction
+#'
+#' @keywords downsampling oversampling
+#'
+#'
+DownOverSampleEvenlyBatches <- function(x, batch, n = 50) {
+    n.batch <- length(unique(as.character(batch)))
+    sample.per.batch <- ceiling(n / n.batch)
+    group.batch <- split(x = x, f = batch)
+    downsample.batch <- lapply(X = group.batch, FUN = function(x) DownOverSampling(x = x, n = sample.per.batch))
+    downsample.batch <- unlist(downsample.batch)
+    return(downsample.batch)
+}
 
 #' @title Clustering projection using logistic regression from
 #' the LiblineaR R package
@@ -239,6 +267,10 @@ DownOverSampling <- function(x, n = 50) {
 #' that determines how many cells per cluster should be
 #' down- and oversampled (d in N/k*d), where N is the total number of cells
 #' and k the number of clusters. Default is \code{0.3}.
+#' @param batch.label A character vector with batch labels corresponding to the cells
+#' given in \code{training.ident}. The character batch labels need to be named
+#' with the cells names given in \code{training.ident}.  By default \code{NULL}, 
+#' i.e., cells are sampled evenly regardless their batch. 
 #'
 #' @return a list containing the output of the LiblineaR prediction
 #'
@@ -256,15 +288,20 @@ LogisticRegression <- function(training.sparse.matrix = NULL,
                                C = 0.3,
                                reg.type = "L1",
                                test.sparse.matrix = NULL,
-                               d = 0.3) {
+                               d = 0.3, 
+                               batch.label = NULL) {
 
   # Downsample training data
-  if (!is.null(d))
-  {
+  if (!is.null(d)) {
     cells_per_cluster <- ceiling((length(training.ident) / (length(levels(training.ident)))) * d)
 
-    training_ident_subset <- as.character(unlist(lapply(split(names(training.ident),training.ident), function(x) DownOverSampling(x,cells_per_cluster))))
-
+    if (is.null(batch.label)) {
+        training_ident_subset <- as.character(unlist(lapply(split(names(training.ident),training.ident), function(x) DownOverSampling(x,cells_per_cluster))))
+    } else {
+        training_ident_subset <- as.character(unlist(lapply(split(names(training.ident), training.ident), function(x) {
+            DownOverSampleEvenlyBatches(x, batch = batch.label[x], cells_per_cluster)
+        })))
+    }
     training.ident <- training.ident[training_ident_subset]
     training.sparse.matrix <- training.sparse.matrix[training_ident_subset,]
   }
