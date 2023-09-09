@@ -311,17 +311,18 @@ RunParallelICP.SingleCellExperiment <- function(object, k, d, L, r, C,
   metadata(object)$iloreg$joint.probability <-
     lapply(out,function(x) x$probabilities)
   
-  sds <- unlist(lapply(metadata(object)$iloreg$joint.probability,sd))
-  
-  metadata(object)$iloreg$joint.probability <-
-    metadata(object)$iloreg$joint.probability[order(sds)]
-  
   metadata(object)$iloreg$metrics <-
     lapply(out,function(x) x$metrics)
   
   metadata(object)$iloreg$models <-
       lapply(out,function(x) x$model)
   
+  # Order output lists by increasing standard deviation of cluster probability tables 
+  sds <- unlist(lapply(metadata(object)$iloreg$joint.probability,sd))
+  order.list <- order(sds)
+  metadata(object)$iloreg$joint.probability <- metadata(object)$iloreg$joint.probability[order.list]
+  metadata(object)$iloreg$metrics <- metadata(object)$iloreg$metrics[order.list]
+  metadata(object)$iloreg$models <- metadata(object)$iloreg$models[order.list]
 
   return(object)
 }
