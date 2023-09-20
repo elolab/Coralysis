@@ -6,6 +6,7 @@
 \usage{
 RunICP(
   normalized.data = NULL,
+  batch.label = NULL,
   k = 15,
   d = 0.3,
   r = 5,
@@ -13,13 +14,19 @@ RunICP(
   reg.type = "L1",
   max.iter = 200,
   icp.batch.size = Inf,
-  batch.label = NULL
+  train.with.bnn = TRUE,
+  train.k.nn = 10
 )
 }
 \arguments{
 \item{normalized.data}{A sparse matrix (dgCMatrix) containing
 normalized gene expression data with cells in rows and genes in columns.
 Default is \code{NULL}.}
+
+\item{batch.label}{A character vector with batch labels corresponding to the cells
+given in \code{normalized.data}. The character batch labels need to be named
+with the cells names given in the rows of \code{normalized.data}. 
+By default \code{NULL}, i.e., cells are sampled evenly regardless their batch.}
 
 \item{k}{A positive integer greater or equal to 2, denoting the number of
 clusters in ICP. Default is \code{15}.}
@@ -45,10 +52,12 @@ to randomly select for each ICP run from the complete data set.
 This is a new feature intended to speed up the process
 with larger data sets. Default is \code{Inf}, which means using all cells.}
 
-\item{batch.label}{A character vector with batch labels corresponding to the cells
-given in \code{normalized.data}. The character batch labels need to be named
-with the cells names given in the rows of \code{normalized.data}. 
-By default \code{NULL}, i.e., cells are sampled evenly regardless their batch.}
+\item{train.with.bnn}{Train data with batch nearest neighbors. Default is 
+\code{TRUE}. Only used if \code{batch.label} is given.}
+
+\item{train.k.nn}{Train data with batch nearest neighbors using \code{k} 
+nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
+is \code{TRUE}.}
 }
 \value{
 A list that includes the probability matrix and the clustering

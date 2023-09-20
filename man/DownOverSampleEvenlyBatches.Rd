@@ -17,7 +17,7 @@ DownOverSampleEvenlyBatches(x, batch, n = 50)
 a list containing the output of the LiblineaR prediction
 }
 \description{
-The function down- and over-samples cluster cells evenly by batch.¸
+The function down- and over-samples cluster cells evenly by batch.
 }
 \keyword{downsampling}
 \keyword{oversampling}

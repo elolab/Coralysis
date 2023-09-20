@@ -143,6 +143,11 @@ setMethod("PrepareILoReg2", signature(object = "SingleCellExperiment"),
 #' to randomly select for each ICP run from the complete data set. 
 #' This is a new feature intended to speed up the process
 #' with larger data sets. Default is \code{Inf}, which means using all cells.
+#' @param train.with.bnn Train data with batch nearest neighbors. Default is 
+#' \code{TRUE}. Only used if \code{batch.label} is given.   
+#' @param train.k.nn Train data with batch nearest neighbors using \code{k} 
+#' nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
+#' is \code{TRUE}.   
 #' @param verbose A logical value to print verbose during the ICP run in case 
 #' of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'. 
 #'
@@ -176,6 +181,8 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
                                                 k, d, L, r, C,
                                                 reg.type, max.iter,
                                                 threads,icp.batch.size, 
+                                                train.with.bnn, 
+                                                train.k.nn,
                                                 verbose){
 
   if (!is(object,"SingleCellExperiment")) {
@@ -293,7 +300,8 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
                        message(paste0("\nICP run: ",task))
                        RunICP(normalized.data = dataset, batch.label = batch.label, 
                               k = k, d = d, r = r, C = C, reg.type = reg.type, 
-                              max.iter = max.iter, icp.batch.size = icp.batch.size)
+                              max.iter = max.iter, icp.batch.size = icp.batch.size, 
+                              train.with.bnn = train.with.bnn, train.k.nn = train.k.nn)
                      }, error = function(e){ # Stop progress bar & workers if 'foreach()' loop terminates/exit with error
                          message("'foreach()' loop terminated unexpectedly.\nPlease read the error message or use the 'verbose=TRUE' option.\nShutting down workers...")
                          close(pb)
@@ -311,7 +319,8 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
         message(paste0("ICP run: ",l))
         res <- RunICP(normalized.data = dataset, batch.label = batch.label, 
                       k = k, d = d, r = r, C = C, reg.type = reg.type, 
-                      max.iter = max.iter, icp.batch.size = icp.batch.size)
+                      max.iter = max.iter, icp.batch.size = icp.batch.size, 
+                      train.with.bnn = train.with.bnn, train.k.nn = train.k.nn)
         out[[l]] <- res
       })
     }

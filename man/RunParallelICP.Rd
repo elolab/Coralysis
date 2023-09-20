@@ -18,6 +18,8 @@ RunParallelICP.SingleCellExperiment(
   max.iter,
   threads,
   icp.batch.size,
+  train.with.bnn,
+  train.k.nn,
   verbose
 )
 
@@ -33,6 +35,8 @@ RunParallelICP.SingleCellExperiment(
   max.iter = 200,
   threads = 0,
   icp.batch.size = Inf,
+  train.with.bnn = TRUE,
+  train.k.nn = 10,
   verbose = FALSE
 )
 }
@@ -93,6 +97,13 @@ available threas except one. Default is \code{0}.}
 to randomly select for each ICP run from the complete data set. 
 This is a new feature intended to speed up the process
 with larger data sets. Default is \code{Inf}, which means using all cells.}
+
+\item{train.with.bnn}{Train data with batch nearest neighbors. Default is 
+\code{TRUE}. Only used if \code{batch.label} is given.}
+
+\item{train.k.nn}{Train data with batch nearest neighbors using \code{k} 
+nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
+is \code{TRUE}.}
 
 \item{verbose}{A logical value to print verbose during the ICP run in case 
 of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'.}

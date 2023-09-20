@@ -52,6 +52,11 @@
 #' to randomly select for each ICP run from the complete data set. 
 #' This is a new feature intended to speed up the process
 #' with larger data sets. Default is \code{Inf}, which means using all cells.
+#' @param train.with.bnn Train data with batch nearest neighbors. Default is 
+#' \code{TRUE}. Only used if \code{batch.label} is given.   
+#' @param train.k.nn Train data with batch nearest neighbors using \code{k} 
+#' nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
+#' is \code{TRUE}.   
 #' 
 #' @return A list that includes the probability matrix and the clustering
 #' similarity measures: ARI, NMI, etc.
@@ -64,9 +69,11 @@
 #' @import SparseM
 #'
 #'
-RunICP <- function(normalized.data = NULL,k = 15, d = 0.3, r = 5, C = 5,
-                   reg.type = "L1", max.iter = 200,icp.batch.size=Inf, 
-                   batch.label = NULL) {
+RunICP <- function(normalized.data = NULL, batch.label = NULL, 
+                   k = 15, d = 0.3, r = 5, C = 5,
+                   reg.type = "L1", max.iter = 200, 
+                   icp.batch.size=Inf, train.with.bnn = TRUE, 
+                   train.k.nn = 10) {
 
   first_round <- TRUE
   metrics <- NULL
@@ -101,11 +108,22 @@ RunICP <- function(normalized.data = NULL,k = 15, d = 0.3, r = 5, C = 5,
     }
 
     # Step 2: train logistic regression model
+    if (!is.null(batch.label) & train.with.bnn & !first_round) {
+        training_ident_subset <- unlist(
+            FindClusterBatchKNN(preds = res_prediction$predictions, 
+                                probs = res_prediction$probabilities, 
+                                batch = batch.label, 
+                                k = train.k.nn)
+            )
+    } else {
+        training_ident_subset <- NULL
+    }
     res <- LogisticRegression(training.sparse.matrix = normalized.data,
                               training.ident = ident_1, C = C,
                               reg.type=reg.type,
                               test.sparse.matrix = normalized.data, d=d, 
-                              batch.label = batch.label)
+                              batch.label = batch.label, 
+                              training_ident_subset = training_ident_subset)
     
     res_prediction <- res$prediction
     
@@ -223,7 +241,7 @@ DownOverSampling <- function(x, n = 50) {
 #' @title Down- and oversample data evenly batches
 #'
 #' @description
-#' The function down- and over-samples cluster cells evenly by batch.¸
+#' The function down- and over-samples cluster cells evenly by batch.
 #'
 #' @param x A character or numeric vector of data to down-and oversample.
 #' @param batch A character vector with batch labels corresponding to \code{x}.
@@ -241,6 +259,75 @@ DownOverSampleEvenlyBatches <- function(x, batch, n = 50) {
     downsample.batch <- lapply(X = group.batch, FUN = function(x) DownOverSampling(x = x, n = sample.per.batch))
     downsample.batch <- unlist(downsample.batch)
     return(downsample.batch)
+}
+
+#' @title Find batch k nearest neighbors  
+#'
+#' @description
+#' The function finds batch k nearest neighbors for the cell with the highest 
+#' probability for every batch.
+#'
+#' @param idx A numeric vector with the cell ids to retrieve from the data set.
+#' @param group A character vector with batch labels corresponding to \code{idx}.
+#' @param prob A numeric vector with cell probabilities corresponding to \code{idx}.
+#' @param k The number of nearest neighbors to search for. Default is \code{10}.
+#'
+#' @return a list containing the k nearest neighbors for every cell queried
+#'
+#' @keywords knn 
+#'
+#' @importFrom RANN nn2
+#'
+FindBatchKNN <- function(idx, group, prob, k = 10) {
+    prob.groups <- split(prob, group)
+    prob.idx <- split(idx, group)
+    uniq.groups <- names(prob.groups)
+    comb.groups <- expand.grid(uniq.groups, uniq.groups)
+    comb.groups <- comb.groups[comb.groups$Var1 != comb.groups$Var2,]
+    obs.groups <- unlist(lapply(X = prob.idx, FUN = function(x) length(x)))
+    knn.idx <- list()
+    j <- 0
+    for (pair in comb.groups) {
+        j <- j + 1
+        if (obs.groups[pair[1]] >= k) {
+            knn <- nn2(data = prob.groups[[pair[1]]], 
+                       query = prob.groups[[pair[2]]][which.max(prob.groups[[pair[2]]])], 
+                       k = k) 
+            tmp.knn.idx <- prob.idx[[comb.groups[1,j]]][knn$nn.idx]      
+        } else {
+            tmp.knn.idx <- prob.idx[[comb.groups[1,j]]]
+        }
+        knn.idx[[paste(comb.groups[,j], collapse="_")]] <- tmp.knn.idx
+    }
+    return(knn.idx)
+}
+
+#' @title Find batch k nearest neighbors per cluster 
+#'
+#' @description
+#' The function finds batch k nearest neighbors for the cell with the highest 
+#' probability for every batch per cluster.
+#'
+#' @param preds A numeric vector with the cell cluster predictions.
+#' @param probs A numeric matrix with cell cluster probabilities.
+#' @param batch A numeric vector with cell probabilities corresponding to \code{idx}.
+#' @param k The number of nearest neighbors to search for. Default is \code{10}.
+#'
+#' @return a list containing the k nearest neighbors for every cluster
+#'
+#' @keywords knn 
+#'
+FindClusterBatchKNN <- function(preds, probs, batch, k = 10) {
+    k <- ncol(probs)
+    clt.knn <- list()
+    for (clt in 1:k) {
+        idx <- which(preds == clt)
+        group <- batch[idx]
+        prob <- probs[idx, clt]
+        tmp <- FindBatchKNN(idx = idx, group = group, prob = prob, k = k)
+        clt.knn[[clt]] <- unique(unlist(tmp))
+    }
+    return(clt.knn)
 }
 
 #' @title Clustering projection using logistic regression from
@@ -269,8 +356,11 @@ DownOverSampleEvenlyBatches <- function(x, batch, n = 50) {
 #' and k the number of clusters. Default is \code{0.3}.
 #' @param batch.label A character vector with batch labels corresponding to the cells
 #' given in \code{training.ident}. The character batch labels need to be named
-#' with the cells names given in \code{training.ident}.  By default \code{NULL}, 
+#' with the cells names given in \code{training.ident}. By default \code{NULL}, 
 #' i.e., cells are sampled evenly regardless their batch. 
+#' @param training_ident_subset A character or numeric vector with cell ids to 
+#' use as train set. By default \code{NULL}. If given, the down- and oversampled
+#' parameters are ignored.
 #'
 #' @return a list containing the output of the LiblineaR prediction
 #'
@@ -289,22 +379,23 @@ LogisticRegression <- function(training.sparse.matrix = NULL,
                                reg.type = "L1",
                                test.sparse.matrix = NULL,
                                d = 0.3, 
-                               batch.label = NULL) {
-
-  # Downsample training data
-  if (!is.null(d)) {
-    cells_per_cluster <- ceiling((length(training.ident) / (length(levels(training.ident)))) * d)
-
-    if (is.null(batch.label)) {
-        training_ident_subset <- as.character(unlist(lapply(split(names(training.ident),training.ident), function(x) DownOverSampling(x,cells_per_cluster))))
-    } else {
-        training_ident_subset <- as.character(unlist(lapply(split(names(training.ident), training.ident), function(x) {
-            DownOverSampleEvenlyBatches(x, batch = batch.label[x], cells_per_cluster)
-        })))
+                               batch.label = NULL, 
+                               training_ident_subset = NULL) {
+    # Downsample training data
+    if (!is.null(d)) {
+        cells_per_cluster <- ceiling((length(training.ident) / (length(levels(training.ident)))) * d)
+        if (is.null(training_ident_subset)) {
+            if (is.null(batch.label)) {
+                training_ident_subset <- as.character(unlist(lapply(split(names(training.ident),training.ident), function(x) DownOverSampling(x,cells_per_cluster))))
+            } else {
+                training_ident_subset <- as.character(unlist(lapply(split(names(training.ident), training.ident), function(x) {
+                    DownOverSampleEvenlyBatches(x, batch = batch.label[x], cells_per_cluster)
+                })))
+            } 
+        } 
+        training.ident <- training.ident[training_ident_subset]
+        training.sparse.matrix <- training.sparse.matrix[training_ident_subset,]
     }
-    training.ident <- training.ident[training_ident_subset]
-    training.sparse.matrix <- training.sparse.matrix[training_ident_subset,]
-  }
 
   # Transform training and test data from dgCMatrix to matrix.csr
   training.sparse.matrix <- as(training.sparse.matrix,"matrix.csr")
