@@ -57,6 +57,11 @@
 #' @param train.k.nn Train data with batch nearest neighbors using \code{k} 
 #' nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
 #' is \code{TRUE}.   
+#' @param weight.classes Should the classes be weighed for unbalanced batches. If 
+#' \code{TRUE}, the Gini coefficient of the number of cluster cells per batch is 
+#' added to one and given to the model. Otherwise all the classes have the same 
+#' importance. By default \code{TRUE}. Only used if \code{batch.label} different
+#' than \code{NULL}. 
 #' 
 #' @return A list that includes the probability matrix and the clustering
 #' similarity measures: ARI, NMI, etc.
@@ -73,7 +78,7 @@ RunICP <- function(normalized.data = NULL, batch.label = NULL,
                    k = 15, d = 0.3, r = 5, C = 5,
                    reg.type = "L1", max.iter = 200, 
                    icp.batch.size=Inf, train.with.bnn = TRUE, 
-                   train.k.nn = 10) {
+                   train.k.nn = 10, weight.classes = TRUE) {
 
   first_round <- TRUE
   metrics <- NULL
@@ -123,7 +128,8 @@ RunICP <- function(normalized.data = NULL, batch.label = NULL,
                               reg.type=reg.type,
                               test.sparse.matrix = normalized.data, d=d, 
                               batch.label = batch.label, 
-                              training_ident_subset = training_ident_subset)
+                              training_ident_subset = training_ident_subset, 
+                              weight.classes = weight.classes)
     
     res_prediction <- res$prediction
     
@@ -196,7 +202,10 @@ RunICP <- function(normalized.data = NULL, batch.label = NULL,
     res <- LogisticRegression(training.sparse.matrix = normalized.data,
                               training.ident = ident_1, C = C,
                               reg.type=reg.type,
-                              test.sparse.matrix = normalized_data_whole, d=d)
+                              test.sparse.matrix = normalized_data_whole, d=d, 
+                              batch.label = batch.label, 
+                              training_ident_subset = training_ident_subset, 
+                              weight.classes = weight.classes)
     
     res_prediction <- res$prediction
     res_model <- res$model
@@ -361,6 +370,11 @@ FindClusterBatchKNN <- function(preds, probs, batch, k = 10) {
 #' @param training_ident_subset A character or numeric vector with cell ids to 
 #' use as train set. By default \code{NULL}. If given, the down- and oversampled
 #' parameters are ignored.
+#' @param weight.classes Should the classes be weighed for unbalanced batches. If 
+#' \code{TRUE}, the Gini coefficient of the number of cluster cells per batch is 
+#' added to one and given to the model. Otherwise all the classes have the same 
+#' importance. By default \code{TRUE}. Only used if \code{batch.label} different
+#' than \code{NULL}. 
 #'
 #' @return a list containing the output of the LiblineaR prediction
 #'
@@ -371,7 +385,7 @@ FindClusterBatchKNN <- function(preds, probs, batch, k = 10) {
 #' @importFrom methods as
 #' @importFrom LiblineaR LiblineaR
 #' @importFrom stats predict
-#'
+#' @importFrom DescTools Gini
 #'
 LogisticRegression <- function(training.sparse.matrix = NULL,
                                training.ident = NULL,
@@ -380,7 +394,17 @@ LogisticRegression <- function(training.sparse.matrix = NULL,
                                test.sparse.matrix = NULL,
                                d = 0.3, 
                                batch.label = NULL, 
-                               training_ident_subset = NULL) {
+                               training_ident_subset = NULL, 
+                               weight.classes = TRUE) {
+    
+    # Weight classes - only if 'batch.label' is given
+    if (!is.null(batch.label) & weight.classes) {
+        props <- table(training.ident, batch.label)
+        wi <- apply(X = props, MARGIN = 1, FUN = function(x) Gini(x) + 1) 
+    } else (
+        wi <- NULL
+    )
+    
     # Downsample training data
     if (!is.null(d)) {
         cells_per_cluster <- ceiling((length(training.ident) / (length(levels(training.ident)))) * d)
@@ -412,7 +436,7 @@ LogisticRegression <- function(training.sparse.matrix = NULL,
   }
 
   model <- LiblineaR(training.sparse.matrix, training.ident,
-                     type = type, cost = C)
+                     type = type, cost = C, wi = wi)
   prediction <- predict(model,proba = TRUE,test.sparse.matrix)
 
   return(list(prediction=prediction,model=model))

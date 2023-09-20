@@ -20,6 +20,7 @@ RunParallelICP.SingleCellExperiment(
   icp.batch.size,
   train.with.bnn,
   train.k.nn,
+  weight.classes,
   verbose
 )
 
@@ -37,6 +38,7 @@ RunParallelICP.SingleCellExperiment(
   icp.batch.size = Inf,
   train.with.bnn = TRUE,
   train.k.nn = 10,
+  weight.classes = TRUE,
   verbose = FALSE
 )
 }
@@ -104,6 +106,12 @@ with larger data sets. Default is \code{Inf}, which means using all cells.}
 \item{train.k.nn}{Train data with batch nearest neighbors using \code{k} 
 nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
 is \code{TRUE}.}
+
+\item{weight.classes}{Should the classes be weighed for unbalanced batches. If 
+\code{TRUE}, the Gini coefficient of the number of cluster cells per batch is 
+added to one and given to the model. Otherwise all the classes have the same 
+importance. By default \code{TRUE}. Only used if \code{batch.label} different
+than \code{NULL}.}
 
 \item{verbose}{A logical value to print verbose during the ICP run in case 
 of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'.}

@@ -13,7 +13,8 @@ LogisticRegression(
   test.sparse.matrix = NULL,
   d = 0.3,
   batch.label = NULL,
-  training_ident_subset = NULL
+  training_ident_subset = NULL,
+  weight.classes = TRUE
 )
 }
 \arguments{
@@ -46,6 +47,12 @@ i.e., cells are sampled evenly regardless their batch.}
 \item{training_ident_subset}{A character or numeric vector with cell ids to 
 use as train set. By default \code{NULL}. If given, the down- and oversampled
 parameters are ignored.}
+
+\item{weight.classes}{Should the classes be weighed for unbalanced batches. If 
+\code{TRUE}, the Gini coefficient of the number of cluster cells per batch is 
+added to one and given to the model. Otherwise all the classes have the same 
+importance. By default \code{TRUE}. Only used if \code{batch.label} different
+than \code{NULL}.}
 }
 \value{
 a list containing the output of the LiblineaR prediction
