@@ -293,6 +293,7 @@ FindBatchKNN <- function(idx, group, prob, k = 10) {
     uniq.groups <- names(prob.groups)
     comb.groups <- expand.grid(uniq.groups, uniq.groups)
     comb.groups <- comb.groups[comb.groups$Var1 != comb.groups$Var2,]
+    comb.groups <- data.frame(t(comb.groups))
     obs.groups <- unlist(lapply(X = prob.idx, FUN = function(x) length(x)))
     knn.idx <- list()
     j <- 0
