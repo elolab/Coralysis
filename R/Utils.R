@@ -298,15 +298,22 @@ FindBatchKNN <- function(idx, group, prob, k = 10) {
     j <- 0
     for (pair in comb.groups) {
         j <- j + 1
-        if (obs.groups[pair[1]] >= k) {
-            knn <- nn2(data = prob.groups[[pair[1]]], 
-                       query = prob.groups[[pair[2]]][which.max(prob.groups[[pair[2]]])], 
-                       k = k) 
-            tmp.knn.idx <- prob.idx[[comb.groups[1,j]]][knn$nn.idx]      
+        if (length(pair) > 0) {
+            if (obs.groups[pair[1]] >= k) {
+                knn <- nn2(data = prob.groups[[pair[1]]], query = prob.groups[[pair[2]]][which.max(prob.groups[[pair[2]]])], 
+                           k = k)
+                tmp.knn.idx <- prob.idx[[comb.groups[1, j]]][knn$nn.idx]
+            } else {
+                tmp.knn.idx <- prob.idx[[comb.groups[1, j]]]
+            }
         } else {
-            tmp.knn.idx <- prob.idx[[comb.groups[1,j]]]
+            if (length(idx) >= k) {
+                tmp.knn.idx <- sample(x = idx, size = k)
+            } else {
+                tmp.knn.idx <- sample(x = idx, size = k, replace = TRUE)
+            }
         }
-        knn.idx[[paste(comb.groups[,j], collapse="_")]] <- tmp.knn.idx
+        knn.idx[[paste(comb.groups[, j], collapse = "_")]] <- tmp.knn.idx
     }
     return(knn.idx)
 }
@@ -327,9 +334,9 @@ FindBatchKNN <- function(idx, group, prob, k = 10) {
 #' @keywords knn 
 #'
 FindClusterBatchKNN <- function(preds, probs, batch, k = 10) {
-    k <- ncol(probs)
+    clts <- ncol(probs)
     clt.knn <- list()
-    for (clt in 1:k) {
+    for (clt in 1:clts) {
         idx <- which(preds == clt)
         group <- batch[idx]
         prob <- probs[idx, clt]
@@ -401,9 +408,9 @@ LogisticRegression <- function(training.sparse.matrix = NULL,
     if (!is.null(batch.label) & weight.classes) {
         props <- table(training.ident, batch.label)
         wi <- apply(X = props, MARGIN = 1, FUN = function(x) Gini(x) + 1) 
-    } else (
+    } else {
         wi <- NULL
-    )
+    }
     
     # Downsample training data
     if (!is.null(d)) {
