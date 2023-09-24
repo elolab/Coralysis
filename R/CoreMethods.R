@@ -147,12 +147,7 @@ setMethod("PrepareILoReg2", signature(object = "SingleCellExperiment"),
 #' \code{TRUE}. Only used if \code{batch.label} is given.   
 #' @param train.k.nn Train data with batch nearest neighbors using \code{k} 
 #' nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
-#' is \code{TRUE}.   
-#' @param weight.classes Should the classes be weighed for unbalanced batches. If 
-#' \code{TRUE}, the Gini coefficient of the number of cluster cells per batch is 
-#' added to one and given to the model. Otherwise all the classes have the same 
-#' importance. By default \code{TRUE}. Only used if \code{batch.label} different
-#' than \code{NULL}. 
+#' is \code{TRUE}.
 #' @param verbose A logical value to print verbose during the ICP run in case 
 #' of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'. 
 #'
@@ -187,7 +182,7 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
                                                 reg.type, max.iter,
                                                 threads,icp.batch.size, 
                                                 train.with.bnn, 
-                                                train.k.nn, weight.classes,
+                                                train.k.nn,
                                                 verbose){
 
   if (!is(object,"SingleCellExperiment")) {
@@ -306,8 +301,7 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
                        RunICP(normalized.data = dataset, batch.label = batch.label, 
                               k = k, d = d, r = r, C = C, reg.type = reg.type, 
                               max.iter = max.iter, icp.batch.size = icp.batch.size, 
-                              train.with.bnn = train.with.bnn, train.k.nn = train.k.nn, 
-                              weight.classes = weight.classes)
+                              train.with.bnn = train.with.bnn, train.k.nn = train.k.nn)
                      }, error = function(e){ # Stop progress bar & workers if 'foreach()' loop terminates/exit with error
                          message("'foreach()' loop terminated unexpectedly.\nPlease read the error message or use the 'verbose=TRUE' option.\nShutting down workers...")
                          close(pb)
@@ -326,8 +320,7 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
         res <- RunICP(normalized.data = dataset, batch.label = batch.label, 
                       k = k, d = d, r = r, C = C, reg.type = reg.type, 
                       max.iter = max.iter, icp.batch.size = icp.batch.size, 
-                      train.with.bnn = train.with.bnn, train.k.nn = train.k.nn, 
-                      weight.classes = weight.classes)
+                      train.with.bnn = train.with.bnn, train.k.nn = train.k.nn)
         out[[l]] <- res
       })
     }

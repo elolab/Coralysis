@@ -13,7 +13,6 @@ setGeneric("RunParallelICP",signature = "object",
                     icp.batch.size = Inf, 
                     train.with.bnn = TRUE, 
                     train.k.nn = 10, 
-                    weight.classes = TRUE, 
                     verbose = FALSE) {
              standardGeneric("RunParallelICP")
            })

@@ -15,8 +15,7 @@ RunICP(
   max.iter = 200,
   icp.batch.size = Inf,
   train.with.bnn = TRUE,
-  train.k.nn = 10,
-  weight.classes = TRUE
+  train.k.nn = 10
 )
 }
 \arguments{
@@ -59,12 +58,6 @@ with larger data sets. Default is \code{Inf}, which means using all cells.}
 \item{train.k.nn}{Train data with batch nearest neighbors using \code{k} 
 nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
 is \code{TRUE}.}
-
-\item{weight.classes}{Should the classes be weighed for unbalanced batches. If 
-\code{TRUE}, the Gini coefficient of the number of cluster cells per batch is 
-added to one and given to the model. Otherwise all the classes have the same 
-importance. By default \code{TRUE}. Only used if \code{batch.label} different
-than \code{NULL}.}
 }
 \value{
 A list that includes the probability matrix and the clustering
