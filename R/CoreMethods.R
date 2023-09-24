@@ -406,7 +406,7 @@ setMethod("RunParallelICP", signature(object = "SingleCellExperiment"),
 #'
 #' @keywords aggregated gene expression batches
 #'
-#' @importFrom SingleCellExperiment logcounts 
+#' @importFrom SingleCellExperiment logcounts cbind
 #' @importFrom S4Vectors DataFrame metadata
 #' @importFrom scran getTopHVGs
 #' @importFrom irlba prcomp_irlba
