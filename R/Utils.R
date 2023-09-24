@@ -217,6 +217,138 @@ RunICP <- function(normalized.data = NULL, batch.label = NULL,
   }
 }
 
+#' @title Cluster cells 
+#'
+#' @description
+#' The function clusters cells with the K-means++ algorithm
+#'
+#' @param object An object of \code{SingleCellExperiment} class.
+#' @param nclusters Cluster the cells into n clusters.
+#' @param use.emb Should the embedding be used to cluster or the log-transformed 
+#' data. By default \code{TRUE}. 
+#' @param emb.name Which embedding to use. By default \code{"PCA"}. 
+#'
+#' @return Clusters.
+#'
+#' @keywords cluster
+#' 
+#' @importFrom flexclust kcca kccaFamily
+#'
+ClusterCells <- function(object, nclusters=150, use.emb=TRUE, emb.name="PCA") {
+    if (use.emb) {
+        data.cluster <- reducedDim(object, emb.name)
+    } else {
+        data.cluster <- t(logcounts(object))
+    }
+    clusters <- kcca(x = data.cluster, k = nclusters, 
+                     family = kccaFamily("kmeans"), 
+                     control = list(initcent="kmeanspp"))
+    metadata(object)$clusters <- clusters 
+    return(object)
+} 
+
+#' @title Aggregates cell gene expression by clusters
+#'
+#' @description
+#' The function aggregates cell gene expression by clusters provided.
+#'
+#' @param mtx Matrix with genes vs cells (rows vs cols) with gene expression to 
+#' aggregate.
+#' @param cluster Cluster identities vector corresponding to the cells in 
+#' \code{mtx}.
+#' @param select.features Should features, i.e., genes, be selected. By default 
+#' \code{NULL}, all genes used. 
+#' @param fun Character specifying if gene expression should be aggregated by 
+#' \code{mean} or \code{sum}. By default \code{"mean"}. 
+#'
+#' @return Matrix of gene expressed aggregated by clusters.
+#'
+#' @keywords aggregated gene expression
+#'
+AggregateClusterExpression <- function(mtx, cluster, select.features = NULL, 
+                                       fun = "mean") {
+    stopifnot(fun %in% c("sum", "mean"))
+    # Convert mtx to df
+    if(is(mtx, "dgCMatrix")) mtx <- as.data.frame(as.matrix(mtx))
+    if (is.matrix(mtx)) mtx <- as.data.frame(mtx)
+    if (!is.null(select.features)) mtx <- mtx[select.features,]
+    # Calculate average expression by cluster
+    #based on: https://github.com/neurorestore/Libra/blob/main/R/to_pseudobulk.R#L87
+    mm <- model.matrix(~ 0 + cluster, data=mtx)
+    ps <- as.matrix(mtx) %*% mm
+    if (fun=="mean") {
+        scale_fct <- as.vector(table(cluster))
+        ps <- sweep(ps, 2, scale_fct, "/")
+    }
+    return(ps)
+}
+
+#' @title Scale a sparse matrix by row or column
+#'
+#' @description Faster implementation of \code{scale} function. It diverges from 
+#' the \code{scale} function by not performing the root-mean-square when 
+#' \code{scale=TRUE} and \code{center=FALSE}. In this case it divides the values
+#' by the standard deviation of the column or row used (depending on \code{scale.by}). 
+#'
+#' @param x A matrix of class `dgCMatrix`. 
+#' @param center A logical. By default \code{TRUE}. Subtract the values by the 
+#' row or column mean depending on the `scale.by` parameter. 
+#' @param scale A logical. By default \code{TRUE}. Divide the values by the row 
+#' or column standard deviation depending on the `scale.by` parameter
+#' @param scale.by Scale by `row` or `col` (=column), i.e., use the row or 
+#' column mean and/or standard deviations to center and /or scale the data. 
+#' Default is \code{col}.
+#' 
+#' @return A matrix of class `dgCMatrix`. 
+#'
+#' @keywords scale
+#'
+#' @importFrom Matrix Matrix
+#' @importFrom sparseMatrixStats colMeans2 colSds rowMeans2 rowSds
+#' 
+Scale <- function(x, center=TRUE, scale=TRUE, scale.by="col") {
+    # Check input
+    stopifnot(is.logical(center) & is.logical(scale))
+    stopifnot(inherits(x, what="dgCMatrix"))
+    stopifnot(scale.by %in% c("col", "row"))
+    # Assign funs 
+    col.mean <- sparseMatrixStats::colMeans2
+    col.sds <- sparseMatrixStats::colSds
+    row.mean <- sparseMatrixStats::rowMeans2
+    row.sds <- sparseMatrixStats::rowSds
+    # Scale
+    if (center & scale & (scale.by=="col")) {
+        m <- col.mean(x)
+        s <- col.sds(x)
+        names(m) <- names(s) <- colnames(x)
+        x <- t((t(x) - m) / s) 
+    } else if (center & scale & (scale.by=="row")) {
+        m <- row.mean(x)  
+        s <- row.sds(x)
+        names(m) <- names(s) <- row.names(x)
+        x <- ((x - m) / s)
+    } else if (center & (scale.by=="col")) {
+        m <- col.mean(x)
+        names(m) <- colnames(x)
+        x <- t(t(x) - m)
+    } else if (center & (scale.by=="row")) {
+        m <- row.mean(x)
+        names(m) <- row.names(x)
+        x <- x - m
+    } else if (scale & (scale.by=="col")) {
+        s <- col.sds(x)
+        names(s) <- colnames(x)
+        x <- t(t(x) / s)
+    } else {
+        s <- row.sds(x)
+        names(s) <- row.names(x)
+        x <- x / s
+    } 
+    # Convert to sparse format
+    x <- Matrix::Matrix(x, sparse=T)
+    return(x)
+}
+
 #' @title Down- and oversample data
 #'
 #' @description
@@ -229,7 +361,6 @@ RunICP <- function(normalized.data = NULL, batch.label = NULL,
 #' @return a list containing the output of the LiblineaR prediction
 #'
 #' @keywords downsampling oversampling
-#'
 #'
 DownOverSampling <- function(x, n = 50) {
   if (length(x) < n) {
@@ -252,7 +383,6 @@ DownOverSampling <- function(x, n = 50) {
 #' @return a list containing the output of the LiblineaR prediction
 #'
 #' @keywords downsampling oversampling
-#'
 #'
 DownOverSampleEvenlyBatches <- function(x, batch, n = 50) {
     n.batch <- length(unique(as.character(batch)))

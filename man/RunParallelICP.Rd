@@ -20,6 +20,9 @@ RunParallelICP.SingleCellExperiment(
   icp.batch.size,
   train.with.bnn,
   train.k.nn,
+  build.train.set,
+  build.train.params,
+  scale,
   verbose
 )
 
@@ -37,6 +40,9 @@ RunParallelICP.SingleCellExperiment(
   icp.batch.size = Inf,
   train.with.bnn = TRUE,
   train.k.nn = 10,
+  build.train.set = TRUE,
+  build.train.params = list(),
+  scale = FALSE,
   verbose = FALSE
 )
 }
@@ -104,6 +110,16 @@ with larger data sets. Default is \code{Inf}, which means using all cells.}
 \item{train.k.nn}{Train data with batch nearest neighbors using \code{k} 
 nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
 is \code{TRUE}.}
+
+\item{build.train.set}{Logical specifying if a training set should be built 
+from the data or the whole data should be used for training. By default 
+\code{FALSE}.}
+
+\item{build.train.params}{A list of parameters to be passed to the function
+\code{AggregateDataByBatch()}.}
+
+\item{scale}{A logical specifying if data should be scaled before training. 
+Default is \code{FALSE}.}
 
 \item{verbose}{A logical value to print verbose during the ICP run in case 
 of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'.}

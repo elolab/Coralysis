@@ -84,7 +84,6 @@ PrepareILoReg2.SingleCellExperiment <- function(object) {
 
   return(object)
 }
-
 #' @rdname PrepareILoReg2
 #' @aliases PrepareILoReg2
 setMethod("PrepareILoReg2", signature(object = "SingleCellExperiment"),
@@ -148,6 +147,13 @@ setMethod("PrepareILoReg2", signature(object = "SingleCellExperiment"),
 #' @param train.k.nn Train data with batch nearest neighbors using \code{k} 
 #' nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
 #' is \code{TRUE}.
+#' @param build.train.set Logical specifying if a training set should be built 
+#' from the data or the whole data should be used for training. By default 
+#' \code{FALSE}.
+#' @param build.train.params A list of parameters to be passed to the function
+#' \code{AggregateDataByBatch()}.
+#' @param scale A logical specifying if data should be scaled before training. 
+#' Default is \code{FALSE}.
 #' @param verbose A logical value to print verbose during the ICP run in case 
 #' of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'. 
 #'
@@ -180,9 +186,11 @@ setMethod("PrepareILoReg2", signature(object = "SingleCellExperiment"),
 RunParallelICP.SingleCellExperiment <- function(object, batch.label, 
                                                 k, d, L, r, C,
                                                 reg.type, max.iter,
-                                                threads,icp.batch.size, 
-                                                train.with.bnn, 
-                                                train.k.nn,
+                                                threads, icp.batch.size, 
+                                                train.with.bnn, train.k.nn,
+                                                build.train.set, 
+                                                build.train.params,
+                                                scale,
                                                 verbose){
 
   if (!is(object,"SingleCellExperiment")) {
@@ -246,11 +254,6 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
     metadata(object)$iloreg$threads <- threads
   }
     
-  if (!is.null(batch.label)) {
-    batch.label <- as.character(object[[batch.label]])
-    names(batch.label) <- colnames(object)
-  }
-    
   if (!is.infinite(icp.batch.size))
   {
     if (!is.numeric(icp.batch.size) | icp.batch.size <= 2 | icp.batch.size%%1 != 0)
@@ -259,7 +262,6 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
     } else {
       metadata(object)$iloreg$icp.batch.size <- icp.batch.size
     }
-    
   }
 
   parallelism <- TRUE
@@ -282,7 +284,27 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
     clusterCall(cl, function(x) .libPaths(x), .libPaths()) # Exporting .libPaths from master to the workers
   }
 
-  dataset <- t(logcounts(object))
+  if (build.train.set) {
+      build.train.params <- c(list(object = object, batch.label = batch.label), build.train.params)
+      clustered.object <- do.call(AggregateDataByBatch, build.train.params)
+      dataset <- t(logcounts(clustered.object))
+  } else {
+      dataset <- t(logcounts(object))
+  }
+  
+  if (!is.null(batch.label)) {
+      if (build.train.set) {
+          batch.label <- as.character(clustered.object[[batch.label]])
+          names(batch.label) <- colnames(clustered.object)
+      } else {
+          batch.label <- as.character(object[[batch.label]])
+          names(batch.label) <- colnames(object)
+      }
+  }
+  
+  if (scale) {
+      dataset <- Scale(x = as(dataset, "sparseMatrix"), scale.by="row")
+  }
 
   if (parallelism) {
     pb <- txtProgressBar(min = 1, max = L, style = 3)
@@ -297,7 +319,7 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
                    .packages=c("ILoReg2", "parallel"),
                    .options.snow = opts)  %dorng% {
                      tryCatch(expr = {
-                       message(paste0("\nICP run: ",task))
+                       message(paste0("\nICP run: ", task))
                        RunICP(normalized.data = dataset, batch.label = batch.label, 
                               k = k, d = d, r = r, C = C, reg.type = reg.type, 
                               max.iter = max.iter, icp.batch.size = icp.batch.size, 
@@ -325,17 +347,30 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
       })
     }
   }
-  metadata(object)$iloreg$joint.probability <-
-    lapply(out,function(x) x$probabilities)
-  
+
   metadata(object)$iloreg$metrics <-
-    lapply(out,function(x) x$metrics)
+    lapply(out, function(x) x$metrics)
   
   metadata(object)$iloreg$models <-
-      lapply(out,function(x) x$model)
-  
+      lapply(out, function(x) x$model)
+
+  if (build.train.set) {
+      test.data <- t(logcounts(object))
+      colnames(test.data) <- paste0("W", 1:ncol(test.data))
+      if (scale) {
+          test.data <- Scale(x = as(dataset, "sparseMatrix"), scale.by="row")
+      }
+      metadata(object)$iloreg$joint.probability <- 
+          lapply(metadata(object)$iloreg$models, function(x) {
+              predict(x, test.data, proba=TRUE)$probabilities
+              })
+  } else {
+      metadata(object)$iloreg$joint.probability <-
+          lapply(out, function(x) x$probabilities)
+  }
+    
   # Order output lists by increasing standard deviation of cluster probability tables 
-  sds <- unlist(lapply(metadata(object)$iloreg$joint.probability,sd))
+  sds <- unlist(lapply(metadata(object)$iloreg$joint.probability, sd))
   order.list <- order(sds)
   metadata(object)$iloreg$joint.probability <- metadata(object)$iloreg$joint.probability[order.list]
   metadata(object)$iloreg$metrics <- metadata(object)$iloreg$metrics[order.list]
@@ -348,6 +383,71 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
 setMethod("RunParallelICP", signature(object = "SingleCellExperiment"),
           RunParallelICP.SingleCellExperiment)
 
+#' @title Aggregates cell gene expression by clusters per batch
+#'
+#' @description
+#' The function aggregates cell gene expression by clusters per batch.
+#'
+#' @param object An object of \code{SingleCellExperiment} class.
+#' @param batch.label A variable name (of class \code{character}) available 
+#' in the cell metadata \code{colData(object)} with the batch labels (\code{character} 
+#' or \code{factor}) to use. The variable provided must not contain \code{NAs}.
+#' By default \code{NULL}, i.e., cells are sampled evenly regardless their batch. 
+#' @param batch.label Cluster identities vector corresponding to the cells in 
+#' \code{mtx}.
+#' @param nhvg Integer of the number of highly variable genes to select. By default 
+#' \code{30}. 
+#' @param p Integer. By default \code{30}. 
+#' @param ... Parameters to be passed to \code{ClusterCells()} function. 
+#'
+#' @name AggregateDataByBatch
+#' 
+#' @return Matrix of gene expressed aggregated by clusters.
+#'
+#' @keywords aggregated gene expression batches
+#'
+#' @importFrom SingleCellExperiment logcounts 
+#' @importFrom S4Vectors DataFrame metadata
+#' @importFrom scran getTopHVGs
+#' @importFrom irlba prcomp_irlba
+#' 
+AggregateDataByBatch.SingleCellExperiment <- function(object, batch.label, 
+                                                      nhvg, p, ...) {
+    batch <- as.character(colData(object)[[batch.label]])
+    batch.names <- unique(batch)
+    names(batch.names) <- batch.names
+    sce.batch <- lapply(X = batch.names, FUN = function(b) {
+        object[,batch==b]
+    })
+    top.hvg <- lapply(X = sce.batch, FUN = function(b) {
+        getTopHVGs(b, n=nhvg)
+    })
+    pca.batch <- lapply(X = batch.names, FUN = function(b) {
+        prcomp_irlba(t(logcounts(sce.batch[[b]][top.hvg[[b]],])),
+                     scale.=TRUE, center=TRUE, n=p)
+    })
+    meta.data <- data.frame()
+    sce.batch.clusters <- list()
+    for (b in batch.names) {
+        reducedDim(x=sce.batch[[b]], type="PCA") <- pca.batch[[b]]$x
+        sce.batch[[b]] <- ClusterCells(object = sce.batch[[b]], ...)
+        clusters.mean <- AggregateClusterExpression(mtx = logcounts(sce.batch[[b]]),
+                                                    cluster=as.character(metadata(sce.batch[[b]])$clusters@cluster))
+        colnames(clusters.mean) <- paste(colnames(clusters.mean), b, sep="_")
+        sce.batch.clusters[[b]] <- SingleCellExperiment(assays=list(logcounts=clusters.mean), 
+                                                        colData=DataFrame(batch=rep(b, ncol(clusters.mean)), 
+                                                                          row.names = colnames(clusters.mean)))
+        tmp.meta.data <- data.frame("cluster" = metadata(sce.batch[[b]])$clusters@cluster, "batch" = b)
+        meta.data <- rbind(meta.data, tmp.meta.data)
+    }
+    sce <- do.call(cbind, sce.batch.clusters)
+    metadata(sce)$clusters <- meta.data[colnames(object),]
+    return(sce)
+}
+#' @rdname AggregateDataByBatch
+#' @aliases AggregateDataByBatch
+setMethod("AggregateDataByBatch", signature(object = "SingleCellExperiment"),
+          AggregateDataByBatch.SingleCellExperiment)
 
 #' @title PCA transformation of the joint probability matrix
 #'
