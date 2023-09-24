@@ -358,7 +358,7 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
       test.data <- t(logcounts(object))
       colnames(test.data) <- paste0("W", 1:ncol(test.data))
       if (scale) {
-          test.data <- Scale(x = as(dataset, "sparseMatrix"), scale.by="row")
+          test.data <- Scale(x = as(test.data, "sparseMatrix"), scale.by="row")
       }
       metadata(object)$iloreg$joint.probability <- 
           lapply(metadata(object)$iloreg$models, function(x) {
