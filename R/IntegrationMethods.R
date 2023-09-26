@@ -166,26 +166,6 @@ IntegrateData.SingleCellExperiment <- function(object, batch.label,
         }
     }
     
-    parallelism <- TRUE
-    
-    if (threads == 0) {
-        cl <- makeCluster(detectCores(logical=TRUE)-1)
-        # registerDoParallel(cl)
-        registerDoSNOW(cl)
-    } else if(threads == 1) {
-        message("Parallelism disabled, because threads = 1")
-        parallelism <- FALSE
-    } else {
-        if (verbose) {
-            cl<-makeCluster(threads, outfile="")
-        } else {
-            cl<-makeCluster(threads) 
-        }
-        # registerDoParallel(cl)
-        registerDoSNOW(cl)
-        clusterCall(cl, function(x) .libPaths(x), .libPaths()) # Exporting .libPaths from master to the workers
-    }
-    
     if (build.train.set) {
         build.train.params <- c(list(object = object, batch.label = batch.label), build.train.params)
         clustered.object <- do.call(AggregateDataByBatch, build.train.params)
@@ -207,9 +187,27 @@ IntegrateData.SingleCellExperiment <- function(object, batch.label,
     if (scale) {
         dataset <- Scale(x = as(dataset, "sparseMatrix"), scale.by="row")
     }
+    parallelism <- TRUE
     
     icp <- list()
     for (clt in k) {
+        if (threads == 0) {
+            cl <- makeCluster(detectCores(logical=TRUE)-1)
+            # registerDoParallel(cl)
+            registerDoSNOW(cl)
+        } else if(threads == 1) {
+            message("Parallelism disabled, because threads = 1")
+            parallelism <- FALSE
+        } else {
+            if (verbose) {
+                cl <- makeCluster(threads, outfile="")
+            } else {
+                cl <- makeCluster(threads) 
+            }
+            # registerDoParallel(cl)
+            registerDoSNOW(cl)
+            clusterCall(cl, function(x) .libPaths(x), .libPaths()) # Exporting .libPaths from master to the workers
+        }
         k.clt <- paste0("k", clt)
         if (parallelism) {
             pb <- txtProgressBar(min = 1, max = L, style = 3)
