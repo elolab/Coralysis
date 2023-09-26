@@ -194,3 +194,18 @@ setGeneric("AnnotationScatterPlot", signature = "object",
              standardGeneric("AnnotationScatterPlot")
            })
 
+#' @export
+setGeneric("IntegrateData", signature = "object",
+           function(object, batch.label = NULL, 
+                    k = 15, d = 0.3, L = 200, 
+                    r = 5, C = 0.3, reg.type = "L1", 
+                    max.iter = 200, threads = 0,
+                    icp.batch.size = Inf, 
+                    train.with.bnn = TRUE, 
+                    train.k.nn = 10, 
+                    build.train.set = TRUE, 
+                    build.train.params = list(),
+                    scale = FALSE, 
+                    verbose = FALSE) {
+               standardGeneric("IntegrateData")
+           })
