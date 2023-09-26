@@ -235,7 +235,6 @@ IntegrateData.SingleCellExperiment <- function(object, batch.label,
                                     }
             close(pb)
             # stop local cluster
-            stopImplicitCluster()
             stopCluster(cl)
         } else {
             for (l in seq_len(L)) {
