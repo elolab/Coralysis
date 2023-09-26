@@ -226,7 +226,7 @@ IntegrateData.SingleCellExperiment <- function(object, batch.label,
                                         tryCatch(expr = {
                                             message(paste0("\nICP run: ", task))
                                             RunICP(normalized.data = dataset, batch.label = batch.label, 
-                                                   k = k, d = d, r = r, C = C, reg.type = reg.type, 
+                                                   k = clt, d = d, r = r, C = C, reg.type = reg.type, 
                                                    max.iter = max.iter, icp.batch.size = icp.batch.size, 
                                                    train.with.bnn = train.with.bnn, train.k.nn = train.k.nn)
                                         }, error = function(e){ # Stop progress bar & workers if 'foreach()' loop terminates/exit with error
@@ -243,7 +243,7 @@ IntegrateData.SingleCellExperiment <- function(object, batch.label,
                 try({
                     message(paste0("ICP run: ",l))
                     res <- RunICP(normalized.data = dataset, batch.label = batch.label, 
-                                  k = k, d = d, r = r, C = C, reg.type = reg.type, 
+                                  k = clt, d = d, r = r, C = C, reg.type = reg.type, 
                                   max.iter = max.iter, icp.batch.size = icp.batch.size, 
                                   train.with.bnn = train.with.bnn, train.k.nn = train.k.nn)
                     icp[[k.clt]][[l]] <- res
