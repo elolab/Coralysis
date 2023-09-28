@@ -176,7 +176,7 @@ IntegrateData.SingleCellExperiment <- function(object, batch.label,
     
     if (!is.null(batch.label)) {
         if (build.train.set) {
-            batch.label <- as.character(clustered.object[[batch.label]])
+            batch.label <- as.character(clustered.object[["batch"]])
             names(batch.label) <- colnames(clustered.object)
         } else {
             batch.label <- as.character(object[[batch.label]])
@@ -273,8 +273,11 @@ IntegrateData.SingleCellExperiment <- function(object, batch.label,
     }
     
     # Order output lists by increasing standard deviation of cluster probability tables 
-    sds <- unlist(lapply(metadata(object)$iloreg$joint.probability, sd))
-    order.list <- order(sds)
+    icp.k <- rep(k, each = L)
+    icp.k.idx <- split(x = 1:length(icp.k), f = icp.k)
+    order.list <- unlist(lapply(X = icp.k.idx, FUN = function(x) {
+        order(unlist(lapply(metadata(object)$iloreg$joint.probability[x], sd))) 
+        }))
     metadata(object)$iloreg$joint.probability <- metadata(object)$iloreg$joint.probability[order.list]
     metadata(object)$iloreg$metrics <- metadata(object)$iloreg$metrics[order.list]
     metadata(object)$iloreg$models <- metadata(object)$iloreg$models[order.list]
