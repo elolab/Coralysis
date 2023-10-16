@@ -541,9 +541,10 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
     }
     metadata(object)$iloreg$metrics <-
         lapply(out, function(x) x$metrics)
-    
+    metadata(object)$iloreg$metrics <- unlist(metadata(object)$iloreg$metrics, recursive = FALSE)
     metadata(object)$iloreg$models <-
         lapply(out, function(x) x$model)
+    metadata(object)$iloreg$models <- unlist(metadata(object)$iloreg$models, recursive = FALSE)
     
     if (build.train.set) {
         test.data <- t(logcounts(object))
@@ -559,9 +560,6 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
         metadata(object)$iloreg$joint.probability <-
             lapply(out, function(x) x$probabilities)
     }
-    
-    metadata(object)$iloreg$metrics <- unlist(metadata(object)$iloreg$metrics, recursive = FALSE)
-    metadata(object)$iloreg$models <- unlist(metadata(object)$iloreg$models, recursive = FALSE)
     metadata(object)$iloreg$joint.probability <- unlist(metadata(object)$iloreg$joint.probability, recursive = FALSE)
     
     return(object)
