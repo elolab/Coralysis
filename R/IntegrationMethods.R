@@ -560,8 +560,7 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
         metadata(object)$iloreg$joint.probability <-
             lapply(out, function(x) x$probabilities)
     }
-    metadata(object)$iloreg$joint.probability <- unlist(metadata(object)$iloreg$joint.probability, recursive = FALSE)
-    
+
     return(object)
 }
 #' @rdname RunParallelDivisiveICP
