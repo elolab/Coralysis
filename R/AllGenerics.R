@@ -46,14 +46,16 @@ setGeneric("PCAElbowPlot", signature = "object",
 
 #' @export
 setGeneric("RunUMAP", signature = "object",
-           function(object) {
+           function(object, 
+                    type = "PCA") {
              standardGeneric("RunUMAP")
            })
 
 #' @export
 setGeneric("RunTSNE", signature = "object",
            function(object,
-                    perplexity = 30) {
+                    perplexity = 30, 
+                    type = "PCA") {
              standardGeneric("RunTSNE")
            })
 
@@ -224,4 +226,16 @@ setGeneric("RunParallelDivisiveICP", signature = "object",
                     scale = FALSE, 
                     verbose = FALSE) {
                standardGeneric("RunParallelDivisiveICP")
+           })
+
+#' @export
+setGeneric("IntegrateDimRed", signature = "object",
+           function(object, pc = 50, ld = 9, cluster.method = "NNgraph") {
+               standardGeneric("IntegrateDimRed")
+           })
+
+#' @export
+setGeneric("ReferenceMapping", signature = c("ref", "query"),
+           function(ref, query, scale.query = TRUE) {
+               standardGeneric("ReferenceMapping")
            })

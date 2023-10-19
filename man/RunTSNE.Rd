@@ -7,14 +7,16 @@
 \title{Barnes-Hut implementation of t-Distributed Stochastic
 Neighbor Embedding (t-SNE)}
 \usage{
-RunTSNE.SingleCellExperiment(object, perplexity)
+RunTSNE.SingleCellExperiment(object, perplexity, type = "PCA")
 
-\S4method{RunTSNE}{SingleCellExperiment}(object, perplexity = 30)
+\S4method{RunTSNE}{SingleCellExperiment}(object, perplexity = 30, type = "PCA")
 }
 \arguments{
 \item{object}{of \code{SingleCellExperiment} class}
 
 \item{perplexity}{perplexity of t-SNE}
+
+\item{type}{type of dimensional reduction to use. By default \code{"PCA"}.}
 }
 \value{
 object of \code{SingleCellExperiment} class

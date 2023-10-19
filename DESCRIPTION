@@ -21,7 +21,7 @@ Imports: Matrix, parallel, foreach,
           umap, Rtsne, fastcluster, parallelDist, cluster, dendextend, 
           DescTools, plyr, scales, pheatmap, reshape2, dplyr, doRNG, 
           SingleCellExperiment, SummarizedExperiment, S4Vectors, methods, stats,
-          doSNOW, utils, RANN, sparseMatrixStats, irlba, flexclust, scran
+          doSNOW, utils, RANN, sparseMatrixStats, irlba, flexclust, scran, MASS
 Depends: R (>= 4.0.0)
 Encoding: UTF-8
 LazyData: TRUE

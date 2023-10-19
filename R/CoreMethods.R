@@ -592,6 +592,7 @@ setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
 #' the PCA-transformed consensus matrix as input.
 #'
 #' @param object of \code{SingleCellExperiment} class
+#' @param type type of dimensional reduction to use. By default \code{"PCA"}.
 #'
 #' @name RunUMAP
 #'
@@ -611,9 +612,9 @@ setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
 #' sce <- RunPCA(sce,p=5)
 #' sce <- RunUMAP(sce)
 #'
-RunUMAP.SingleCellExperiment <- function(object) {
+RunUMAP.SingleCellExperiment <- function(object, type="PCA") {
 
-  umap_out <- umap(reducedDim(object,"PCA"))
+  umap_out <- umap(reducedDim(object,type))
 
   reducedDim(object,"UMAP") <- umap_out$layout
 
@@ -635,6 +636,7 @@ setMethod("RunUMAP", signature(object = "SingleCellExperiment"),
 #'
 #' @param object of \code{SingleCellExperiment} class
 #' @param perplexity perplexity of t-SNE
+#' @param type type of dimensional reduction to use. By default \code{"PCA"}.
 #'
 #' @name RunTSNE
 #'
@@ -655,9 +657,9 @@ setMethod("RunUMAP", signature(object = "SingleCellExperiment"),
 #' sce <- RunPCA(sce,p=5)
 #' sce <- RunTSNE(sce)
 #'
-RunTSNE.SingleCellExperiment <- function(object, perplexity) {
+RunTSNE.SingleCellExperiment <- function(object, perplexity, type="PCA") {
 
-  rtsne_out <- Rtsne(reducedDim(object,"PCA"),
+  rtsne_out <- Rtsne(reducedDim(object, type),
                      is_distance=FALSE,
                      perplexity=perplexity,
                      pca=FALSE)

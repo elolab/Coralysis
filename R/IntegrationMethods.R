@@ -820,3 +820,65 @@ RandomlyDivisiveClustering <- function(cluster, k, cluster.names = NULL) {
     if (!is.null(cluster.names)) names(rand.divisive.clts) <- cluster.names
     return(rand.divisive.clts)
 }
+
+#' @title Integrate low dimensional reduction
+#'
+#' @description
+#' Integrates low dimensional reduction, i.e., PCA, through supervised LDA.
+#'
+#' @param object An object of \code{SingleCellExperiment} class.
+#' @param pc Number of principal components (integer) to compute. By default 
+#' \code{50}.
+#' @param ld Number of linear discriminants to compute (integer). By default 
+#' \code{9}. 
+#' @param cluster.method Cluster method to cluster PCA in order to give the 
+#' clustering result for supervised Linear Discriminant Analysis (character). 
+#' One of \code{"kmeans++"} (kmeans optimization implement in `flexclust`) or 
+#' \code{"NNgraph"} (graph based clustering implemented in `scran`). By default 
+#' \code{"NNgraph"}.
+#' 
+#' @name IntegrateDimRed
+#' 
+#' @return A clustering result where every cluster given was split randomly 
+#' into \code{k} clusters. 
+#'
+#' @keywords dimensional reduction PCA LDA
+#'
+#' @importFrom S4Vectors metadata metadata<-
+#' @importFrom SingleCellExperiment reducedDim reducedDim<-
+#' @importFrom flexclust kcca kccaFamily
+#' @importFrom scran clusterCells
+#' @importFrom MASS lda 
+#' @importFrom stats predict prcomp
+#'
+IntegrateDimRed.SingleCellExperiment <- function(object, pc, ld, cluster.method) {
+    # 1) Unsuprevised DR: PCA
+    probs <- do.call(cbind, metadata(object)$iloreg$joint.probability)
+    metadata(object)$iloreg$pca.model <- prcomp(x = probs, scale.=TRUE, center=TRUE, rank=pc)
+    reducedDim(x = object, type = "PCA") <- metadata(object)$iloreg$pca.model$x 
+    
+    # 2) Clustering: Kmeans++ or NNgraph
+    if (cluster.method == "kmeans++") {
+        k <- ld + 1
+        metadata(object)$iloreg$lda.clusters <- kcca(x = reducedDim(x = object, type = "PCA"), 
+                                                     k = k, family = kccaFamily("kmeans"), 
+                                                     control = list(initcent="kmeanspp"))
+        k.labels <- as.factor(metadata(object)$iloreg$lda.clusters@cluster)
+    } 
+    if (cluster.method == "NNgraph") {
+        metadata(object)$iloreg$lda.clusters <- clusterCells(object, use.dimred = "PCA")
+        k.labels <- as.factor(metadata(object)$iloreg$lda.clusters)
+    }
+    
+    # 3) Supervised DR: LDA
+    metadata(object)$iloreg$lda.model <- lda(x = reducedDim(object, "PCA"), 
+                                             grouping = k.labels)
+    metadata(object)$iloreg$lda.dimred <- predict(metadata(object)$iloreg$lda.model, reducedDim(object, "PCA"))
+    reducedDim(object, "LDA") <- metadata(object)$iloreg$lda.dimred$x
+    
+    return(object)
+}
+#' @rdname IntegrateDimRed
+#' @aliases IntegrateDimRed
+setMethod("IntegrateDimRed", signature(object = "SingleCellExperiment"),
+          IntegrateDimRed.SingleCellExperiment)
