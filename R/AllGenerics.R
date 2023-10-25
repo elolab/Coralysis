@@ -224,6 +224,8 @@ setGeneric("RunParallelDivisiveICP", signature = "object",
                     build.train.set = TRUE, 
                     build.train.params = list(),
                     scale = FALSE, 
+                    use.cluster.seed = FALSE,
+                    divisive.method = "random",
                     verbose = FALSE) {
                standardGeneric("RunParallelDivisiveICP")
            })

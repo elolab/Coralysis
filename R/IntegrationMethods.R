@@ -357,6 +357,15 @@ setMethod("IntegrateData", signature(object = "SingleCellExperiment"),
 #' \code{AggregateDataByBatch()}.
 #' @param scale A logical specifying if data should be scaled before training. 
 #' Default is \code{FALSE}.
+#' @param use.cluster.seed Should the same starting clustering result be provided
+#' to ensure more reproducible results (logical). By default \code{FALSE}, i.e., 
+#' Each ICP run starts with a total random and, thus, independent clustering. If 
+#' \code{TRUE} the same clustering result is provided based on batch wise PCA 
+#' density sampling.  
+#' @param divisive.method Divisive method (character). One of \code{"random"} 
+#' (randomly sample two clusters out of every cluster previously found) or
+#' \code{"cluster"} (sample two clusters out of every cluster previously found 
+#' based on the cluster probability distribution). By default \code{"random"}. 
 #' @param verbose A logical value to print verbose during the ICP run in case 
 #' of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'. 
 #'
@@ -386,7 +395,8 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
                                                         train.with.bnn, train.k.nn,
                                                         build.train.set, 
                                                         build.train.params,
-                                                        scale,
+                                                        scale, use.cluster.seed,
+                                                        divisive.method,
                                                         verbose) {
     
     if (!is(object,"SingleCellExperiment")) {
@@ -478,6 +488,14 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
         }
     }
     
+    if (use.cluster.seed) {
+        cluster.seed <- SamplePCABatchCells(data = dataset, batch = batch.label, 
+                                            q.split = 0.5, p=30, use.pc="PC1", 
+                                            center=TRUE, scale.=TRUE)
+    } else {
+        cluster.seed <- NULL
+    }
+    
     if (scale) {
         dataset <- Scale(x = as(dataset, "sparseMatrix"), scale.by="row")
     }
@@ -518,7 +536,8 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
                                RunDivisiveICP(normalized.data = dataset, batch.label = batch.label, 
                                               k = k, d = d, r = r, C = C, reg.type = reg.type, 
                                               max.iter = max.iter, icp.batch.size = icp.batch.size, 
-                                              train.with.bnn = train.with.bnn, train.k.nn = train.k.nn)
+                                              train.with.bnn = train.with.bnn, train.k.nn = train.k.nn, 
+                                              cluster.seed = cluster.seed, divisive.method = divisive.method)
                            }, error = function(e){ # Stop progress bar & workers if 'foreach()' loop terminates/exit with error
                                message("'foreach()' loop terminated unexpectedly.\nPlease read the error message or use the 'verbose=TRUE' option.\nShutting down workers...")
                                close(pb)
@@ -535,7 +554,8 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
                 res <- RunDivisiveICP(normalized.data = dataset, batch.label = batch.label, 
                                       k = k, d = d, r = r, C = C, reg.type = reg.type, 
                                       max.iter = max.iter, icp.batch.size = icp.batch.size, 
-                                      train.with.bnn = train.with.bnn, train.k.nn = train.k.nn)
+                                      train.with.bnn = train.with.bnn, train.k.nn = train.k.nn, 
+                                      cluster.seed = cluster.seed, divisive.method = divisive.method)
             })
         }
     }
@@ -603,7 +623,14 @@ setMethod("RunParallelDivisiveICP", signature(object = "SingleCellExperiment"),
 #' \code{TRUE}. Only used if \code{batch.label} is given.   
 #' @param train.k.nn Train data with batch nearest neighbors using \code{k} 
 #' nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
-#' is \code{TRUE}.   
+#' is \code{TRUE}.  
+#' @param cluster.seed A cluster seed to start and guide the clustering to more 
+#' reproducible clusterings across runs (factor). Default is \code{NULL}. Otherwise, 
+#' a random clustering takes place to start divisive clustering with ICP. 
+#' @param divisive.method Divisive method (character). One of \code{"random"} 
+#' (randomly sample two clusters out of every cluster previously found) or
+#' \code{"cluster"} (sample two clusters out of every cluster previously found 
+#' based on the cluster probability distribution). By default \code{"random"}. 
 #' 
 #' @return A list that includes the probability matrix and the clustering
 #' similarity measures: ARI, NMI, etc.
@@ -619,7 +646,8 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
                            k = 8, d = 0.3, r = 5, C = 5,
                            reg.type = "L1", max.iter = 200, 
                            icp.batch.size=Inf, train.with.bnn = TRUE, 
-                           train.k.nn = 10) {
+                           train.k.nn = 10, cluster.seed = NULL, 
+                           divisive.method = "random") {
     
     #first_round <- TRUE
     metrics <- NULL
@@ -652,9 +680,18 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
             # Step 1: initialize clustering (ident_1) randomly, ARI=0 and r=0
             if (first_round) {
                 if (k == 2) {
-                    ident_1 <- factor(sample(seq_len(k), nrow(normalized.data), replace = TRUE))
+                    if (!is.null(cluster.seed) & is.factor(cluster.seed)) {
+                        ident_1 <- cluster.seed
+                    } else {
+                        ident_1 <- factor(sample(seq_len(k), nrow(normalized.data), replace = TRUE))
+                    }
                 } else {
-                    ident_1 <- RandomlyDivisiveClustering(cluster=preds[[i-1]], k=2)
+                    if (divisive.method=="random") {
+                        ident_1 <- RandomlyDivisiveClustering(cluster=preds[[i-1]], k=2)
+                    } 
+                    if (divisive.method=="cluster") {
+                        ident_1 <- SampleClusterProbs(cluster = preds[[i-1]], probs = probs[[i-1]], q.split = 0.5)
+                    }
                 }
                 names(ident_1) <- row.names(normalized.data)
                 idents[[1]] <- ident_1
@@ -882,3 +919,108 @@ IntegrateDimRed.SingleCellExperiment <- function(object, pc, ld, cluster.method)
 #' @aliases IntegrateDimRed
 setMethod("IntegrateDimRed", signature(object = "SingleCellExperiment"),
           IntegrateDimRed.SingleCellExperiment)
+
+#' @title Sample cells based on principal components batch distribution
+#'
+#' @description
+#' Samples cells based on batch distributions along one principal component
+#'
+#' @param data Data to compute PCA and sample cells from. Rows and columns 
+#' should represent cells and features/genes, respectively.   
+#' @param batch Batch cell label identity (character) matching cells giving in 
+#' \code{data}.   
+#' @param q.split Split (cell) batch principal component distribution by this 
+#' quantile (numeric). By default {0.5}, i.e., median.  
+#' @param p Number of principal components to compute (integer). By default 
+#' \code{30}.
+#' @param use.pc Which principal component should be used for sampling cells per
+#' batch. By default \code{"PC1"}, i.e., first principal component is used. 
+#' @param center Should the features/genes given in \code{data} centered before
+#' performing the PCA (logical). By default \code{TRUE}. 
+#' @param scale. Should the features/genes given in \code{data} scaled before
+#' performing the PCA (logical). By default \code{TRUE}. 
+#' 
+#' @return A factor with cell cluster identities (two clusters). 
+#'
+#' @keywords sample PCA batch
+#'
+#' @importFrom irlba prcomp_irlba
+#' @importFrom stats quantile
+#' 
+SamplePCABatchCells <- function(data, batch, q.split = 0.5, p=30, use.pc="PC1", 
+                                center=TRUE, scale.=TRUE) {
+    # Compute PCA
+    cell.names <- row.names(data)
+    pca <- prcomp_irlba(x=data, n=p, center = center, scale. = scale.)
+    # Select PC of interest
+    pc <- pca$x[,use.pc]
+    names(pc) <- cell.names
+    # Index by batch labels
+    cell.batch <- split(x = 1:length(batch), f = batch)
+    pc.batch <- split(x = pc, f = batch)
+    # Split PC by quantile - median by default
+    batch.names <- names(cell.batch)
+    names(batch.names) <- batch.names
+    q.batch <- lapply(X = pc.batch, FUN = function(x) quantile(x = x, probs = q.split))
+    split.half.batch <- lapply(X = batch.names, FUN = function(x) {
+        (pc.batch[[x]] <= q.batch[[x]])
+    })
+    first.half.batch <- lapply(X = batch.names, function(x) {
+        names(pc.batch[[x]][split.half.batch[[x]]]) 
+    })
+    second.half.batch <- lapply(X = batch.names, function(x) {
+        names(pc.batch[[x]][!split.half.batch[[x]]]) 
+    })
+    # Clustering 
+    first.half.batch <- unlist(first.half.batch)
+    second.half.batch <- unlist(second.half.batch)
+    cluster <- factor(rep(1:2, c(length(first.half.batch), length(second.half.batch))))
+    names(cluster) <- c(first.half.batch, second.half.batch)
+    cluster <- factor(cluster[cell.names])
+    return(cluster)
+}
+
+#' @title Sample cells based on cluster probabilities distribution
+#'
+#' @description
+#' Samples cells based on cluster probabilities distribution
+#'
+#' @param cluster Clustering cell labels predicted by ICP (factor). 
+#' @param probs Clustering probabilities predicted by ICP (matrix). 
+#' @param q.split Split (cell) batch principal component distribution by this 
+#' quantile (numeric). By default {0.5}, i.e., median.  
+
+#' @return A factor with cell cluster identities. 
+#'
+#' @keywords sample cluster probabilities ICP
+#' 
+#' @importFrom stats quantile
+#'
+SampleClusterProbs <- function(cluster, probs, q.split = 0.5) {
+    # Split cells & probs by cluster/prediction
+    clts <- as.character(unique(cluster))
+    names(clts) <- clts
+    cell.idx <- 1:length(cluster)
+    clt.cell.idx <- split(x = cell.idx, f = cluster)
+    max.probs <- apply(X = probs, MARGIN = 1, FUN = function(x) max(x)) 
+    clt.probs <- split(x = max.probs, f = cluster)
+    # Quantile - median by default
+    clt.q.split <- lapply(X = clt.probs, FUN = function(x) quantile(x, probs = q.split))
+    clt.q.probs.split <- lapply(X = clts, FUN = function(x) (clt.probs[[x]] <= clt.q.split[[x]]))
+    # Make new clusterings
+    new.idx <- new.clt <- vector(mode="numeric", length = length(cluster))
+    s.pos <- 1
+    e.pos <- i <- 0
+    for (clt in clts) {
+        new.clt1 <- clt.cell.idx[[clt]][clt.q.probs.split[[clt]]]
+        new.clt2 <- clt.cell.idx[[clt]][!clt.q.probs.split[[clt]]]
+        make.clt <- rep(c(1+i, 2+i), c(length(new.clt1), length(new.clt2)))
+        e.pos <- e.pos + length(make.clt) 
+        new.idx[s.pos:e.pos] <- c(new.clt1, new.clt2)
+        new.clt[s.pos:e.pos] <- make.clt
+        i <- i + 2
+        s.pos <- s.pos + length(make.clt) 
+    }
+    new.clt <- factor(new.clt[order(new.idx)])
+    return(new.clt)
+}
