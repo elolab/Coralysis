@@ -23,6 +23,8 @@ RunParallelDivisiveICP.SingleCellExperiment(
   build.train.set,
   build.train.params,
   scale,
+  use.cluster.seed,
+  divisive.method,
   verbose
 )
 
@@ -43,6 +45,8 @@ RunParallelDivisiveICP.SingleCellExperiment(
   build.train.set = TRUE,
   build.train.params = list(),
   scale = FALSE,
+  use.cluster.seed = FALSE,
+  divisive.method = "random",
   verbose = FALSE
 )
 }
@@ -120,6 +124,18 @@ from the data or the whole data should be used for training. By default
 
 \item{scale}{A logical specifying if data should be scaled before training. 
 Default is \code{FALSE}.}
+
+\item{use.cluster.seed}{Should the same starting clustering result be provided
+to ensure more reproducible results (logical). By default \code{FALSE}, i.e., 
+Each ICP run starts with a total random and, thus, independent clustering. If 
+\code{TRUE} the same clustering result is provided based on batch wise PCA 
+density sampling.}
+
+\item{divisive.method}{Divisive method (character). One of \code{"random"} 
+(randomly sample two clusters out of every cluster previously found),
+\code{"cluster"} or \code{"cluster.batch"} (sample two clusters out of every 
+cluster previously found based on the cluster probability distribution across
+batches or per batch). By default \code{"random"}.}
 
 \item{verbose}{A logical value to print verbose during the ICP run in case 
 of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'.}

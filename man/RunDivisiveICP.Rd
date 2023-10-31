@@ -15,7 +15,9 @@ RunDivisiveICP(
   max.iter = 200,
   icp.batch.size = Inf,
   train.with.bnn = TRUE,
-  train.k.nn = 10
+  train.k.nn = 10,
+  cluster.seed = NULL,
+  divisive.method = "random"
 )
 }
 \arguments{
@@ -58,6 +60,16 @@ with larger data sets. Default is \code{Inf}, which means using all cells.}
 \item{train.k.nn}{Train data with batch nearest neighbors using \code{k} 
 nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
 is \code{TRUE}.}
+
+\item{cluster.seed}{A cluster seed to start and guide the clustering to more 
+reproducible clusterings across runs (factor). Default is \code{NULL}. Otherwise, 
+a random clustering takes place to start divisive clustering with ICP.}
+
+\item{divisive.method}{Divisive method (character). One of \code{"random"} 
+(randomly sample two clusters out of every cluster previously found),
+\code{"cluster"} or \code{"cluster.batch"} (sample two clusters out of every 
+cluster previously found based on the cluster probability distribution across
+batches or per batch). By default \code{"random"}.}
 }
 \value{
 A list that includes the probability matrix and the clustering

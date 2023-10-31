@@ -363,9 +363,10 @@ setMethod("IntegrateData", signature(object = "SingleCellExperiment"),
 #' \code{TRUE} the same clustering result is provided based on batch wise PCA 
 #' density sampling.  
 #' @param divisive.method Divisive method (character). One of \code{"random"} 
-#' (randomly sample two clusters out of every cluster previously found) or
-#' \code{"cluster"} (sample two clusters out of every cluster previously found 
-#' based on the cluster probability distribution). By default \code{"random"}. 
+#' (randomly sample two clusters out of every cluster previously found),
+#' \code{"cluster"} or \code{"cluster.batch"} (sample two clusters out of every 
+#' cluster previously found based on the cluster probability distribution across
+#' batches or per batch). By default \code{"random"}. 
 #' @param verbose A logical value to print verbose during the ICP run in case 
 #' of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'. 
 #'
@@ -628,9 +629,10 @@ setMethod("RunParallelDivisiveICP", signature(object = "SingleCellExperiment"),
 #' reproducible clusterings across runs (factor). Default is \code{NULL}. Otherwise, 
 #' a random clustering takes place to start divisive clustering with ICP. 
 #' @param divisive.method Divisive method (character). One of \code{"random"} 
-#' (randomly sample two clusters out of every cluster previously found) or
-#' \code{"cluster"} (sample two clusters out of every cluster previously found 
-#' based on the cluster probability distribution). By default \code{"random"}. 
+#' (randomly sample two clusters out of every cluster previously found),
+#' \code{"cluster"} or \code{"cluster.batch"} (sample two clusters out of every 
+#' cluster previously found based on the cluster probability distribution across
+#' batches or per batch). By default \code{"random"}. 
 #' 
 #' @return A list that includes the probability matrix and the clustering
 #' similarity measures: ARI, NMI, etc.
@@ -691,6 +693,10 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
                     } 
                     if (divisive.method=="cluster") {
                         ident_1 <- SampleClusterProbs(cluster = preds[[i-1]], probs = probs[[i-1]], q.split = 0.5)
+                    }
+                    if (divisive.method=="cluster.batch") {
+                        ident_1 <- SampleClusterBatchProbs(cluster = preds[[i-1]], probs = probs[[i-1]], 
+                                                           batch = batch.label, q.split = 0.5)
                     }
                 }
                 names(ident_1) <- row.names(normalized.data)
@@ -1014,6 +1020,73 @@ SampleClusterProbs <- function(cluster, probs, q.split = 0.5) {
     for (clt in clts) {
         new.clt1 <- clt.cell.idx[[clt]][clt.q.probs.split[[clt]]]
         new.clt2 <- clt.cell.idx[[clt]][!clt.q.probs.split[[clt]]]
+        make.clt <- rep(c(1+i, 2+i), c(length(new.clt1), length(new.clt2)))
+        e.pos <- e.pos + length(make.clt) 
+        new.idx[s.pos:e.pos] <- c(new.clt1, new.clt2)
+        new.clt[s.pos:e.pos] <- make.clt
+        i <- i + 2
+        s.pos <- s.pos + length(make.clt) 
+    }
+    new.clt <- factor(new.clt[order(new.idx)])
+    return(new.clt)
+}
+
+#' @title Sample cells based on cluster probabilities distribution batch wise
+#'
+#' @description
+#' Samples cells based on cluster probabilities distribution batch wise
+#'
+#' @param cluster Clustering cell labels predicted by ICP (factor). 
+#' @param probs Clustering probabilities predicted by ICP (matrix). 
+#' @param batch Batch labels for the corresponding clusters (character or factor). 
+#' @param q.split Split (cell) batch principal component distribution by this 
+#' quantile (numeric). By default {0.5}, i.e., median.  
+
+#' @return A factor with cell cluster identities. 
+#'
+#' @keywords sample cluster probabilities ICP
+#' 
+#' @importFrom stats quantile
+#'
+SampleClusterBatchProbs <- function(cluster, probs, batch, q.split = 0.5) {
+    # Split cells & probs by cluster/prediction
+    clts <- as.character(sort(unique(cluster)))
+    names(clts) <- clts
+    batches <- unique(as.character(batch))
+    names(batches) <- batches
+    cell.idx <- 1:length(cluster)
+    clt.cell.idx <- split(x = cell.idx, f = cluster)
+    max.probs <- apply(X = probs, MARGIN = 1, FUN = function(x) max(x)) 
+    clt.probs <- split(x = max.probs, f = cluster)
+    clt.batch <- split(x = batch, f = cluster)
+    # Split divided idx & probs by batch
+    clt.probs.batch <- lapply(X = clts, FUN = function(x) {
+        split(x = clt.probs[[x]], f = clt.batch[[x]])
+    })
+    clt.cell.idx.batch <- lapply(X = clts, FUN = function(x) {
+        split(x = clt.cell.idx[[x]], f = clt.batch[[x]])
+    })
+    # Quantile - median by default
+    clt.b.q.split <- lapply(X = clt.probs.batch, FUN = function(x) {
+        lapply(X = x, FUN = function(y) {
+            quantile(y, probs = q.split) 
+        })
+    })
+    clt.q.probs.split <- lapply(X = clts, FUN = function(x) {
+        unlist(
+            lapply(X = batches, FUN = function(y) {
+                (clt.probs.batch[[x]][[y]] <= clt.b.q.split[[x]][[y]])
+            })
+        )
+    })
+    clt.cell.idx. <- lapply(X = clt.cell.idx.batch, FUN = function(x) unlist(x[batches])) 
+    # Make new clusterings
+    new.idx <- new.clt <- vector(mode="numeric", length = length(cluster))
+    s.pos <- 1
+    e.pos <- i <- 0
+    for (clt in clts) {
+        new.clt1 <- clt.cell.idx.[[clt]][clt.q.probs.split[[clt]]]
+        new.clt2 <- clt.cell.idx.[[clt]][!clt.q.probs.split[[clt]]]
         make.clt <- rep(c(1+i, 2+i), c(length(new.clt1), length(new.clt2)))
         e.pos <- e.pos + length(make.clt) 
         new.idx[s.pos:e.pos] <- c(new.clt1, new.clt2)
