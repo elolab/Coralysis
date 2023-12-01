@@ -15,7 +15,8 @@ RunICP(
   max.iter = 200,
   icp.batch.size = Inf,
   train.with.bnn = TRUE,
-  train.k.nn = 10
+  train.k.nn = 10,
+  train.k.nn.prop = NULL
 )
 }
 \arguments{
@@ -58,6 +59,13 @@ with larger data sets. Default is \code{Inf}, which means using all cells.}
 \item{train.k.nn}{Train data with batch nearest neighbors using \code{k} 
 nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
 is \code{TRUE}.}
+
+\item{train.k.nn.prop}{A numeric (higher than 0 and lower than 1) corresponding 
+to the fraction of cells per cluster to use as \code{train.k.nn} nearest 
+neighbors. Default is \code{NULL} meaning that the number of \code{train.k.nn} 
+nearest neighbors is equal to \code{train.k.nn}. If given, \code{train.k.nn} 
+parameter is ignored and \code{train.k.nn} is calculated based on 
+\code{train.k.nn.prop}.}
 }
 \value{
 A list that includes the probability matrix and the clustering

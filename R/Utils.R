@@ -57,6 +57,12 @@
 #' @param train.k.nn Train data with batch nearest neighbors using \code{k} 
 #' nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
 #' is \code{TRUE}.   
+#' @param train.k.nn.prop A numeric (higher than 0 and lower than 1) corresponding 
+#' to the fraction of cells per cluster to use as \code{train.k.nn} nearest 
+#' neighbors. Default is \code{NULL} meaning that the number of \code{train.k.nn} 
+#' nearest neighbors is equal to \code{train.k.nn}. If given, \code{train.k.nn} 
+#' parameter is ignored and \code{train.k.nn} is calculated based on 
+#' \code{train.k.nn.prop}.  
 #' 
 #' @return A list that includes the probability matrix and the clustering
 #' similarity measures: ARI, NMI, etc.
@@ -73,7 +79,7 @@ RunICP <- function(normalized.data = NULL, batch.label = NULL,
                    k = 15, d = 0.3, r = 5, C = 5,
                    reg.type = "L1", max.iter = 200, 
                    icp.batch.size=Inf, train.with.bnn = TRUE, 
-                   train.k.nn = 10) {
+                   train.k.nn = 10, train.k.nn.prop = NULL) {
 
   first_round <- TRUE
   metrics <- NULL
@@ -113,7 +119,8 @@ RunICP <- function(normalized.data = NULL, batch.label = NULL,
             FindClusterBatchKNN(preds = res_prediction$predictions, 
                                 probs = res_prediction$probabilities, 
                                 batch = batch.label, 
-                                k = train.k.nn)
+                                k = train.k.nn, 
+                                k.prop = train.k.nn.prop)
             )
     } else {
         training_ident_subset <- NULL
@@ -452,18 +459,27 @@ FindBatchKNN <- function(idx, group, prob, k = 10) {
 #' @param probs A numeric matrix with cell cluster probabilities.
 #' @param batch A numeric vector with cell probabilities corresponding to \code{idx}.
 #' @param k The number of nearest neighbors to search for. Default is \code{10}.
+#' @param k.prop A numeric (higher than 0 and lower than 1) corresponding to the 
+#' fraction of cells per cluster to use as \code{k} nearest neighbors. Default 
+#' is \code{NULL} meaning that the number of \code{k} nearest neighbors is equal
+#' to \code{k}. If given, \code{k} parameter is ignored and \code{k} is calculated
+#' based on \code{k.prop}.  
 #'
 #' @return a list containing the k nearest neighbors for every cluster
 #'
 #' @keywords knn 
 #'
-FindClusterBatchKNN <- function(preds, probs, batch, k = 10) {
+FindClusterBatchKNN <- function(preds, probs, batch, k = 10, k.prop = NULL) {
     clts <- ncol(probs)
     clt.knn <- list()
+    nbatches <- length(unique(as.character(batch)))
     for (clt in 1:clts) {
         idx <- which(preds == clt)
         group <- batch[idx]
         prob <- probs[idx, clt]
+        if (!is.null(k.prop)) {
+            k <- ceiling(length(idx) * k.prop / nbatches)
+        }
         tmp <- FindBatchKNN(idx = idx, group = group, prob = prob, k = k)
         clt.knn[[clt]] <- unique(unlist(tmp))
     }

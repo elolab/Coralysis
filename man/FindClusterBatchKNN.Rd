@@ -4,7 +4,7 @@
 \alias{FindClusterBatchKNN}
 \title{Find batch k nearest neighbors per cluster}
 \usage{
-FindClusterBatchKNN(preds, probs, batch, k = 10)
+FindClusterBatchKNN(preds, probs, batch, k = 10, k.prop = NULL)
 }
 \arguments{
 \item{preds}{A numeric vector with the cell cluster predictions.}
@@ -14,6 +14,12 @@ FindClusterBatchKNN(preds, probs, batch, k = 10)
 \item{batch}{A numeric vector with cell probabilities corresponding to \code{idx}.}
 
 \item{k}{The number of nearest neighbors to search for. Default is \code{10}.}
+
+\item{k.prop}{A numeric (higher than 0 and lower than 1) corresponding to the 
+fraction of cells per cluster to use as \code{k} nearest neighbors. Default 
+is \code{NULL} meaning that the number of \code{k} nearest neighbors is equal
+to \code{k}. If given, \code{k} parameter is ignored and \code{k} is calculated
+based on \code{k.prop}.}
 }
 \value{
 a list containing the k nearest neighbors for every cluster
