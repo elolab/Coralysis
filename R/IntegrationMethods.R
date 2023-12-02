@@ -753,21 +753,19 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
             # However, k should NOT decrease during the iteration when
             # the down- and oversampling approach is used for the balancing training data.
             if (length(levels(factor(as.character(ident_2)))) < k) {
-                if (ari>0.5) {
-                    message("k decreased epoch, exiting with the previous clustering epoch...")
-                    break
-                } else {
-                    message(paste0("k decreased, starting from the beginning... ", 
-                                   "consider increasing d to 0.5 and C to 1 ", 
-                                   "or increasing the ICP batch size ",
-                                   "and check the input data ",
-                                   "(scaled dense data might cause problems)"))
-                    first_round <- TRUE
-                    metrics <- NULL
-                    idents <- list()
-                    iterations <- 1
-                    next
-                }
+                message(paste("k", k, "decreased to", length(levels(factor(as.character(ident_2))))))
+                k <- length(levels(factor(as.character(ident_2))))
+                # message(paste0("k decreased, starting from the beginning... ",
+                #                "consider increasing d to 0.5 and C to 1 ",
+                #                "or increasing the ICP batch size ",
+                #                "and check the input data ",
+                #                "(scaled dense data might cause problems)"))
+                # first_round <- TRUE
+                # metrics <- NULL
+                # idents <- list()
+                # iterations <- 1
+                # next
+                
             }
             
             # Step 3: compare clustering similarity between clustering and projection
