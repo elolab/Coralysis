@@ -373,6 +373,12 @@ setMethod("IntegrateData", signature(object = "SingleCellExperiment"),
 #' \code{"cluster"} or \code{"cluster.batch"} (sample two clusters out of every 
 #' cluster previously found based on the cluster probability distribution across
 #' batches or per batch). By default \code{"random"}. 
+#' @param allow.free.k Allow free \code{k} (logical). Allow ICP algorithm to 
+#' decrease the \code{k} given in case it does not find \code{k} target clusters. 
+#' By default \code{FALSE}. 
+#' @param ari.cutoff Include ICP models and probability tables with an Adjusted 
+#' Rand Index higher than \code{ari.cutoff} (numeric). By default \code{0.5}. A
+#' value that can range between 0 (include all) and lower than 1.   
 #' @param verbose A logical value to print verbose during the ICP run in case 
 #' of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'. 
 #'
@@ -405,6 +411,8 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
                                                         build.train.params,
                                                         scale, use.cluster.seed,
                                                         divisive.method,
+                                                        allow.free.k,
+                                                        ari.cutoff,
                                                         verbose) {
     
     if (!is(object,"SingleCellExperiment")) {
@@ -546,7 +554,8 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
                                               max.iter = max.iter, icp.batch.size = icp.batch.size, 
                                               train.with.bnn = train.with.bnn, train.k.nn = train.k.nn, 
                                               train.k.nn.prop = train.k.nn.prop, cluster.seed = cluster.seed, 
-                                              divisive.method = divisive.method)
+                                              divisive.method = divisive.method, allow.free.k = allow.free.k, 
+                                              ari.cutoff = ari.cutoff)
                            }, error = function(e){ # Stop progress bar & workers if 'foreach()' loop terminates/exit with error
                                message("'foreach()' loop terminated unexpectedly.\nPlease read the error message or use the 'verbose=TRUE' option.\nShutting down workers...")
                                close(pb)
@@ -565,7 +574,8 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
                                       max.iter = max.iter, icp.batch.size = icp.batch.size, 
                                       train.with.bnn = train.with.bnn, train.k.nn = train.k.nn, 
                                       train.k.nn.prop = train.k.nn.prop, cluster.seed = cluster.seed, 
-                                      divisive.method = divisive.method)
+                                      divisive.method = divisive.method, allow.free.k = allow.free.k, 
+                                      ari.cutoff = ari.cutoff)
             })
         }
     }
@@ -648,6 +658,12 @@ setMethod("RunParallelDivisiveICP", signature(object = "SingleCellExperiment"),
 #' \code{"cluster"} or \code{"cluster.batch"} (sample two clusters out of every 
 #' cluster previously found based on the cluster probability distribution across
 #' batches or per batch). By default \code{"random"}. 
+#' @param allow.free.k Allow free \code{k} (logical). Allow ICP algorithm to 
+#' decrease the \code{k} given in case it does not find \code{k} target clusters. 
+#' By default \code{FALSE}. 
+#' @param ari.cutoff Include ICP models and probability tables with an Adjusted 
+#' Rand Index higher than \code{ari.cutoff} (numeric). By default \code{0.5}. A
+#' value that can range between 0 (include all) and lower than 1.   
 #' 
 #' @return A list that includes the probability matrix and the clustering
 #' similarity measures: ARI, NMI, etc.
@@ -664,7 +680,8 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
                            reg.type = "L1", max.iter = 200, 
                            icp.batch.size=Inf, train.with.bnn = TRUE, 
                            train.k.nn = 10, train.k.nn.prop = NULL, 
-                           cluster.seed = NULL, divisive.method = "random") {
+                           cluster.seed = NULL, divisive.method = "random", 
+                           allow.free.k = FALSE, ari.cutoff = 0.5) {
     
     #first_round <- TRUE
     metrics <- NULL
@@ -752,20 +769,22 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
             # Safety procedure: If k drops to 1, start from the beginning.
             # However, k should NOT decrease during the iteration when
             # the down- and oversampling approach is used for the balancing training data.
-            if (length(levels(factor(as.character(ident_2)))) < k) {
-                message(paste("k", k, "decreased to", length(levels(factor(as.character(ident_2))))))
-                k <- length(levels(factor(as.character(ident_2))))
-                # message(paste0("k decreased, starting from the beginning... ",
-                #                "consider increasing d to 0.5 and C to 1 ",
-                #                "or increasing the ICP batch size ",
-                #                "and check the input data ",
-                #                "(scaled dense data might cause problems)"))
-                # first_round <- TRUE
-                # metrics <- NULL
-                # idents <- list()
-                # iterations <- 1
-                # next
-                
+            if (nlevels(factor(as.character(ident_2))) < k) {
+                if (allow.free.k) {
+                    message(paste("k", k, "decreased to", nlevels(factor(as.character(ident_2)))))
+                    k <- nlevels(factor(as.character(ident_2)))
+                } else {
+                    message(paste0("k decreased, starting from the beginning... ",
+                                   "consider increasing d to 0.5 and C to 1 ",
+                                   "or increasing the ICP batch size ",
+                                   "and check the input data ",
+                                   "(scaled dense data might cause problems)"))
+                    first_round <- TRUE
+                    metrics <- NULL
+                    idents <- list()
+                    iterations <- 1
+                    next
+                }
             }
             
             # Step 3: compare clustering similarity between clustering and projection
@@ -800,7 +819,7 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
             # Step 4: If the maximum number of reiterations or iterations was
             # reached, break the while loop
             if (reiterations == r | iterations == max.iter){
-                if (ari>0.5) {
+                if (ari>ari.cutoff) {
                     break
                 } else {
                     first_round <- TRUE
