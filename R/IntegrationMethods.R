@@ -770,7 +770,7 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
             # However, k should NOT decrease during the iteration when
             # the down- and oversampling approach is used for the balancing training data.
             if (nlevels(factor(as.character(ident_2))) < k) {
-                if (allow.free.k & (nlevels(factor(as.character(ident_2)))>1)) {
+                if (allow.free.k & (nlevels(factor(as.character(ident_2)))>3)) {
                     message(paste("k", k, "decreased to", nlevels(factor(as.character(ident_2)))))
                     k <- nlevels(factor(as.character(ident_2)))
                 } else {

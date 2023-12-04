@@ -18,7 +18,9 @@ RunDivisiveICP(
   train.k.nn = 10,
   train.k.nn.prop = NULL,
   cluster.seed = NULL,
-  divisive.method = "random"
+  divisive.method = "random",
+  allow.free.k = FALSE,
+  ari.cutoff = 0.5
 )
 }
 \arguments{
@@ -78,6 +80,14 @@ a random clustering takes place to start divisive clustering with ICP.}
 \code{"cluster"} or \code{"cluster.batch"} (sample two clusters out of every 
 cluster previously found based on the cluster probability distribution across
 batches or per batch). By default \code{"random"}.}
+
+\item{allow.free.k}{Allow free \code{k} (logical). Allow ICP algorithm to 
+decrease the \code{k} given in case it does not find \code{k} target clusters. 
+By default \code{FALSE}.}
+
+\item{ari.cutoff}{Include ICP models and probability tables with an Adjusted 
+Rand Index higher than \code{ari.cutoff} (numeric). By default \code{0.5}. A
+value that can range between 0 (include all) and lower than 1.}
 }
 \value{
 A list that includes the probability matrix and the clustering
