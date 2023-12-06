@@ -126,7 +126,9 @@ to the fraction of cells per cluster to use as \code{train.k.nn} nearest
 neighbors. Default is \code{NULL} meaning that the number of \code{train.k.nn} 
 nearest neighbors is equal to \code{train.k.nn}. If given, \code{train.k.nn} 
 parameter is ignored and \code{train.k.nn} is calculated based on 
-\code{train.k.nn.prop}.}
+\code{train.k.nn.prop}. A vector with different proportions for the different
+divisive clustering rounds can be given, otherwise the same value is given for 
+all.}
 
 \item{build.train.set}{Logical specifying if a training set should be built 
 from the data or the whole data should be used for training. By default 

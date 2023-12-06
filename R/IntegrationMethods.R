@@ -355,7 +355,9 @@ setMethod("IntegrateData", signature(object = "SingleCellExperiment"),
 #' neighbors. Default is \code{NULL} meaning that the number of \code{train.k.nn} 
 #' nearest neighbors is equal to \code{train.k.nn}. If given, \code{train.k.nn} 
 #' parameter is ignored and \code{train.k.nn} is calculated based on 
-#' \code{train.k.nn.prop}.  
+#' \code{train.k.nn.prop}. A vector with different proportions for the different
+#' divisive clustering rounds can be given, otherwise the same value is given for 
+#' all.    
 #' @param build.train.set Logical specifying if a training set should be built 
 #' from the data or the whole data should be used for training. By default 
 #' \code{FALSE}.
@@ -649,7 +651,9 @@ setMethod("RunParallelDivisiveICP", signature(object = "SingleCellExperiment"),
 #' neighbors. Default is \code{NULL} meaning that the number of \code{train.k.nn} 
 #' nearest neighbors is equal to \code{train.k.nn}. If given, \code{train.k.nn} 
 #' parameter is ignored and \code{train.k.nn} is calculated based on 
-#' \code{train.k.nn.prop}.  
+#' \code{train.k.nn.prop}. A vector with different proportions for the different
+#' divisive clustering rounds can be given, otherwise the same value is given for 
+#' all.   
 #' @param cluster.seed A cluster seed to start and guide the clustering to more 
 #' reproducible clusterings across runs (factor). Default is \code{NULL}. Otherwise, 
 #' a random clustering takes place to start divisive clustering with ICP. 
@@ -706,6 +710,9 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
     probs <- res_model <- res_metrics <- preds <- list()
     i <- 0
     Ks <- 2^seq(from=1, to=log2(k), by=1)
+    if (length(train.k.nn.prop)==1) {
+        train.k.nn.prop <- rep(train.k.nn.prop, length(Ks))
+    }
     for (k in Ks) {
         first_round <- TRUE
         i <- i + 1
@@ -744,7 +751,7 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
                                         probs = res_prediction$probabilities,
                                         batch = batch.label, 
                                         k = train.k.nn, 
-                                        k.prop = train.k.nn.prop)
+                                        k.prop = train.k.nn.prop[i])
                 )
             } else {
                 training_ident_subset <- NULL
