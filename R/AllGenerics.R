@@ -34,7 +34,11 @@ setGeneric("RunPCA", signature = "object",
            function(object,
                     p = 50,
                     scale = FALSE,
-                    threshold = 0) {
+                    center = TRUE,
+                    threshold = 0,
+                    method = "RSpectra", 
+                    return.model = FALSE, 
+                    select.icp.tables = NULL) {
              standardGeneric("RunPCA")
            })
 
@@ -48,7 +52,8 @@ setGeneric("PCAElbowPlot", signature = "object",
 #' @export
 setGeneric("RunUMAP", signature = "object",
            function(object, 
-                    type = "PCA") {
+                    type = "PCA", 
+                    return.model = FALSE) {
              standardGeneric("RunUMAP")
            })
 
@@ -242,6 +247,10 @@ setGeneric("IntegrateDimRed", signature = "object",
 
 #' @export
 setGeneric("ReferenceMapping", signature = c("ref", "query"),
-           function(ref, query, scale.query = TRUE) {
+           function(ref, query, ref.label,
+                    scale.query = FALSE, 
+                    project.umap = FALSE, 
+                    select.icp.models = NULL, 
+                    k.nn = 10) {
                standardGeneric("ReferenceMapping")
            })

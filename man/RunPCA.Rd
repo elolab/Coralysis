@@ -6,9 +6,27 @@
 \alias{RunPCA,SingleCellExperiment-method}
 \title{PCA transformation of the joint probability matrix}
 \usage{
-RunPCA.SingleCellExperiment(object, p, scale, threshold)
+RunPCA.SingleCellExperiment(
+  object,
+  p,
+  scale,
+  center,
+  threshold,
+  method,
+  return.model,
+  select.icp.tables
+)
 
-\S4method{RunPCA}{SingleCellExperiment}(object, p = 50, scale = FALSE, threshold = 0)
+\S4method{RunPCA}{SingleCellExperiment}(
+  object,
+  p = 50,
+  scale = FALSE,
+  center = TRUE,
+  threshold = 0,
+  method = "RSpectra",
+  return.model = FALSE,
+  select.icp.tables = NULL
+)
 }
 \arguments{
 \item{object}{object of \code{SingleCellExperiment} class}
@@ -19,9 +37,25 @@ components to calculate and select. Default is \code{50}.}
 \item{scale}{a logical specifying whether the probabilities should be
 standardized to unit-variance before running PCA. Default is \code{FALSE}.}
 
+\item{center}{a logical specifying whether the probabilities should be
+centered before running PCA. Default is \code{TRUE}.}
+
 \item{threshold}{a thresfold for filtering out ICP runs before PCA with
 the lower terminal projection accuracy below the threshold.
 Default is \code{0}.}
+
+\item{method}{A character specifying the PCA method. One of \code{"RSpectra"}
+(default), \code{"irlba"} or \code{"stats"}.}
+
+\item{return.model}{A logical specifying if the PCA model should or not be 
+retrieved. By default \code{FALSE}. Only implemented for \code{method = "stats"}. 
+If \code{TRUE}, the \code{method} is coerced to \code{"stats"}.}
+
+\item{select.icp.tables}{Select the ICP cluster probability tables to perform 
+PCA. By default \code{NULL}, i.e., all are used, except if the ICP tables were
+obtained with the function \code{RunParallelDivisiveICP}, in which the ICP 
+tables correspond to the last round of divisive clustering for every epoch.  
+A vector of \code{integers} should be given otherwise.}
 }
 \value{
 object of \code{SingleCellExperiment} class

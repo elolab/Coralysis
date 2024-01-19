@@ -6,14 +6,16 @@
 \alias{RunUMAP,SingleCellExperiment-method}
 \title{Uniform Manifold Approximation and Projection (UMAP)}
 \usage{
-RunUMAP.SingleCellExperiment(object, type = "PCA")
+RunUMAP.SingleCellExperiment(object, type, return.model)
 
-\S4method{RunUMAP}{SingleCellExperiment}(object, type = "PCA")
+\S4method{RunUMAP}{SingleCellExperiment}(object, type = "PCA", return.model = FALSE)
 }
 \arguments{
 \item{object}{of \code{SingleCellExperiment} class}
 
 \item{type}{type of dimensional reduction to use. By default \code{"PCA"}.}
+
+\item{return.model}{return UMAP model. By default \code{FALSE}.}
 }
 \value{
 object of \code{SingleCellExperiment} class

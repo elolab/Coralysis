@@ -469,9 +469,21 @@ setMethod("AggregateDataByBatch", signature(object = "SingleCellExperiment"),
 #' components to calculate and select. Default is \code{50}.
 #' @param scale a logical specifying whether the probabilities should be
 #' standardized to unit-variance before running PCA. Default is \code{FALSE}.
+#' @param center a logical specifying whether the probabilities should be
+#' centered before running PCA. Default is \code{TRUE}.
 #' @param threshold a thresfold for filtering out ICP runs before PCA with
 #' the lower terminal projection accuracy below the threshold.
 #' Default is \code{0}.
+#' @param method A character specifying the PCA method. One of \code{"RSpectra"}
+#' (default), \code{"irlba"} or \code{"stats"}. 
+#' @param return.model A logical specifying if the PCA model should or not be 
+#' retrieved. By default \code{FALSE}. Only implemented for \code{method = "stats"}. 
+#' If \code{TRUE}, the \code{method} is coerced to \code{"stats"}. 
+#' @param select.icp.tables Select the ICP cluster probability tables to perform 
+#' PCA. By default \code{NULL}, i.e., all are used, except if the ICP tables were
+#' obtained with the function \code{RunParallelDivisiveICP}, in which the ICP 
+#' tables correspond to the last round of divisive clustering for every epoch.  
+#' A vector of \code{integers} should be given otherwise.   
 #'
 #' @name RunPCA
 #'
@@ -480,6 +492,8 @@ setMethod("AggregateDataByBatch", signature(object = "SingleCellExperiment"),
 #' @keywords PCA eigendecomposition
 #'
 #' @importFrom RSpectra eigs_sym
+#' @importFrom irlba prcomp_irlba
+#' @importFrom stats prcomp
 #' @importFrom SingleCellExperiment reducedDim<-
 #' @importFrom S4Vectors metadata metadata<-
 #'
@@ -492,39 +506,75 @@ setMethod("AggregateDataByBatch", signature(object = "SingleCellExperiment"),
 #' sce <- RunPCA(sce,p=5)
 #'
 #'
-RunPCA.SingleCellExperiment <- function(object, p, scale, threshold) {
-
-  if (p > metadata(object)$iloreg$L*metadata(object)$iloreg$k) {
-    stop(paste0("p larger than number of joint probabilities. Decrease p"))
-  }
-
-  metadata(object)$iloreg$p <- p
-  metadata(object)$iloreg$scale.pca <- scale
-
-  if (threshold == 0)
-  {
-    X <- do.call(cbind,metadata(object)$iloreg$joint.probability)
-  } else {
-    icp_runs_logical <- unlist(lapply(metadata(object)$iloreg$metrics,
-                                      function(x) x["ARI",])) >= threshold
-    X <- do.call(cbind,
-                 metadata(object)$iloreg$joint.probability[icp_runs_logical])
-  }
-  X <- scale(X, scale = scale, center = TRUE)
-
-  # X^T %*% X
-  A = crossprod(X)
-
-  # Perform eigendecomposition
-  eigs_sym_out <- eigs_sym(A, p, which = "LM")
-
-  rotated <- X %*% eigs_sym_out$vectors
-  colnames(rotated) <- paste0("PC", seq_len(ncol(rotated)))
-
-  reducedDim(object,type = "PCA") <- rotated
-
-  return(object)
-
+RunPCA.SingleCellExperiment <- function(object, p, scale, center, threshold,
+                                        method, return.model, select.icp.tables) {
+    
+    # Check conditions
+    if (p > metadata(object)$iloreg$L*metadata(object)$iloreg$k) {
+        stop(paste0("p larger than number of joint probabilities. Decrease p"))
+    }
+    if (return.model) {
+        if (method != "stats") {
+            message(paste0("Setting 'method' to 'stats' as 'return.model' is TRUE.", 
+                           "\nSet 'return.model' to FALSE to use 'method' '", method, "'."))
+            method <- "stats"
+        }
+    }
+    
+    # Get ICP tables
+    n.icps <- length(metadata(object)$iloreg$joint.probability)
+    if (is.null(select.icp.tables)) {
+        select.icp.tables <- 1:n.icps
+        divisive.icp <- metadata(object)$iloreg$divisive.icp
+        if (!is.null(divisive.icp)) {
+            L <- metadata(object)$iloreg$L
+            k <- metadata(object)$iloreg$k  
+            Ks <- log2(k) # divisive K rounds (if k=16: 2 --> 4 --> 8 --> 16, i.e., Ks = 4 rounds)
+            select.icp.tables <- seq(Ks, Ks * L, Ks) # select a ICP table every Ks round
+            message(paste0("Divisive ICP: selecting ICP tables multiple of ", Ks))
+        }
+    }
+    if (threshold == 0) {
+        X <- do.call(cbind, metadata(object)$iloreg$joint.probability[select.icp.tables])
+    } else {
+        icp_runs_logical <- unlist(lapply(metadata(object)$iloreg$metrics, function(x) x["ARI",])) >= threshold
+        icp_runs_logical <- (icp_runs_logical & ((1:n.icps) %in% select.icp.tables))
+        X <- do.call(cbind, metadata(object)$iloreg$joint.probability[icp_runs_logical])
+    }
+    
+    # Calculate PCA
+    if (method=="RSpectra") {
+        X <- scale(X, scale = scale, center = center)
+        # X^T %*% X
+        A = crossprod(X)
+        # Perform eigendecomposition
+        eigs_sym_out <- RSpectra::eigs_sym(A, p, which = "LM")
+        pca <- X %*% eigs_sym_out$vectors
+        colnames(pca) <- paste0("PC", seq_len(ncol(pca))) 
+    } 
+    if (method == "irlba") {
+        pca <- irlba::prcomp_irlba(x = X, n = p, scale. = scale, center = center)
+        pca <- pca$x
+    }
+    if (method == "stats") {
+        pca <- stats::prcomp(x = X, scale. = scale, center = center, rank = p)
+        if (return.model) {
+            metadata(object)$iloreg$pca.model <- pca
+        }
+        pca <- pca$x
+    }
+    
+    # Saving PCA into SCE object (& params)
+    reducedDim(object, type = "PCA") <- pca
+    metadata(object)$iloreg$p <- p # saving due to compatibility issues
+    metadata(object)$iloreg$pca.params <-  list("p" = p, "scale" = scale, 
+                                                "threshold" = threshold, 
+                                                "center" = center,
+                                                "method" = method, 
+                                                "return.model" = return.model, 
+                                                "select.icp.tables" = select.icp.tables)
+    
+    return(object)
 }
 
 #' @rdname RunPCA
@@ -602,6 +652,7 @@ setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
 #'
 #' @param object of \code{SingleCellExperiment} class
 #' @param type type of dimensional reduction to use. By default \code{"PCA"}.
+#' @param return.model return UMAP model. By default \code{FALSE}.
 #'
 #' @name RunUMAP
 #'
@@ -621,13 +672,17 @@ setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
 #' sce <- RunPCA(sce,p=5)
 #' sce <- RunUMAP(sce)
 #'
-RunUMAP.SingleCellExperiment <- function(object, type="PCA") {
-
-  umap_out <- umap(reducedDim(object,type))
-
-  reducedDim(object,"UMAP") <- umap_out$layout
-
-  return(object)
+RunUMAP.SingleCellExperiment <- function(object, type, return.model) {
+    
+    umap_out <- umap::umap(reducedDim(object,type))
+    
+    if (return.model) {
+        metadata(object)$iloreg$umap.model <- umap_out
+    }
+    
+    reducedDim(object,"UMAP") <- umap_out$layout
+    
+    return(object)
 }
 
 #' @rdname RunUMAP

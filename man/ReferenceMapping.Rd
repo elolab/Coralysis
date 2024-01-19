@@ -6,25 +6,57 @@
 \alias{ReferenceMapping,SingleCellExperiment,SingleCellExperiment-method}
 \title{Reference mapping}
 \usage{
-ReferenceMapping.SingleCellExperiment(ref, query, scale.query)
+ReferenceMapping.SingleCellExperiment(
+  ref,
+  query,
+  ref.label,
+  scale.query,
+  project.umap,
+  select.icp.models,
+  k.nn
+)
 
-\S4method{ReferenceMapping}{SingleCellExperiment,SingleCellExperiment}(ref, query, scale.query = TRUE)
+\S4method{ReferenceMapping}{SingleCellExperiment,SingleCellExperiment}(
+  ref,
+  query,
+  ref.label,
+  scale.query = FALSE,
+  project.umap = FALSE,
+  select.icp.models = NULL,
+  k.nn = 10
+)
 }
 \arguments{
-\item{ref}{An object of \code{SingleCellExperiment} class trained with ILoReg.}
+\item{ref}{An object of \code{SingleCellExperiment} class trained with ILoReg
+and after running \code{RunPCA(..., return.model = TRUE)} function.}
 
 \item{query}{An object of \code{SingleCellExperiment} class to project onto 
 \code{ref}.}
 
+\item{ref.label}{A character cell metadata column name from the \code{ref} 
+object to transfer to the queries.}
+
 \item{scale.query}{Should the query logcounts be scaled or not (logical). By 
 default \code{TRUE}. Scale it if reference was scaled.}
+
+\item{project.umap}{Project query data onto reference UMAP (logical). By 
+default \code{FALSE}. If \code{TRUE}, the \code{ref} object needs to have a 
+UMAP embedding obtained with \code{RunUMAP(..., return.model = TRUE)} function.}
+
+\item{k.nn}{The number of \code{k} nearest neighbors to use in the classification
+KNN algorithm used to transfer labels from the reference to queries (integer).
+By default \code{10}.}
+
+\item{selecte.icp.models}{Select the reference ICP models to use for query 
+cluster probability prediction. By default \code{NULL}, i.e., all are used.
+A vector of \code{integers} should be given otherwise.}
 }
 \value{
 An object of \code{SingleCellExperiment} class.
 }
 \description{
-This functions allows to project new query data sets onto a reference built 
-with ILoReg.
+This function allows to project new query data sets onto a reference built 
+with ILoReg as well as transfer cell labels from the reference to queries.
 }
 \keyword{ICP}
 \keyword{LIBLINEAR}
