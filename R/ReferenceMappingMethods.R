@@ -43,12 +43,19 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
     if (project.umap & is.null(metadata(ref)$iloreg$umap.model)) {
         stop("UMAP model does not exist. Run 'RunUMAP(...)' with 'return.model = TRUE'.")
     }
+    
 
     # Filter out genes
     ref.genes <- row.names(ref)
     query.genes <- row.names(query)
+    if (!all(ref.genes %in% query.genes)) {
+        message(paste0("Reference does not share all the genes with query:\n", 
+                       "Reference genes: ", length(ref.genes), "\n",
+                       "Query genes shared: ", sum(ref.genes %in% query.genes), 
+                       "\nContinuing analysis..."))
+    }
     pick.genes <- which(ref.genes %in% query.genes)
-    query <- query[ref.genes[pick.genes],]
+    #query <- query[ref.genes[pick.genes],]
     
     # Get model data
     if (is.null(select.icp.models)) {
@@ -59,7 +66,7 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
     pca.model <- metadata(ref)$iloreg$pca.model
     
     # Predict cluster probabilities
-    query.data <- t(logcounts(query))
+    query.data <- t(logcounts(query[ref.genes[pick.genes],]))
     if (scale.query) {
         query.data <- Scale(x = query.data, scale.by = "row")
     }
