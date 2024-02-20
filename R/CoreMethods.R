@@ -422,6 +422,10 @@ setMethod("RunParallelICP", signature(object = "SingleCellExperiment"),
 #' 
 AggregateDataByBatch.SingleCellExperiment <- function(object, batch.label, 
                                                       nhvg, p, ...) {
+    if (is.null(batch.label)) {
+        batch.label <- "batch"
+        object[[batch.label]] <- "single"
+    }
     batch <- as.character(colData(object)[[batch.label]])
     batch.names <- unique(batch)
     names(batch.names) <- batch.names
