@@ -704,12 +704,15 @@ setMethod("IntegrateDimRed", signature(object = "SingleCellExperiment"),
 #'
 #' @importFrom irlba prcomp_irlba
 #' @importFrom stats quantile
+#' @importFrom sparseMatrixStats colSds
 #' 
 SamplePCABatchCells <- function(data, batch, q.split = 0.5, p=30, use.pc="PC1", 
                                 center=TRUE, scale.=TRUE) {
     # Compute PCA
+    genes.sd <- colSds(data) 
+    genes.sd.diff0 <- which(genes.sd != 0)
     cell.names <- row.names(data)
-    pca <- prcomp_irlba(x=data, n=p, center = center, scale. = scale.)
+    pca <- prcomp_irlba(x=data[,genes.sd.diff0], n=p, center = center, scale. = scale.)
     # Select PC of interest
     pc <- pca$x[,use.pc]
     names(pc) <- cell.names
