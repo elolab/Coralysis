@@ -230,7 +230,8 @@ RunICP <- function(normalized.data = NULL, batch.label = NULL,
 #' The function clusters cells with the K-means++ algorithm
 #'
 #' @param object An object of \code{SingleCellExperiment} class.
-#' @param nclusters Cluster the cells into n clusters.
+#' @param nclusters Cluster the cells into n clusters. Ignored if the number of 
+#' cells in \code{object} is lower or equal to \code{nclusters}. 
 #' @param use.emb Should the embedding be used to cluster or the log-transformed 
 #' data. By default \code{TRUE}. 
 #' @param emb.name Which embedding to use. By default \code{"PCA"}. 
@@ -247,10 +248,19 @@ ClusterCells <- function(object, nclusters=150, use.emb=TRUE, emb.name="PCA") {
     } else {
         data.cluster <- t(logcounts(object))
     }
-    clusters <- kcca(x = data.cluster, k = nclusters, 
-                     family = kccaFamily("kmeans"), 
-                     control = list(initcent="kmeanspp"))
+    no.cells <- nrow(data.cluster)
+    if (no.cells > nclusters) {
+        clusters <- kcca(x = data.cluster, k = nclusters, 
+                         family = kccaFamily("kmeans"), 
+                         control = list(initcent="kmeanspp"))
+    } else {
+        message("No. of cells is lower or equal than the no. of 'nclusters': ", no.cells, " <= ", nclusters, 
+                "\nAll the cells will be included and the clustering step will be skipped!\n")
+        setClass("clt", representation(cluster = "numeric"))
+        clusters <- new("clt", cluster = 1:no.cells)
+    }
     metadata(object)$clusters <- clusters 
+
     return(object)
 } 
 
