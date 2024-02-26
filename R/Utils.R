@@ -249,16 +249,13 @@ ClusterCells <- function(object, nclusters=150, use.emb=TRUE, emb.name="PCA") {
         data.cluster <- t(logcounts(object))
     }
     no.cells <- nrow(data.cluster)
-    if (no.cells > nclusters) {
-        clusters <- kcca(x = data.cluster, k = nclusters, 
-                         family = kccaFamily("kmeans"), 
-                         control = list(initcent="kmeanspp"))
-    } else {
-        message("No. of cells is lower or equal than the no. of 'nclusters': ", no.cells, " <= ", nclusters, 
-                "\nAll the cells will be included and the clustering step will be skipped!\n")
-        setClass("clt", representation(cluster = "numeric"))
-        clusters <- new("clt", cluster = 1:no.cells)
+    if (no.cells <= nclusters) {
+        message("No. of cells is lower or equal than the no. of 'nclusters': ", 
+                no.cells, " <= ", nclusters, "\nAll the cells will be included and the clustering step will be skipped!\n")
+        nclusters <- no.cells
     }
+    clusters <- kcca(x = data.cluster, k = nclusters, family = kccaFamily("kmeans"), 
+                     control = list(initcent = "kmeanspp"))
     metadata(object)$clusters <- clusters 
 
     return(object)
