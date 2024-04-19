@@ -285,6 +285,7 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
                                       train.k.nn.prop = train.k.nn.prop, cluster.seed = cluster.seed, 
                                       divisive.method = divisive.method, allow.free.k = allow.free.k, 
                                       ari.cutoff = ari.cutoff)
+                out[[l]] <- res
             })
         }
     }
