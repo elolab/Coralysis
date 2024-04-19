@@ -275,6 +275,7 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
         # stop local cluster
         stopCluster(cl)
     } else {
+        out <- list()
         for (l in seq_len(L)) {
             try({
                 message(paste0("ICP run: ",l))
