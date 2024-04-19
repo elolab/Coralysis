@@ -203,6 +203,7 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
         dataset <- t(logcounts(object))
     }
     
+    batch.name <- batch.label
     if (!is.null(batch.label)) {
         if (build.train.set) {
             batch.label <- as.character(clustered.object[["batch"]])
@@ -222,7 +223,9 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
     }
     
     if (scale) {
-        dataset <- Scale(x = as(dataset, "sparseMatrix"), scale.by="row")
+        # Test scaling by genes instead of cells
+        #dataset <- Scale(x = as(dataset, "sparseMatrix"), scale.by="row")
+        dataset <- ScaleByBatch(x = dataset, batch = batch.label)
     }
     parallelism <- TRUE
 
@@ -301,7 +304,11 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
         test.data <- t(logcounts(object))
         colnames(test.data) <- paste0("W", 1:ncol(test.data))
         if (scale) {
-            test.data <- Scale(x = as(test.data, "sparseMatrix"), scale.by="row")
+            # Test scaling by genes instead of cells
+            # test.data <- Scale(x = as(test.data, "sparseMatrix"), scale.by="row")
+            batch.label <- as.character(object[[batch.name]]) 
+            names(batch.label) <- colnames(object)
+            test.data <- ScaleByBatch(x = test.data, batch = batch.label)
         }
         metadata(object)$iloreg$joint.probability <- 
             lapply(metadata(object)$iloreg$models, function(x) {

@@ -363,6 +363,30 @@ Scale <- function(x, center=TRUE, scale=TRUE, scale.by="col") {
     return(x)
 }
 
+#' @title Scale sparse matrix by genes (column) by batch
+#'
+#' @description Scales genes by batch
+#'
+#' @param x A matrix of class `dgCMatrix`. Cells by genes (rows x columns).  
+#' @param batch A character vector with batch labels corresponding to the cells
+#' given in \code{x}. The character batch labels need to be named
+#' with the cells names given in the rows of \code{x}. 
+#' 
+#' @return A scaled matrix of class `dgCMatrix`. 
+#'
+#' @keywords scale
+#' 
+ScaleByBatch <- function(x, batch) {
+    x.batch <- split(x = as.data.frame(as.matrix(x)), f = batch)
+    x.batch <- lapply(X = x.batch, function(x) {
+        Scale(x = as(as.matrix(x), "sparseMatrix"), scale.by = "col")
+    })
+    x <- do.call(rbind, x.batch)
+    x <- x[names(batch),]
+    x[is.na(x)] <- 0
+    return(x)
+}
+
 #' @title Down- and oversample data
 #'
 #' @description
