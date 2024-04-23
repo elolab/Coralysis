@@ -203,22 +203,6 @@ setGeneric("AnnotationScatterPlot", signature = "object",
            })
 
 #' @export
-setGeneric("IntegrateData", signature = "object",
-           function(object, batch.label = NULL, 
-                    k = 15, d = 0.3, L = 200, 
-                    r = 5, C = 0.3, reg.type = "L1", 
-                    max.iter = 200, threads = 0,
-                    icp.batch.size = Inf, 
-                    train.with.bnn = TRUE, 
-                    train.k.nn = 10, 
-                    build.train.set = TRUE, 
-                    build.train.params = list(),
-                    scale = FALSE, 
-                    verbose = FALSE) {
-               standardGeneric("IntegrateData")
-           })
-
-#' @export
 setGeneric("RunParallelDivisiveICP", signature = "object",
            function(object, batch.label = NULL, 
                     k = 8, d = 0.3, L = 200, 
@@ -230,7 +214,7 @@ setGeneric("RunParallelDivisiveICP", signature = "object",
                     train.k.nn.prop = NULL,
                     build.train.set = TRUE, 
                     build.train.params = list(),
-                    scale = FALSE, 
+                    scale.by = NULL, 
                     use.cluster.seed = FALSE,
                     divisive.method = "random",
                     allow.free.k = FALSE,
@@ -240,15 +224,9 @@ setGeneric("RunParallelDivisiveICP", signature = "object",
            })
 
 #' @export
-setGeneric("IntegrateDimRed", signature = "object",
-           function(object, pc = 50, ld = 9, cluster.method = "NNgraph") {
-               standardGeneric("IntegrateDimRed")
-           })
-
-#' @export
 setGeneric("ReferenceMapping", signature = c("ref", "query"),
            function(ref, query, ref.label,
-                    scale.query = FALSE, 
+                    scale.query.by = NULL, 
                     project.umap = FALSE, 
                     select.icp.models = NULL, 
                     k.nn = 10) {

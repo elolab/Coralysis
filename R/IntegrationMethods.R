@@ -69,8 +69,9 @@
 #' \code{FALSE}.
 #' @param build.train.params A list of parameters to be passed to the function
 #' \code{AggregateDataByBatch()}.
-#' @param scale A logical specifying if data should be scaled before training. 
-#' Default is \code{FALSE}.
+#' @param scale.by A character specifying if the data should be scaled by \code{cell}
+#' or by \code{gene} before training. Default is \code{NULL}, i.e., the data is 
+#' not scaled before training.
 #' @param use.cluster.seed Should the same starting clustering result be provided
 #' to ensure more reproducible results (logical). By default \code{FALSE}, i.e., 
 #' Each ICP run starts with a total random and, thus, independent clustering. If 
@@ -117,7 +118,7 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
                                                         train.k.nn.prop,
                                                         build.train.set, 
                                                         build.train.params,
-                                                        scale, use.cluster.seed,
+                                                        scale.by, use.cluster.seed,
                                                         divisive.method,
                                                         allow.free.k,
                                                         ari.cutoff,
@@ -221,11 +222,14 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
     } else {
         cluster.seed <- NULL
     }
-    
-    if (scale) {
-        # Test scaling by genes instead of cells
-        #dataset <- Scale(x = as(dataset, "sparseMatrix"), scale.by="row")
-        dataset <- ScaleByBatch(x = dataset, batch = batch.label)
+    metadata(object)$iloreg$scale.by <- scale.by
+    if (!is.null(scale.by)) {
+        if (scale.by=="cell") {
+            dataset <- Scale(x = as(dataset, "sparseMatrix"), scale.by="row")
+        }
+        if (scale.by=="gene"){
+            dataset <- ScaleByBatch(x = dataset, batch = batch.label)
+        }
     }
     parallelism <- TRUE
 
@@ -303,12 +307,15 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
     if (build.train.set) {
         test.data <- t(logcounts(object))
         colnames(test.data) <- paste0("W", 1:ncol(test.data))
-        if (scale) {
-            # Test scaling by genes instead of cells
-            # test.data <- Scale(x = as(test.data, "sparseMatrix"), scale.by="row")
-            batch.label <- as.character(object[[batch.name]]) 
-            names(batch.label) <- colnames(object)
-            test.data <- ScaleByBatch(x = test.data, batch = batch.label)
+        if (!is.null(scale.by)) {
+            if (scale.by=="cell") {
+                test.data <- Scale(x = as(test.data, "sparseMatrix"), scale.by="row")
+            }
+            if (scale.by=="gene") {
+                batch.label <- as.character(object[[batch.name]]) 
+                names(batch.label) <- colnames(object)
+                test.data <- ScaleByBatch(x = test.data, batch = batch.label)
+            }
         }
         metadata(object)$iloreg$joint.probability <- 
             lapply(metadata(object)$iloreg$models, function(x) {
@@ -624,68 +631,6 @@ RandomlyDivisiveClustering <- function(cluster, k, cluster.names = NULL) {
     if (!is.null(cluster.names)) names(rand.divisive.clts) <- cluster.names
     return(rand.divisive.clts)
 }
-
-#' @title Integrate low dimensional reduction
-#'
-#' @description
-#' Integrates low dimensional reduction, i.e., PCA, through supervised LDA.
-#'
-#' @param object An object of \code{SingleCellExperiment} class.
-#' @param pc Number of principal components (integer) to compute. By default 
-#' \code{50}.
-#' @param ld Number of linear discriminants to compute (integer). By default 
-#' \code{9}. 
-#' @param cluster.method Cluster method to cluster PCA in order to give the 
-#' clustering result for supervised Linear Discriminant Analysis (character). 
-#' One of \code{"kmeans++"} (kmeans optimization implement in `flexclust`) or 
-#' \code{"NNgraph"} (graph based clustering implemented in `scran`). By default 
-#' \code{"NNgraph"}.
-#' 
-#' @name IntegrateDimRed
-#' 
-#' @return A clustering result where every cluster given was split randomly 
-#' into \code{k} clusters. 
-#'
-#' @keywords dimensional reduction PCA LDA
-#'
-#' @importFrom S4Vectors metadata metadata<-
-#' @importFrom SingleCellExperiment reducedDim reducedDim<-
-#' @importFrom flexclust kcca kccaFamily
-#' @importFrom scran clusterCells
-#' @importFrom MASS lda 
-#' @importFrom stats predict prcomp
-#'
-IntegrateDimRed.SingleCellExperiment <- function(object, pc, ld, cluster.method) {
-    # 1) Unsuprevised DR: PCA
-    probs <- do.call(cbind, metadata(object)$iloreg$joint.probability)
-    metadata(object)$iloreg$pca.model <- prcomp(x = probs, scale.=TRUE, center=TRUE, rank=pc)
-    reducedDim(x = object, type = "PCA") <- metadata(object)$iloreg$pca.model$x 
-    
-    # 2) Clustering: Kmeans++ or NNgraph
-    if (cluster.method == "kmeans++") {
-        k <- ld + 1
-        metadata(object)$iloreg$lda.clusters <- kcca(x = reducedDim(x = object, type = "PCA"), 
-                                                     k = k, family = kccaFamily("kmeans"), 
-                                                     control = list(initcent="kmeanspp"))
-        k.labels <- as.factor(metadata(object)$iloreg$lda.clusters@cluster)
-    } 
-    if (cluster.method == "NNgraph") {
-        metadata(object)$iloreg$lda.clusters <- clusterCells(object, use.dimred = "PCA")
-        k.labels <- as.factor(metadata(object)$iloreg$lda.clusters)
-    }
-    
-    # 3) Supervised DR: LDA
-    metadata(object)$iloreg$lda.model <- lda(x = reducedDim(object, "PCA"), 
-                                             grouping = k.labels)
-    metadata(object)$iloreg$lda.dimred <- predict(metadata(object)$iloreg$lda.model, reducedDim(object, "PCA"))
-    reducedDim(object, "LDA") <- metadata(object)$iloreg$lda.dimred$x
-    
-    return(object)
-}
-#' @rdname IntegrateDimRed
-#' @aliases IntegrateDimRed
-setMethod("IntegrateDimRed", signature(object = "SingleCellExperiment"),
-          IntegrateDimRed.SingleCellExperiment)
 
 #' @title Sample cells based on principal components batch distribution
 #'

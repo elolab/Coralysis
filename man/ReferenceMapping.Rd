@@ -10,7 +10,7 @@ ReferenceMapping.SingleCellExperiment(
   ref,
   query,
   ref.label,
-  scale.query,
+  scale.query.by,
   project.umap,
   select.icp.models,
   k.nn
@@ -20,7 +20,7 @@ ReferenceMapping.SingleCellExperiment(
   ref,
   query,
   ref.label,
-  scale.query = FALSE,
+  scale.query.by = NULL,
   project.umap = FALSE,
   select.icp.models = NULL,
   k.nn = 10
@@ -36,8 +36,9 @@ and after running \code{RunPCA(..., return.model = TRUE)} function.}
 \item{ref.label}{A character cell metadata column name from the \code{ref} 
 object to transfer to the queries.}
 
-\item{scale.query}{Should the query logcounts be scaled or not (logical). By 
-default \code{TRUE}. Scale it if reference was scaled.}
+\item{scale.query.by}{Should the query data be scaled by \code{cell} or by 
+\code{gene}. By default is \code{NULL}, i.e., is not scaled. Scale it if 
+reference was scaled.}
 
 \item{project.umap}{Project query data onto reference UMAP (logical). By 
 default \code{FALSE}. If \code{TRUE}, the \code{ref} object needs to have a 

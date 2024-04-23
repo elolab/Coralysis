@@ -23,7 +23,7 @@ RunParallelDivisiveICP.SingleCellExperiment(
   train.k.nn.prop,
   build.train.set,
   build.train.params,
-  scale,
+  scale.by,
   use.cluster.seed,
   divisive.method,
   allow.free.k,
@@ -48,7 +48,7 @@ RunParallelDivisiveICP.SingleCellExperiment(
   train.k.nn.prop = NULL,
   build.train.set = TRUE,
   build.train.params = list(),
-  scale = FALSE,
+  scale.by = NULL,
   use.cluster.seed = FALSE,
   divisive.method = "random",
   allow.free.k = FALSE,
@@ -137,8 +137,9 @@ from the data or the whole data should be used for training. By default
 \item{build.train.params}{A list of parameters to be passed to the function
 \code{AggregateDataByBatch()}.}
 
-\item{scale}{A logical specifying if data should be scaled before training. 
-Default is \code{FALSE}.}
+\item{scale.by}{A character specifying if the data should be scaled by \code{cell}
+or by \code{gene} before training. Default is \code{NULL}, i.e., the data is 
+not scaled before training.}
 
 \item{use.cluster.seed}{Should the same starting clustering result be provided
 to ensure more reproducible results (logical). By default \code{FALSE}, i.e., 

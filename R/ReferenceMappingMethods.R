@@ -10,8 +10,9 @@
 #' \code{ref}.
 #' @param ref.label A character cell metadata column name from the \code{ref} 
 #' object to transfer to the queries.  
-#' @param scale.query Should the query logcounts be scaled or not (logical). By 
-#' default \code{TRUE}. Scale it if reference was scaled.  
+#' @param scale.query.by Should the query data be scaled by \code{cell} or by 
+#' \code{gene}. By default is \code{NULL}, i.e., is not scaled. Scale it if 
+#' reference was scaled.  
 #' @param project.umap Project query data onto reference UMAP (logical). By 
 #' default \code{FALSE}. If \code{TRUE}, the \code{ref} object needs to have a 
 #' UMAP embedding obtained with \code{RunUMAP(..., return.model = TRUE)} function. 
@@ -34,7 +35,7 @@
 #' @importFrom class knn
 #' 
 ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
-                                                  scale.query, project.umap, 
+                                                  scale.query.by, project.umap, 
                                                   select.icp.models, k.nn) {
     # Check input params
     if (is.null(metadata(ref)$iloreg$pca.model)) {
@@ -67,8 +68,13 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
     
     # Predict cluster probabilities
     query.data <- t(logcounts(query[ref.genes[pick.genes],]))
-    if (scale.query) {
-        query.data <- Scale(x = query.data, scale.by = "row")
+    if (!is.null(scale.query.by)) {
+        if (scale.query.by=="cell") {
+            query.data <- Scale(x = query.data, scale.by = "row")
+        } 
+        if (scale.query.by=="gene") {
+            query.data <- Scale(x = query.data, scale.by = "col")
+        }
     }
     colnames(query.data) <- paste0("W", pick.genes)
     query.probs <- list()
