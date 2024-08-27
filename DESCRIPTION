@@ -1,28 +1,27 @@
 Package: ILoReg2
 Type: Package
-Title: ILoReg2: a tool for high-resolution cell population identification from scRNA-Seq data
-Version: 0.99.6
-Description: ILoReg2 is a tool for identification of cell populations from scRNA-seq data. In particular, ILoReg2 is useful for finding cell populations with subtle transcriptomic differences.
-              The method utilizes a self-supervised learning method, called Iteratitive Clustering Projection (ICP), to find cluster probabilities, which
-              are used in noise reduction prior to PCA and the subsequent hierarchical clustering and t-SNE steps.
-              Additionally, functions for differential expression analysis to find gene markers for the populations and gene expression visualization are provided.
-Authors@R: c(person("Johannes", "Smolander",
-             email = "johannes.smolander@gmail.com",
+Title: LoReg2: sensitive cell population identification through multi-level integration of single-cell RNA-seq data
+Version: 2.0.0
+Description: ILoReg2 is an R package for sensitive identification of shared cell types/states across heterogeneous single-cell RNA-sequencing (scRNA-seq) datasets through “puzzle” integration. 
+             The method involves multiple divisive clustering rounds to blend in the batch effect and to highlight the biological signal, utilizing our Iterative Clustering Projection (ICP) algorithm to progressively focus on low- to high-level features. 
+             In addition, the tool enables training a reference model for projecting and annotating new datasets through reference-mapping.
+Authors@R: c(person("António", "Sousa",
+             email = "aggode@utu.fi",
              role=c("cre", "aut")),
-             person("Sini", "Junttila",
+             person("Johannes", "Smolander",
              role=c("aut")),
-             person("Mikko S", "Venäläinen",
+             person("Sini", "Junttila",
              role=c("aut")),
              person("Laura L", "Elo",
              role=c("aut")))
 License: GPL-3
 Imports: Matrix, parallel, foreach, 
-          aricode, LiblineaR, SparseM, ggplot2, cowplot, RSpectra, 
-          umap, Rtsne, fastcluster, parallelDist, cluster, dendextend, 
-          DescTools, plyr, scales, pheatmap, reshape2, dplyr, doRNG, 
-          SingleCellExperiment, SummarizedExperiment, S4Vectors, methods, stats,
-          doSNOW, utils, RANN, sparseMatrixStats, irlba, flexclust, scran, MASS, 
-          class
+         aricode, LiblineaR, SparseM, ggplot2, cowplot, RSpectra, 
+         umap, Rtsne, fastcluster, parallelDist, cluster, dendextend, 
+         DescTools, plyr, scales, pheatmap, reshape2, dplyr, doRNG, 
+         SingleCellExperiment, SummarizedExperiment, S4Vectors, methods, stats,
+         doSNOW, utils, RANN, sparseMatrixStats, irlba, flexclust, scran, MASS, 
+         class
 Depends: R (>= 4.0.0)
 Encoding: UTF-8
 LazyData: TRUE
@@ -30,9 +29,9 @@ RoxygenNote: 7.3.2
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 biocViews: SingleCell, Software, Clustering, DimensionReduction, 
-            RNASeq, Visualization, Transcriptomics, 
-            DataRepresentation, DifferentialExpression, Transcription,
-            GeneExpression
+           RNASeq, Visualization, Transcriptomics, 
+           DataRepresentation, DifferentialExpression, Transcription,
+           GeneExpression
 NeedsCompilation: no
 URL: https://github.com/elolab/ILoReg2
 BugReports: https://github.com/elolab/ILoReg2/issues

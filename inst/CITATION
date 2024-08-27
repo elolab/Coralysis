@@ -1,12 +1,11 @@
 note <- sprintf("R package version %s", meta$Version)
 
-bibentry(bibtype = "Article",
-         title = " ILoReg: a tool for high-resolution cell population identification from single-cell RNA-seq data",
-         author = c(person("Johannes", "Smolander"),
+bibentry(bibtype = "Manual",
+         title = "LoReg2: sensitive cell population identification through multi-level integration of single-cell RNA-seq data",
+         author = c(person("António", "Sousa"),
+                    person("Johannes", "Smolander"),
                     person("Sini", "Junttila"),
-                    person("Mikko S", "Venalainen"),
                     person("Laura L", "Elo")),
-         year = 2021,
-         journal = "Bioinformatics",
-         note = note,
-         url = "https://doi.org/10.1093/bioinformatics/btaa919")
+         year = 2024,
+         note = note, 
+         url = "https://github.com/elolab/ILoReg2")
