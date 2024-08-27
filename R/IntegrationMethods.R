@@ -88,7 +88,7 @@
 #' decrease the \code{k} given in case it does not find \code{k} target clusters. 
 #' By default \code{TRUE}. 
 #' @param ari.cutoff Include ICP models and probability tables with an Adjusted 
-#' Rand Index higher than \code{ari.cutoff} (numeric). By default \code{0.1}. A
+#' Rand Index higher than \code{ari.cutoff} (numeric). By default \code{0.3}. A
 #' value that can range between 0 (include all) and lower than 1.   
 #' @param verbose A logical value to print verbose during the ICP run in case 
 #' of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'. 
