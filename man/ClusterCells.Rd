@@ -4,7 +4,7 @@
 \alias{ClusterCells}
 \title{Cluster cells}
 \usage{
-ClusterCells(object, nclusters = 150, use.emb = TRUE, emb.name = "PCA")
+ClusterCells(object, nclusters = 500, use.emb = TRUE, emb.name = "PCA")
 }
 \arguments{
 \item{object}{An object of \code{SingleCellExperiment} class.}

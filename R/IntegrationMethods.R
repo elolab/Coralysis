@@ -13,7 +13,7 @@
 #' @param k A positive integer greater or equal to \code{2}, denoting
 #' the number of clusters in Iterative Clustering Projection (ICP).
 #' Decreasing \code{k} leads to smaller cell populations diversity
-#' and vice versa. Default is \code{8}.
+#' and vice versa. Default is \code{16}.
 #' @param d A numeric greater than \code{0} and smaller than \code{1} that
 #' determines how many cells \code{n} are down- or oversampled from each cluster
 #' into the training data (\code{n=N/k*d}), where \code{N} is the total number
@@ -21,7 +21,7 @@
 #' leads greadually to smaller cell populations diversity.
 #' Default is \code{0.3}.
 #' @param L A positive integer greater than \code{1} denoting the number of
-#' the ICP runs to run. Default is \code{200}. Increasing recommended with
+#' the ICP runs to run. Default is \code{50}. Increasing recommended with
 #' a significantly larger sample size (tens of thousands of cells).
 #' Default is \code{200}.
 #' @param r A positive integer that denotes the number of reiterations
@@ -55,15 +55,15 @@
 #' \code{TRUE}. Only used if \code{batch.label} is given.   
 #' @param train.k.nn Train data with batch nearest neighbors using \code{k} 
 #' nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
-#' is \code{TRUE}.
+#' is \code{TRUE} and \code{train.k.nn.prop} is \code{NULL}.
 #' @param train.k.nn.prop A numeric (higher than 0 and lower than 1) corresponding 
 #' to the fraction of cells per cluster to use as \code{train.k.nn} nearest 
-#' neighbors. Default is \code{NULL} meaning that the number of \code{train.k.nn} 
-#' nearest neighbors is equal to \code{train.k.nn}. If given, \code{train.k.nn} 
-#' parameter is ignored and \code{train.k.nn} is calculated based on 
-#' \code{train.k.nn.prop}. A vector with different proportions for the different
-#' divisive clustering rounds can be given, otherwise the same value is given for 
-#' all.    
+#' neighbors. If \code{NULL} the number of \code{train.k.nn} nearest neighbors 
+#' is equal to \code{train.k.nn}. If given, \code{train.k.nn} parameter is ignored 
+#' and \code{train.k.nn} is calculated based on \code{train.k.nn.prop}. By default 
+#' \code{0.3} meaning that 30% of the cells are used. A vector with different 
+#' proportions for the different divisive clustering rounds can be given, otherwise 
+#' the same value is given for all.    
 #' @param build.train.set Logical specifying if a training set should be built 
 #' from the data or the whole data should be used for training. By default 
 #' \code{FALSE}.
@@ -73,20 +73,22 @@
 #' or by \code{gene} before training. Default is \code{NULL}, i.e., the data is 
 #' not scaled before training.
 #' @param use.cluster.seed Should the same starting clustering result be provided
-#' to ensure more reproducible results (logical). By default \code{FALSE}, i.e., 
-#' Each ICP run starts with a total random and, thus, independent clustering. If 
-#' \code{TRUE} the same clustering result is provided based on batch wise PCA 
-#' density sampling.  
+#' to ensure more reproducible results (logical). If \code{FALSE}, each ICP run 
+#' starts with a total random clustering and, thus, independent clustering. By 
+#' default \code{TRUE}, i.e., the same clustering result is provided based on PCA 
+#' density sampling. If \code{batch.label} different than \code{NULL}, the PCA
+#' density sampling is performed in a batch wise manner.  
 #' @param divisive.method Divisive method (character). One of \code{"random"} 
 #' (randomly sample two clusters out of every cluster previously found),
 #' \code{"cluster"} or \code{"cluster.batch"} (sample two clusters out of every 
 #' cluster previously found based on the cluster probability distribution across
-#' batches or per batch). By default \code{"random"}. 
+#' batches or per batch). By default \code{"cluster.batch"}. Change to \code{random}
+#' or \code{cluster} if \code{batch.label} is \code{NULL}.
 #' @param allow.free.k Allow free \code{k} (logical). Allow ICP algorithm to 
 #' decrease the \code{k} given in case it does not find \code{k} target clusters. 
-#' By default \code{FALSE}. 
+#' By default \code{TRUE}. 
 #' @param ari.cutoff Include ICP models and probability tables with an Adjusted 
-#' Rand Index higher than \code{ari.cutoff} (numeric). By default \code{0.5}. A
+#' Rand Index higher than \code{ari.cutoff} (numeric). By default \code{0.1}. A
 #' value that can range between 0 (include all) and lower than 1.   
 #' @param verbose A logical value to print verbose during the ICP run in case 
 #' of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'. 
@@ -216,9 +218,9 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
     }
     
     if (use.cluster.seed) {
-        cluster.seed <- SamplePCABatchCells(data = dataset, batch = batch.label, 
-                                            q.split = 0.5, p=30, use.pc="PC1", 
-                                            center=TRUE, scale.=TRUE)
+        cluster.seed <- SamplePCACells(data = dataset, batch = batch.label, 
+                                       q.split = 0.5, p=30, use.pc="PC1", 
+                                       center=TRUE, scale.=TRUE)
     } else {
         cluster.seed <- NULL
     }
@@ -632,15 +634,17 @@ RandomlyDivisiveClustering <- function(cluster, k, cluster.names = NULL) {
     return(rand.divisive.clts)
 }
 
-#' @title Sample cells based on principal components batch distribution
+#' @title Sample cells based on principal components distribution
 #'
 #' @description
-#' Samples cells based on batch distributions along one principal component
+#' Samples cells based on their distributions along one principal component
 #'
 #' @param data Data to compute PCA and sample cells from. Rows and columns 
 #' should represent cells and features/genes, respectively.   
 #' @param batch Batch cell label identity (character) matching cells giving in 
-#' \code{data}.   
+#' \code{data}. Use \code{NULL} in the absence of batches. If the batch is given 
+#' the cells are sampled in a batch wise manner, otherwise the cells are sampled 
+#' without any grouping factor. By default is \code{NULL}.   
 #' @param q.split Split (cell) batch principal component distribution by this 
 #' quantile (numeric). By default {0.5}, i.e., median.  
 #' @param p Number of principal components to compute (integer). By default 
@@ -654,14 +658,19 @@ RandomlyDivisiveClustering <- function(cluster, k, cluster.names = NULL) {
 #' 
 #' @return A factor with cell cluster identities (two clusters). 
 #'
-#' @keywords sample PCA batch
+#' @keywords sample PCA cells
 #'
 #' @importFrom irlba prcomp_irlba
 #' @importFrom stats quantile
 #' @importFrom sparseMatrixStats colSds
 #' 
-SamplePCABatchCells <- function(data, batch, q.split = 0.5, p=30, use.pc="PC1", 
-                                center=TRUE, scale.=TRUE) {
+SamplePCACells <- function(data, batch = NULL, q.split = 0.5, p=30, use.pc="PC1", 
+                           center=TRUE, scale.=TRUE) {
+    # Check batch
+    if (is.null(batch)) {
+        batch <- factor(rep("0", nrow(data)))
+    }
+    
     # Compute PCA
     genes.sd <- colSds(data) 
     genes.sd.diff0 <- which(genes.sd != 0)

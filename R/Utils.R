@@ -242,7 +242,7 @@ RunICP <- function(normalized.data = NULL, batch.label = NULL,
 #' 
 #' @importFrom flexclust kcca kccaFamily
 #'
-ClusterCells <- function(object, nclusters=150, use.emb=TRUE, emb.name="PCA") {
+ClusterCells <- function(object, nclusters=500, use.emb=TRUE, emb.name="PCA") {
     if (use.emb) {
         data.cluster <- reducedDim(object, emb.name)
     } else {

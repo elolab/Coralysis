@@ -26,7 +26,7 @@ Imports: Matrix, parallel, foreach,
 Depends: R (>= 4.0.0)
 Encoding: UTF-8
 LazyData: TRUE
-RoxygenNote: 7.2.1
+RoxygenNote: 7.3.2
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 biocViews: SingleCell, Software, Clustering, DimensionReduction, 
