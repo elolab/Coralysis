@@ -23,44 +23,44 @@ library("ggplot2")
 ```{r data}
 # Import data distributed with ILoReg2
 data("pbmc_10Xassays") # it imports object as sce
-sce
+pbmc_10Xassays
 ```
 
 Check how the data looks before integrating. 
 
 ```{r unintegrated, fig.width=7, fig.height=2.5}
 # Compute PCA & TSNE
-sce <- scran::fixedPCA(sce, rank = 30, subset.row = NULL)
+pbmc_10Xassays <- scran::fixedPCA(pbmc_10Xassays, rank = 30, subset.row = NULL)
 set.seed(123)
-sce <- RunTSNE(sce)
+pbmc_10Xassays <- RunTSNE(pbmc_10Xassays)
 
 # Plot TSNE highlighting the batch & cell type
-unint.batch.plot <- plotTSNE(sce, colour_by = "batch", point_size = 0.01) + 
+unint.batch.plot <- plotTSNE(pbmc_10Xassays, colour_by = "batch", point_size = 0.01) + 
     guides(color = guide_legend(override.aes = list(size=2.5))) # to increase the legend dot size
-unint.cell.plot <- plotTSNE(sce, colour_by = "cell_type", point_size = 0.01) + 
+unint.cell.plot <- plotTSNE(pbmc_10Xassays, colour_by = "cell_type", point_size = 0.01) + 
     guides(color = guide_legend(override.aes = list(size=2.5)))
 cowplot::plot_grid(unint.batch.plot, unint.cell.plot, rel_widths = c(0.45, 0.55))
 ```
 
-Run integration with `ILoReg2`. Provide the batch label column name in `colData(sce)` to the parameter `batch.label`.  
+Run integration with `ILoReg2`. Provide the batch label column name in `colData(pbmc_10Xassays)` to the parameter `batch.label`.  
 
 ```{r integration, fig.width=7, fig.height=2.5}
 # Perform integration with ILoReg2
 # start <- Sys.time()
 set.seed(1024)
-sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", threads = 4)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", threads = 4)
 # stop <- Sys.time()
 # print(stop - start) # Time difference of 11.41677 mins
 
 # Compute PCA with joint cluster probabilities & TSNE
-sce <- RunPCA(sce, scale = T)
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays, scale = T)
 set.seed(123)
-sce <- RunTSNE(sce)
+pbmc_10Xassays <- RunTSNE(pbmc_10Xassays)
 
 # Plot TSNE highlighting the batch & cell type
-int.batch.plot <- plotTSNE(sce, colour_by = "batch", point_size = 0.01) + 
+int.batch.plot <- plotTSNE(pbmc_10Xassays, colour_by = "batch", point_size = 0.01) + 
     guides(color = guide_legend(override.aes = list(size=2.5)))
-int.cell.plot <- plotTSNE(sce, colour_by = "cell_type", point_size = 0.01) + 
+int.cell.plot <- plotTSNE(pbmc_10Xassays, colour_by = "cell_type", point_size = 0.01) + 
     guides(color = guide_legend(override.aes = list(size=2.5)))
 cowplot::plot_grid(int.batch.plot, int.cell.plot, rel_widths = c(0.45, 0.55))
 ```
@@ -69,13 +69,13 @@ cowplot::plot_grid(int.batch.plot, int.cell.plot, rel_widths = c(0.45, 0.55))
 
 ```{r clustering, fig.width=9, fig.height=2.5}
 # Clustering 
-sce <- HierarchicalClustering(object = sce)
+pbmc_10Xassays <- HierarchicalClustering(object = pbmc_10Xassays)
 
 # Select no. of clusters
-sce <- SelectKClusters(sce, K = 16)
+pbmc_10Xassays <- SelectKClusters(pbmc_10Xassays, K = 16)
 
 # Plot clustering
-clt.plot <- ClusteringScatterPlot(sce, dim.reduction.type = "tsne", return.plot = TRUE, 
+clt.plot <- ClusteringScatterPlot(pbmc_10Xassays, dim.reduction.type = "tsne", return.plot = TRUE, 
                                   point.size = 0.01, show.legend = FALSE, title = "ILoReg2 clusters")
 cowplot::plot_grid(int.batch.plot, int.cell.plot, clt.plot, ncol = 3, 
                    rel_widths = c(0.325, 0.375, 0.275), align = "h")
@@ -85,20 +85,20 @@ cowplot::plot_grid(int.batch.plot, int.cell.plot, clt.plot, ncol = 3,
 
 ```{r cluster markers, fig.width=5, fig.height=5}
 # Cluster markers 
-cluster.markers <- FindAllGeneMarkers(sce)
+cluster.markers <- FindAllGeneMarkers(pbmc_10Xassays)
 
 # Select the top 3 positive markers per cluster 
 top3.markers <- SelectTopGenes(cluster.markers, top.N = 3,  criterion.type = "log2FC", inverse = FALSE)
 
 # Heatmap of the top 3 positive markers per cluster
-GeneHeatmap(sce, gene.markers = top3.markers)
+GeneHeatmap(pbmc_10Xassays, gene.markers = top3.markers)
 ```
 
 ## DGE
 
 ```{r dge}
 # DGE analysis: cluster 2 vs 6
-dge.clt2vs6 <- FindGeneMarkers(sce, clusters.1 = "2", clusters.2 = "6")
+dge.clt2vs6 <- FindGeneMarkers(pbmc_10Xassays, clusters.1 = "2", clusters.2 = "6")
 head(dge.clt2vs6)
 ```
 
@@ -111,8 +111,8 @@ Perform reference-mapping with `ILoReg2`,
 ## Reference-mapping
 
 # Split the SCE object by 'batch'
-ref <- sce[,sce$batch=="V2"] # let V2 assay batch be the reference data set
-query <- sce[,sce$batch=="V1"] # let V1 be the query (unknown annotations)
+ref <- pbmc_10Xassays[,pbmc_10Xassays$batch=="V2"] # let V2 assay batch be the reference data set
+query <- pbmc_10Xassays[,pbmc_10Xassays$batch=="V1"] # let V1 be the query (unknown annotations)
 
 # 1) Train the reference 
 # start <- Sys.time()

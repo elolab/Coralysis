@@ -31,7 +31,7 @@
 #'
 #' @usage 
 #' data(pbmc_10Xassays)
-#' sce
+#' pbmc_10Xassays
 #'
 #' @format SCE object
 #'
@@ -44,8 +44,8 @@
 #'
 #' @examples
 #' data(pbmc_10Xassays)
-#' sce
-"sce"
+#' pbmc_10Xassays
+"pbmc_10Xassays"
 
 
 
