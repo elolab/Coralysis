@@ -19,6 +19,34 @@
 #' data(pbmc3k_500)
 "pbmc3k_500"
 
+#' A toy SCE dataset of two 10X PBMCs 3' assays downsampled to 2K cells.
+#'
+#' Two 10X PBMCs 3' assays, V1 and V2, downsampled to 2K cells (1K per assay).  
+#' Both datasets have been downloaded from 10X website (see source below). The 
+#' PBMC dataset V1 corresponds to sample pbmc6k and V2 pbmc8k. Cells were  
+#' annotated using the annotations provided by Korsunsky et al., 2019 (PMID:31740819; 
+#' Source Data Figure 4 file). 
+#' 
+#' @docType data
+#'
+#' @usage 
+#' data(pbmc_10Xassays)
+#' sce
+#'
+#' @format SCE object
+#'
+#' @keywords datasets
+#'
+#' @source 
+#' \url{https://support.10xgenomics.com/single-cell-gene-expression/datasets/1.1.0/pbmc6k}
+#' 
+#' \url{https://support.10xgenomics.com/single-cell-gene-expression/datasets/2.1.0/pbmc8k}
+#'
+#' @examples
+#' data(pbmc_10Xassays)
+#' sce
+"sce"
+
 
 
 #' @title Iterative Clustering Projection (ICP) clustering

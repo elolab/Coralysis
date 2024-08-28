@@ -52,7 +52,7 @@ RunParallelDivisiveICP.SingleCellExperiment(
   use.cluster.seed = TRUE,
   divisive.method = "cluster.batch",
   allow.free.k = TRUE,
-  ari.cutoff = 0.1,
+  ari.cutoff = 0.3,
   verbose = FALSE
 )
 }
