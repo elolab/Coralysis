@@ -7,16 +7,41 @@
 \title{Barnes-Hut implementation of t-Distributed Stochastic
 Neighbor Embedding (t-SNE)}
 \usage{
-RunTSNE.SingleCellExperiment(object, perplexity, type = "PCA")
+RunTSNE.SingleCellExperiment(
+  object,
+  dims,
+  dimred.type,
+  perplexity,
+  dimred.name,
+  ...
+)
 
-\S4method{RunTSNE}{SingleCellExperiment}(object, perplexity = 30, type = "PCA")
+\S4method{RunTSNE}{SingleCellExperiment}(
+  object,
+  dims = NULL,
+  dimred.type = "PCA",
+  perplexity = 30,
+  dimred.name = "TSNE",
+  ...
+)
 }
 \arguments{
-\item{object}{of \code{SingleCellExperiment} class}
+\item{object}{Object of \code{SingleCellExperiment} class.}
 
-\item{perplexity}{perplexity of t-SNE}
+\item{dims}{Dimensions to select from \code{dimred.type}. By default \code{NULL}, 
+i.e., all the dimensions are selected. Provide a numeric vector to select a 
+specific range, e.g., \code{dims = 1:10} to select the first 10 dimensions.}
 
-\item{type}{type of dimensional reduction to use. By default \code{"PCA"}.}
+\item{dimred.type}{Dimensional reduction type to use. By default \code{"PCA"}.}
+
+\item{perplexity}{Perplexity of t-SNE.}
+
+\item{dimred.name}{Dimensional reduction name given to the returned t-SNE. 
+By default \code{"TSNE"}.}
+
+\item{...}{Parameters to be passed to the \code{Rtsne} function. The parameters 
+given should match the parameters accepted by the \code{Rtsne} function. Check 
+possible parameters with \code{?Rtsne::Rtsne}.}
 }
 \value{
 object of \code{SingleCellExperiment} class

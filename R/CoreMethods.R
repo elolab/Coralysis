@@ -652,7 +652,10 @@ setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
 #' @description
 #' Run nonlinear dimensionality reduction using UMAP with a dimensional reduction as input.
 #'
-#' @param object An object of \code{SingleCellExperiment} class
+#' @param object An object of \code{SingleCellExperiment} class.
+#' @param dims Dimensions to select from \code{dimred.type}. By default \code{NULL}, 
+#' i.e., all the dimensions are selected. Provide a numeric vector to select a 
+#' specific range, e.g., \code{dims = 1:10} to select the first 10 dimensions. 
 #' @param dimred.type Dimensional reduction type to use. By default \code{"PCA"}.
 #' @param return.model Return UMAP model. By default \code{FALSE}.
 #' @param umap.method UMAP method to use: \code{"umap"} or \code{"uwot"}. 
@@ -682,7 +685,8 @@ setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
 #' sce <- RunPCA(sce,p=5)
 #' sce <- RunUMAP(sce)
 #'
-RunUMAP.SingleCellExperiment <- function(object, dimred.type, return.model, umap.method, dimred.name, ...) {
+RunUMAP.SingleCellExperiment <- function(object, dims, dimred.type, return.model, 
+                                         umap.method, dimred.name, ...) {
     
     ## Check arguments
     # Check 'return.model', 'dimred.name', 'umap.method' & 'dimred.type'
@@ -692,6 +696,9 @@ RunUMAP.SingleCellExperiment <- function(object, dimred.type, return.model, umap
                    paste(reducedDimNames(x = object), collapse = ", ")))
     }
     dimred <- reducedDim(x = object, type = dimred.type)
+    if (is.null(dims)) { # select all the dimensions from 'dimred.type' if 'dims = NULL'
+        dims <- seq_len(ncol(dimred))
+    }
     # Check 'umap.method'
     if ( ! (umap.method %in% c("umap", "uwot")) ) {
         stop("'umap.method' must be one of: 'umap', 'uwot'")
@@ -701,12 +708,12 @@ RunUMAP.SingleCellExperiment <- function(object, dimred.type, return.model, umap
     if (umap.method == "umap") {
         umap.fun <- umap::umap
         slot.name <- "layout"
-        params <- c(list(d = dimred), ...)
+        params <- c(list(d = dimred[,dims]), ...)
     }
     if (umap.method == "uwot") {
         umap.fun <- uwot::umap
         slot.name <- "embedding"
-        params <- c(list(X = dimred, ret_model = return.model), ...)
+        params <- c(list(X = dimred[,dims], ret_model = return.model), ...)
     }
     
     # Run UMAP
@@ -725,7 +732,6 @@ RunUMAP.SingleCellExperiment <- function(object, dimred.type, return.model, umap
     reducedDim(x = object, type = dimred.name) <- umap.out[[slot.name]]
     return(object)
 }
-
 #' @rdname RunUMAP
 #' @aliases RunUMAP
 setMethod("RunUMAP", signature(object = "SingleCellExperiment"),
@@ -739,9 +745,17 @@ setMethod("RunUMAP", signature(object = "SingleCellExperiment"),
 #' Run nonlinear dimensionality reduction using t-SNE with the
 #' PCA-transformed consensus matrix as input.
 #'
-#' @param object of \code{SingleCellExperiment} class
-#' @param perplexity perplexity of t-SNE
-#' @param type type of dimensional reduction to use. By default \code{"PCA"}.
+#' @param object Object of \code{SingleCellExperiment} class.
+#' @param dims Dimensions to select from \code{dimred.type}. By default \code{NULL}, 
+#' i.e., all the dimensions are selected. Provide a numeric vector to select a 
+#' specific range, e.g., \code{dims = 1:10} to select the first 10 dimensions. 
+#' @param dimred.type Dimensional reduction type to use. By default \code{"PCA"}.
+#' @param perplexity Perplexity of t-SNE.
+#' @param dimred.name Dimensional reduction name given to the returned t-SNE. 
+#' By default \code{"TSNE"}.  
+#' @param ... Parameters to be passed to the \code{Rtsne} function. The parameters 
+#' given should match the parameters accepted by the \code{Rtsne} function. Check 
+#' possible parameters with \code{?Rtsne::Rtsne}.
 #'
 #' @name RunTSNE
 #'
@@ -750,8 +764,7 @@ setMethod("RunUMAP", signature(object = "SingleCellExperiment"),
 #' @keywords Barnes-Hut implementation of t-Distributed
 #' Stochastic Neighbor Embedding t-SNE
 #'
-#' @importFrom Rtsne Rtsne
-#' @importFrom SingleCellExperiment reducedDim reducedDim<-
+#' @importFrom SingleCellExperiment reducedDim reducedDim<- reducedDimNames
 #'
 #' @examples
 #' library(SingleCellExperiment)
@@ -762,18 +775,30 @@ setMethod("RunUMAP", signature(object = "SingleCellExperiment"),
 #' sce <- RunPCA(sce,p=5)
 #' sce <- RunTSNE(sce)
 #'
-RunTSNE.SingleCellExperiment <- function(object, perplexity, type="PCA") {
-
-  rtsne_out <- Rtsne(reducedDim(object, type),
-                     is_distance=FALSE,
-                     perplexity=perplexity,
-                     pca=FALSE)
-
-  reducedDim(object,"TSNE") <- rtsne_out$Y
-
-  return(object)
+RunTSNE.SingleCellExperiment <- function(object, dims, dimred.type, perplexity, dimred.name, ...) {
+    
+    # Check arguments 
+    stopifnot(is(object, "SingleCellExperiment"), any(is.null(dims), is.numeric(dims)), is.numeric(perplexity),
+              all(is.character(dimred.type), (dimred.type %in% reducedDimNames(object))))
+    if ( ! (dimred.type %in% reducedDimNames(object)) ) {
+        stop(paste("The 'dimred.type' '", dimred.type, "' is not among 'reducedDimNames(object)':", 
+                   paste(reducedDimNames(x = object), collapse = ", ")))
+    }
+    
+    # Parameters
+    dimred <- reducedDim(x = object, type = dimred.type)
+    if (is.null(dims)) { # select all the dimensions from 'dimred.type' if 'dims = NULL'
+        dims <- seq_len(ncol(dimred))
+    }
+    params <- c(list(X = dimred[,dims], is_distance = FALSE, perplexity = perplexity, pca = FALSE), ...)
+    
+    # Run t-SNE
+    rtsne.out <- do.call(Rtsne::Rtsne, params)
+    
+    # Return t-SNE
+    reducedDim(x = object, type = dimred.name) <- rtsne.out$Y
+    return(object)
 }
-
 #' @rdname RunTSNE
 #' @aliases RunTSNE
 setMethod("RunTSNE", signature(object = "SingleCellExperiment"),

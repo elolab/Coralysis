@@ -52,6 +52,7 @@ setGeneric("PCAElbowPlot", signature = "object",
 #' @export
 setGeneric("RunUMAP", signature = "object",
            function(object, 
+                    dims = NULL,
                     dimred.type = "PCA",
                     return.model = FALSE, 
                     umap.method = "umap", 
@@ -63,8 +64,11 @@ setGeneric("RunUMAP", signature = "object",
 #' @export
 setGeneric("RunTSNE", signature = "object",
            function(object,
+                    dims = NULL, 
+                    dimred.type = "PCA",
                     perplexity = 30, 
-                    type = "PCA") {
+                    dimred.name = "TSNE", 
+                    ...) {
              standardGeneric("RunTSNE")
            })
 

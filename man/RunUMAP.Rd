@@ -8,6 +8,7 @@
 \usage{
 RunUMAP.SingleCellExperiment(
   object,
+  dims,
   dimred.type,
   return.model,
   umap.method,
@@ -17,6 +18,7 @@ RunUMAP.SingleCellExperiment(
 
 \S4method{RunUMAP}{SingleCellExperiment}(
   object,
+  dims = NULL,
   dimred.type = "PCA",
   return.model = FALSE,
   umap.method = "umap",
@@ -25,7 +27,11 @@ RunUMAP.SingleCellExperiment(
 )
 }
 \arguments{
-\item{object}{An object of \code{SingleCellExperiment} class}
+\item{object}{An object of \code{SingleCellExperiment} class.}
+
+\item{dims}{Dimensions to select from \code{dimred.type}. By default \code{NULL}, 
+i.e., all the dimensions are selected. Provide a numeric vector to select a 
+specific range, e.g., \code{dims = 1:10} to select the first 10 dimensions.}
 
 \item{dimred.type}{Dimensional reduction type to use. By default \code{"PCA"}.}
 
