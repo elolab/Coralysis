@@ -115,9 +115,11 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
     if (project.umap) {
         umap.model <- metadata(ref)$iloreg$umap.model
         if (is(umap.model, "umap")) { # from 'umap::umap' - class 'umap'
-            query.umap <- predict(umap.model, query.pca)
+            dims <- seq_len(ncol(metadata(ref)$iloreg$umap.model$data))
+            query.umap <- predict(umap.model, query.pca[,dims])
         } else { # from 'uwot::umap' - class 'list'
-            query.umap <- uwot::umap_transform(X = query.pca, model = umap.model)
+            dims <- seq_len(metadata(ref)$iloreg$umap.model$metric$euclidean$ndim)
+            query.umap <- uwot::umap_transform(X = query.pca[,dims], model = umap.model)
         }
         row.names(query.umap) <- colnames(query)
         reducedDim(x = query, type = paste0(dimred.name.prefix, "UMAP")) <- query.umap
