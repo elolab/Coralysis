@@ -15,7 +15,6 @@
 #'
 #' @importFrom SummarizedExperiment colData colData<- rowData rowData<- assayNames
 #' @importFrom S4Vectors metadata metadata<-
-#' @importFrom Matrix rowSums Matrix
 #' @importFrom SingleCellExperiment logcounts logcounts<-
 #' @importFrom methods is
 #'
@@ -25,64 +24,64 @@
 #' sce <- PrepareILoReg2(sce)
 #'
 PrepareILoReg2.SingleCellExperiment <- function(object) {
-
-  # Check that there are data in `logcounts` slot
-  if (!("logcounts" %in% assayNames(object))) {
-    stop(paste("`Error: `logcounts` slot is missing from your ",
-               "SingleCellExperiment object. This can be any kind of ",
-               "normalized data matrix. Set it by executing ",
-               "logcounts(object) <- norm_data",sep = ""))
+    
+    # Check that there are data in `logcounts` slot
+    if (!("logcounts" %in% assayNames(object))) {
+        stop(paste("`Error: `logcounts` slot is missing from your ",
+                   "SingleCellExperiment object. This can be any kind of ",
+                   "normalized data matrix. Set it by executing ",
+                   "logcounts(object) <- norm_data",sep = ""))
+        return(object)
+    }
+    
+    # Remove duplicate features from the data in `logcounts` slot
+    if (sum(duplicated(rownames(object))) != 0) {
+        features_before <- length(rownames(object))
+        object <- object[!duplicated(rownames(object)), ]
+        features_after <- length(rownames(object))
+        message(paste("data in SingleCellExperiment object contained duplicate ",
+                      " features. ", features_before - features_after,
+                      "/", features_before, " were filtered out."))
+    }
+    
+    # Convert the data in `logcounts` slot into object of `dgCMatrix` class.
+    if (is(logcounts(object), "matrix")) {
+        logcounts(object) <- Matrix::Matrix(logcounts(object), sparse = TRUE)
+        message(paste("Converting object of `matrix` class into `dgCMatrix`.",
+                      " Please note that ILoReg2 has been designed to work with ",
+                      "sparse data, i.e. data with ",
+                      "a high proportion of zero values! Dense data will likely " ,
+                      "increase run time and memory usage drastically!",sep=""))
+    }
+    else if (is(logcounts(object), "data.frame")) {
+        logcounts(object) <- Matrix::Matrix(as.matrix(logcounts(object)), sparse = TRUE)
+        message(paste("Converting object of `data.frame` class into `dgCMatrix`.",
+                      " Please note that ILoReg2 has been designed to work with ",
+                      "sparse data, i.e. data with ",
+                      "a high proportion of zero values!",sep = ""))
+    }
+    else if (is(logcounts(object), "dgCMatrix")) {
+        message("Data in `logcounts` slot already of `dgCMatrix` class...")
+    }
+    else {
+        stop("Error: Data in `logcounts` slot is not of `matrix`, `data.frame` ",
+             "or `dgCMatrix` class.")
+        return(object)
+    }
+    
+    # Filter genes that are not expressed in any of the cells
+    genes_before_filtering <- nrow(object)
+    non_expressing_genes <- rownames(object)[Matrix::rowSums(logcounts(object)) != 0]
+    object <- object[non_expressing_genes,]
+    genes_after_filtering <- nrow(object)
+    message(paste(genes_after_filtering,"/",genes_before_filtering,
+                  " genes remain after filtering genes with only zero values.",
+                  sep = ""))
+    
+    # Create a place into `metadata`` slot for the data from ILoReg2
+    metadata(object)$iloreg <- list()
+    
     return(object)
-  }
-
-  # Remove duplicate features from the data in `logcounts` slot
-  if (sum(duplicated(rownames(object))) != 0) {
-    features_before <- length(rownames(object))
-    object <- object[!duplicated(rownames(object)), ]
-    features_after <- length(rownames(object))
-    message(paste("data in SingleCellExperiment object contained duplicate ",
-                  " features. ", features_before - features_after,
-                  "/", features_before, " were filtered out."))
-  }
-
-  # Convert the data in `logcounts` slot into object of `dgCMatrix` class.
-  if (is(logcounts(object), "matrix")) {
-    logcounts(object) <- Matrix(logcounts(object),sparse = TRUE)
-    message(paste("Converting object of `matrix` class into `dgCMatrix`.",
-                  " Please note that ILoReg2 has been designed to work with ",
-                  "sparse data, i.e. data with ",
-                  "a high proportion of zero values! Dense data will likely " ,
-                  "increase run time and memory usage drastically!",sep=""))
-  }
-  else if (is(logcounts(object), "data.frame")) {
-    logcounts(object) <- Matrix(as.matrix(logcounts(object)),sparse = TRUE)
-    message(paste("Converting object of `data.frame` class into `dgCMatrix`.",
-                  " Please note that ILoReg2 has been designed to work with ",
-                  "sparse data, i.e. data with ",
-                  "a high proportion of zero values!",sep = ""))
-  }
-  else if (is(logcounts(object), "dgCMatrix")) {
-    message("Data in `logcounts` slot already of `dgCMatrix` class...")
-  }
-  else {
-    stop("Error: Data in `logcounts` slot is not of `matrix`, `data.frame` ",
-         "or `dgCMatrix` class.")
-    return(object)
-  }
-
-  # Filter genes that are not expressed in any of the cells
-  genes_before_filtering <- nrow(object)
-  non_expressing_genes <- rownames(object)[rowSums(logcounts(object)) != 0]
-  object <- object[non_expressing_genes,]
-  genes_after_filtering <- nrow(object)
-  message(paste(genes_after_filtering,"/",genes_before_filtering,
-                " genes remain after filtering genes with only zero values.",
-                sep = ""))
-
-  # Create a place into `metadata`` slot for the data from ILoReg2
-  metadata(object)$iloreg <- list()
-
-  return(object)
 }
 #' @rdname PrepareILoReg2
 #' @aliases PrepareILoReg2
@@ -651,21 +650,28 @@ setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
 #' @title Uniform Manifold Approximation and Projection (UMAP)
 #'
 #' @description
-#' Run nonlinear dimensionality reduction using UMAP with
-#' the PCA-transformed consensus matrix as input.
+#' Run nonlinear dimensionality reduction using UMAP with a dimensional reduction as input.
 #'
-#' @param object of \code{SingleCellExperiment} class
-#' @param type type of dimensional reduction to use. By default \code{"PCA"}.
-#' @param return.model return UMAP model. By default \code{FALSE}.
+#' @param object An object of \code{SingleCellExperiment} class
+#' @param dimred.type Dimensional reduction type to use. By default \code{"PCA"}.
+#' @param return.model Return UMAP model. By default \code{FALSE}.
+#' @param umap.method UMAP method to use: \code{"umap"} or \code{"uwot"}. 
+#' By default \code{"umap"}.
+#' @param dimred.name Dimensional reduction name given to the returned UMAP. 
+#' By default \code{"UMAP"}.  
+#' @param ... Parameters to be passed to the \code{umap} function. The parameters 
+#' given should match the parameters accepted by the \code{umap} function depending
+#' on the \code{umap.method} given. Check possible parameters with \code{?umap::umap} 
+#' or \code{?uwot::umap} depending if \code{umap.method} is \code{"umap"} or 
+#' \code{"uwot"}.  
 #'
 #' @name RunUMAP
 #'
-#' @return object of \code{SingleCellExperiment} class
+#' @return Object of \code{SingleCellExperiment} class.
 #'
 #' @keywords Uniform Manifold Approximation and Projection UMAP
 #'
-#' @importFrom umap umap
-#' @importFrom SingleCellExperiment reducedDim reducedDim<-
+#' @importFrom SingleCellExperiment reducedDim reducedDim<- reducedDimNames
 #'
 #' @examples
 #' library(SingleCellExperiment)
@@ -676,16 +682,47 @@ setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
 #' sce <- RunPCA(sce,p=5)
 #' sce <- RunUMAP(sce)
 #'
-RunUMAP.SingleCellExperiment <- function(object, type, return.model) {
+RunUMAP.SingleCellExperiment <- function(object, dimred.type, return.model, umap.method, dimred.name, ...) {
     
-    umap_out <- umap::umap(reducedDim(object,type))
-    
-    if (return.model) {
-        metadata(object)$iloreg$umap.model <- umap_out
+    ## Check arguments
+    # Check 'return.model', 'dimred.name', 'umap.method' & 'dimred.type'
+    stopifnot(is.logical(return.model), is.character(dimred.name), is.character(umap.method), is.character(dimred.type))
+    if ( ! (dimred.type %in% reducedDimNames(object)) ) {
+        stop(paste("The 'dimred.type' '", dimred.type, "' is not among 'reducedDimNames(object)':", 
+                   paste(reducedDimNames(x = object), collapse = ", ")))
+    }
+    dimred <- reducedDim(x = object, type = dimred.type)
+    # Check 'umap.method'
+    if ( ! (umap.method %in% c("umap", "uwot")) ) {
+        stop("'umap.method' must be one of: 'umap', 'uwot'")
     }
     
-    reducedDim(object,"UMAP") <- umap_out$layout
+    # Select UMAP method function
+    if (umap.method == "umap") {
+        umap.fun <- umap::umap
+        slot.name <- "layout"
+        params <- c(list(d = dimred), ...)
+    }
+    if (umap.method == "uwot") {
+        umap.fun <- uwot::umap
+        slot.name <- "embedding"
+        params <- c(list(X = dimred, ret_model = return.model), ...)
+    }
     
+    # Run UMAP
+    umap.out <- do.call(umap.fun, params) 
+    
+    # Model
+    if (return.model) {
+        metadata(object)$iloreg$umap.model <- umap.out
+    } else {
+        if (umap.method == "uwot") { # Turn matrix into a list to match 'umap' output structure 
+            umap.out <- list("embedding" = umap.out)
+        }
+    }
+    
+    # Return SCE object with UMAP
+    reducedDim(x = object, type = dimred.name) <- umap.out[[slot.name]]
     return(object)
 }
 
@@ -741,7 +778,6 @@ RunTSNE.SingleCellExperiment <- function(object, perplexity, type="PCA") {
 #' @aliases RunTSNE
 setMethod("RunTSNE", signature(object = "SingleCellExperiment"),
           RunTSNE.SingleCellExperiment)
-
 
 
 #' @title Hierarchical clustering using the Ward's method

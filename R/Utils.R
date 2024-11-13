@@ -345,7 +345,6 @@ AggregateClusterExpression <- function(mtx, cluster, select.features = NULL,
 #'
 #' @keywords scale
 #'
-#' @importFrom Matrix Matrix
 #' @importFrom sparseMatrixStats colMeans2 colSds rowMeans2 rowSds
 #' 
 Scale <- function(x, center=TRUE, scale=TRUE, scale.by="col") {
@@ -601,7 +600,7 @@ LogisticRegression <- function(training.sparse.matrix = NULL,
         cells_per_cluster <- ceiling((length(training.ident) / (length(levels(training.ident)))) * d)
         if (is.null(training_ident_subset)) {
             if (is.null(batch.label)) {
-                training_ident_subset <- as.character(unlist(lapply(split(names(training.ident),training.ident), function(x) DownOverSampling(x,cells_per_cluster))))
+                training_ident_subset <- as.character(unlist(lapply(split(names(training.ident),training.ident), function(x) DownOverSampling(x, cells_per_cluster))))
             } else {
                 training_ident_subset <- as.character(unlist(lapply(split(names(training.ident), training.ident), function(x) {
                     DownOverSampleEvenlyBatches(x, batch = batch.label[x], cells_per_cluster)
@@ -613,8 +612,8 @@ LogisticRegression <- function(training.sparse.matrix = NULL,
     }
 
   # Transform training and test data from dgCMatrix to matrix.csr
-  training.sparse.matrix <- as(training.sparse.matrix,"matrix.csr")
-  test.sparse.matrix <- as(test.sparse.matrix,"matrix.csr")
+  training.sparse.matrix <- as(training.sparse.matrix, "matrix.csr")
+  test.sparse.matrix <- as(test.sparse.matrix, "matrix.csr")
 
   if (reg.type=="L2")
   {
@@ -626,11 +625,10 @@ LogisticRegression <- function(training.sparse.matrix = NULL,
     stop("'reg.type' must be either 'L1' or 'L2'")
   }
 
-  model <- LiblineaR(training.sparse.matrix, training.ident,
-                     type = type, cost = C)
-  prediction <- predict(model,proba = TRUE,test.sparse.matrix)
+  model <- LiblineaR(training.sparse.matrix, training.ident, type = type, cost = C)
+  prediction <- predict(model, proba = TRUE, test.sparse.matrix)
 
-  return(list(prediction=prediction,model=model))
+  return(list(prediction = prediction, model = model))
 }
 
 #' @title Select top or bottom N genes based on a selection criterion

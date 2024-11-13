@@ -52,8 +52,11 @@ setGeneric("PCAElbowPlot", signature = "object",
 #' @export
 setGeneric("RunUMAP", signature = "object",
            function(object, 
-                    type = "PCA", 
-                    return.model = FALSE) {
+                    dimred.type = "PCA",
+                    return.model = FALSE, 
+                    umap.method = "umap", 
+                    dimred.name = "UMAP", 
+                    ...) {
              standardGeneric("RunUMAP")
            })
 
@@ -228,7 +231,8 @@ setGeneric("ReferenceMapping", signature = c("ref", "query"),
            function(ref, query, ref.label,
                     scale.query.by = NULL, 
                     project.umap = FALSE, 
-                    select.icp.models = NULL, 
-                    k.nn = 10) {
+                    select.icp.models = metadata(ref)$iloreg$pca.params$select.icp.tables, 
+                    k.nn = 10, 
+                    dimred.name.prefix = "") {
                standardGeneric("ReferenceMapping")
            })

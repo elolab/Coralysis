@@ -6,23 +6,48 @@
 \alias{RunUMAP,SingleCellExperiment-method}
 \title{Uniform Manifold Approximation and Projection (UMAP)}
 \usage{
-RunUMAP.SingleCellExperiment(object, type, return.model)
+RunUMAP.SingleCellExperiment(
+  object,
+  dimred.type,
+  return.model,
+  umap.method,
+  dimred.name,
+  ...
+)
 
-\S4method{RunUMAP}{SingleCellExperiment}(object, type = "PCA", return.model = FALSE)
+\S4method{RunUMAP}{SingleCellExperiment}(
+  object,
+  dimred.type = "PCA",
+  return.model = FALSE,
+  umap.method = "umap",
+  dimred.name = "UMAP",
+  ...
+)
 }
 \arguments{
-\item{object}{of \code{SingleCellExperiment} class}
+\item{object}{An object of \code{SingleCellExperiment} class}
 
-\item{type}{type of dimensional reduction to use. By default \code{"PCA"}.}
+\item{dimred.type}{Dimensional reduction type to use. By default \code{"PCA"}.}
 
-\item{return.model}{return UMAP model. By default \code{FALSE}.}
+\item{return.model}{Return UMAP model. By default \code{FALSE}.}
+
+\item{umap.method}{UMAP method to use: \code{"umap"} or \code{"uwot"}. 
+By default \code{"umap"}.}
+
+\item{dimred.name}{Dimensional reduction name given to the returned UMAP. 
+By default \code{"UMAP"}.}
+
+\item{...}{Parameters to be passed to the \code{umap} function. The parameters 
+given should match the parameters accepted by the \code{umap} function depending
+on the \code{umap.method} given. Check possible parameters with \code{?umap::umap} 
+or \code{?uwot::umap} depending if \code{umap.method} is \code{"umap"} or 
+\code{"uwot"}.}
 }
 \value{
-object of \code{SingleCellExperiment} class
+Object of \code{SingleCellExperiment} class.
 }
 \description{
-Run nonlinear dimensionality reduction using UMAP with
-the PCA-transformed consensus matrix as input.
+Run nonlinear dimensionality reduction using UMAP with a dimensional reduction as input.
 }
 \examples{
 library(SingleCellExperiment)

@@ -13,7 +13,8 @@ ReferenceMapping.SingleCellExperiment(
   scale.query.by,
   project.umap,
   select.icp.models,
-  k.nn
+  k.nn,
+  dimred.name.prefix
 )
 
 \S4method{ReferenceMapping}{SingleCellExperiment,SingleCellExperiment}(
@@ -22,8 +23,9 @@ ReferenceMapping.SingleCellExperiment(
   ref.label,
   scale.query.by = NULL,
   project.umap = FALSE,
-  select.icp.models = NULL,
-  k.nn = 10
+  select.icp.models = metadata(ref)$iloreg$pca.params$select.icp.tables,
+  k.nn = 10,
+  dimred.name.prefix = ""
 )
 }
 \arguments{
@@ -48,9 +50,15 @@ UMAP embedding obtained with \code{RunUMAP(..., return.model = TRUE)} function.}
 KNN algorithm used to transfer labels from the reference to queries (integer).
 By default \code{10}.}
 
+\item{dimred.name.prefix}{Dimensional reduction name prefix to add to the 
+computed PCA and UMAP. By default nothing is added, i.e., 
+\code{dimred.name.prefix = ""}.}
+
 \item{selecte.icp.models}{Select the reference ICP models to use for query 
-cluster probability prediction. By default \code{NULL}, i.e., all are used.
-A vector of \code{integers} should be given otherwise.}
+cluster probability prediction. By default \code{metadata(ref)$iloreg$pca.params$select.icp.tables}, 
+i.e., the models selected to compute the reference PCA are selected. 
+If \code{NULL} all are used. Otherwise a numeric vector should be given
+to select the ICP models of interest.}
 }
 \value{
 An object of \code{SingleCellExperiment} class.

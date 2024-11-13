@@ -17,11 +17,16 @@
 #' default \code{FALSE}. If \code{TRUE}, the \code{ref} object needs to have a 
 #' UMAP embedding obtained with \code{RunUMAP(..., return.model = TRUE)} function. 
 #' @param selecte.icp.models Select the reference ICP models to use for query 
-#' cluster probability prediction. By default \code{NULL}, i.e., all are used.
-#' A vector of \code{integers} should be given otherwise.   
+#' cluster probability prediction. By default \code{metadata(ref)$iloreg$pca.params$select.icp.tables}, 
+#' i.e., the models selected to compute the reference PCA are selected. 
+#' If \code{NULL} all are used. Otherwise a numeric vector should be given
+#' to select the ICP models of interest.    
 #' @param k.nn The number of \code{k} nearest neighbors to use in the classification
 #' KNN algorithm used to transfer labels from the reference to queries (integer).
 #' By default \code{10}.  
+#' @param dimred.name.prefix Dimensional reduction name prefix to add to the 
+#' computed PCA and UMAP. By default nothing is added, i.e., 
+#' \code{dimred.name.prefix = ""}.
 #'
 #' @name ReferenceMapping
 #'
@@ -32,12 +37,16 @@
 #' @importFrom S4Vectors metadata metadata<-
 #' @importFrom SingleCellExperiment logcounts SingleCellExperiment
 #' @importFrom SummarizedExperiment colData
-#' @importFrom class knn
 #' 
 ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
                                                   scale.query.by, project.umap, 
-                                                  select.icp.models, k.nn) {
+                                                  select.icp.models, k.nn, 
+                                                  dimred.name.prefix) {
     # Check input params
+    stopifnot(is(ref, "SingleCellExperiment"), is(query, "SingleCellExperiment"), 
+              (ref.label %in% colnames(colData(ref))), any(is.null(scale.query.by), (scale.query.by %in% c("cell", "gene"))), 
+              is.logical(project.umap), any(is.null(select.icp.models), is.numeric(select.icp.models)), 
+              all(is.numeric(k.nn), (length(k.nn)==1)), is.character(dimred.name.prefix))
     if (is.null(metadata(ref)$iloreg$pca.model)) {
         stop("PCA model does not exist. Run 'RunPCA(...)' with 'return.model = TRUE'.")
     }
@@ -45,7 +54,6 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
         stop("UMAP model does not exist. Run 'RunUMAP(...)' with 'return.model = TRUE'.")
     }
     
-
     # Filter out genes
     ref.genes <- row.names(ref)
     query.genes <- row.names(query)
@@ -62,6 +70,9 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
     if (is.null(select.icp.models)) {
         n.icps <- length(metadata(ref)$iloreg$joint.probability)
         select.icp.models <- 1:n.icps
+        select.icp.tables <- metadata(ref)$iloreg$pca.params$select.icp.tables
+    } else {
+        select.icp.tables <- seq_along(metadata(ref)$iloreg$pca.params$select.icp.tables)
     }
     models <- metadata(ref)$iloreg$models[select.icp.models]
     pca.model <- metadata(ref)$iloreg$pca.model
@@ -83,7 +94,6 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
         pred <- predict(models[[m]], query.data, proba = TRUE)
         query.probs[[m]] <- pred$probabilities
     }
-    select.icp.tables <- metadata(ref)$iloreg$pca.params$select.icp.tables
     probs <- do.call(cbind, query.probs[select.icp.tables])
     
     # Project data onto ref PCA
@@ -97,16 +107,20 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
     # Add predictions to query object
     metadata(query)$iloreg <- list()
     metadata(query)$iloreg$joint.probability <- query.probs   
-    reducedDim(query, type = "PCA") <- query.pca
+    reducedDim(x = query, type = paste0(dimred.name.prefix, "PCA")) <- query.pca
     query[["ilo_labels"]] <- preds.labels
     query[["ilo_labels_prob"]] <- attr(preds.labels, "prob")
     
     # Project data onto ref UMAP
     if (project.umap) {
         umap.model <- metadata(ref)$iloreg$umap.model
-        query.umap <- predict(umap.model, query.pca)
+        if (is(umap.model, "umap")) { # from 'umap::umap' - class 'umap'
+            query.umap <- predict(umap.model, query.pca)
+        } else { # from 'uwot::umap' - class 'list'
+            query.umap <- uwot::umap_transform(X = query.pca, model = umap.model)
+        }
         row.names(query.umap) <- colnames(query)
-        reducedDim(query, "UMAP") <- query.umap
+        reducedDim(x = query, type = paste0(dimred.name.prefix, "UMAP")) <- query.umap
     }
     return(query)
 }
