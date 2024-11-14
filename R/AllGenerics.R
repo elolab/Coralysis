@@ -210,6 +210,26 @@ setGeneric("AnnotationScatterPlot", signature = "object",
            })
 
 #' @export
+setGeneric("GetCellClusterProbability", signature = "object",
+           function(object,
+                    icp.run = NULL,
+                    icp.round = NULL,
+                    concatenate = TRUE) {
+               standardGeneric("GetCellClusterProbability")
+           })
+
+#' @export
+setGeneric("SummariseCellClusterProbability", signature = "object",
+           function(object,
+                    icp.run = NULL,
+                    icp.round = NULL,
+                    funs = c("mean", "median"), 
+                    scale.funs = TRUE, 
+                    save.in.sce = TRUE) {
+               standardGeneric("SummariseCellClusterProbability")
+           })
+
+#' @export
 setGeneric("RunParallelDivisiveICP", signature = "object",
            function(object, batch.label = NULL, 
                     k = 16, d = 0.3, L = 50, 

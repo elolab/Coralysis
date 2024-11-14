@@ -2302,9 +2302,181 @@ AnnotationScatterPlot.SingleCellExperiment <- function(object,
   }
 
 }
-
 #' @rdname AnnotationScatterPlot
 #' @aliases AnnotationScatterPlot
 setMethod("AnnotationScatterPlot", signature(object = "SingleCellExperiment"),
           AnnotationScatterPlot.SingleCellExperiment)
 
+
+#' @title Get ICP cell cluster probability
+#' 
+#' @description Get ICP cell cluster probability table(s)
+#' 
+#' @param object An object of \code{SingleCellExperiment} class with ICP cell 
+#' cluster probability tables saved in \code{metadata(object)$iloreg$joint.probability}. 
+#' After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}. 
+#' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
+#' retrieve a specific set of tables. 
+#' @param icp.round ICP round(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' By default \code{NULL}, i.e., all are retrieved. Only relevant if probabilities
+#' were obtained with the function \code{RunParallelDivisiveICP}, i.e., divisive ICP
+#' was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1}, 
+#' i.e., only one round. 
+#' @param concatenate Concatenate list of ICP cell cluster probability tables retrieved. 
+#' By default \code{TRUE}, i.e., the list of ICP cell cluster probability tables is
+#' concatenated. 
+#' 
+#' @name GetCellClusterProbability
+#' 
+#' @return A list with ICP cell cluster probability tables or a matrix with 
+#' concatenated tables.  
+#' 
+#' @keywords Cell cluster probability
+#'  
+#' @importFrom S4Vectors metadata metadata<-
+#' 
+GetCellClusterProbability.SingleCellExperiment <- function(object, icp.run, icp.round, concatenate) {
+    
+    # Retrieve important params
+    L <- metadata(object)$iloreg$L
+    k <- metadata(object)$iloreg$k
+    
+    # Check input params
+    stopifnot(is(object, "SingleCellExperiment"), is(metadata(object)$iloreg$joint.probability, "list"), 
+              is.numeric(L), is.numeric(k), any(is.null(icp.run), (is.numeric(icp.run) && all(icp.run <= L))), 
+              any(is.null(icp.round), (is.numeric(icp.round))), is.logical(concatenate))
+    
+    # If ICP run is NULL retrieve all
+    if (is.null(icp.run)) {
+        icp.run <- seq_len(L)
+    }
+    
+    # If divisive ICP, retrieve the right ICP run round
+    divisive.icp <- metadata(object)$iloreg$divisive.icp
+    if (isTRUE(divisive.icp)) { 
+        rounds <- log2(k)
+        stopifnot(all(icp.round <= rounds)) # all icp.round need to be equal or lower than rounds
+        if (is.null(icp.round)) {
+            icp.round <- seq_len(rounds)
+        }
+        icp.run.tbl <- matrix(data = seq_len(L*rounds), ncol = rounds, byrow = TRUE)
+        pick.icp <- c(t(icp.run.tbl[icp.run, icp.round]))
+    } else { # if not divisive just select icp runs
+        pick.icp <- icp.run
+    }
+    
+    # Return probabilities
+    probs <- metadata(object)$iloreg$joint.probability[pick.icp]
+    if (concatenate) {
+        probs <- do.call(cbind, probs)
+    }
+    return(probs)
+}
+#' @rdname GetCellClusterProbability
+#' @aliases GetCellClusterProbability
+setMethod("GetCellClusterProbability", signature(object = "SingleCellExperiment"),
+          GetCellClusterProbability.SingleCellExperiment)
+
+
+#' @title Summarise ICP cell cluster probability
+#' 
+#' @description Summarise ICP cell cluster probability table(s)
+#' 
+#' @param object An object of \code{SingleCellExperiment} class with ICP cell 
+#' cluster probability tables saved in \code{metadata(object)$iloreg$joint.probability}. 
+#' After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}. 
+#' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
+#' retrieve a specific set of tables. 
+#' @param icp.round ICP round(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' By default \code{NULL}, i.e., all are retrieved. Only relevant if probabilities
+#' were obtained with the function \code{RunParallelDivisiveICP}, i.e., divisive ICP
+#' was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1}, 
+#' i.e., only one round. 
+#' @param funs Functions to summarise ICP cell cluster probability: \code{"mean"} 
+#' and/or \code{"median"}. By default \code{c("mean", "median")}, i.e, both mean
+#' and median are calculated. Set to \code{NULL} to not estimate any. 
+#' @param scale.funs Scale in the range 0-1 the summarised probability obtained with 
+#' \code{funs}. By default \code{TRUE}, i.e., summarised probability will be scaled
+#' in the 0-1 range. 
+#' @param save.in.sce Save the data frame into the cell metadata from the 
+#' \code{SingleCellExperiment} object or return the data frame. By default \code{TRUE}, 
+#' i.e., the summary of probabilities retrieved is save in the SCE object in 
+#' \code{colData(object)}.  
+#' 
+#' @name SummariseCellClusterProbability
+#' 
+#' @return A data frame or a SingleCellExperiment object with ICP cell cluster probability summarised.  
+#' 
+#' @keywords Summarise cell cluster probability
+#' 
+#' @importFrom S4Vectors metadata metadata<-
+#' @importFrom SummarizedExperiment colData colData<-
+#'  
+SummariseCellClusterProbability.SingleCellExperiment <- function(object, icp.run, icp.round, funs, scale.funs, save.in.sce) {
+    
+    # Check params that will not be checked in the function below
+    stopifnot(any(is.null(funs), any(funs %in% c("mean", "median"))), is.logical(scale.funs), is.logical(save.in.sce))
+    
+    # Retrieve probability & clustering
+    probs <- GetClusterProbability(object = object, icp.run = icp.run, icp.round = icp.round, concatenate = FALSE)
+    
+    # Retrieve important params
+    L <- metadata(object)$iloreg$L
+    k <- metadata(object)$iloreg$k
+    
+    # If ICP run is NULL retrieve all
+    if (is.null(icp.run)) {
+        icp.run <- seq_len(L)
+    }
+    # If divisive ICP, retrieve the right ICP run round
+    divisive.icp <- metadata(object)$iloreg$divisive.icp
+    if (isTRUE(divisive.icp)) { 
+        rounds <- log2(k)
+        if (is.null(icp.round)) {
+            icp.round <- seq_len(rounds)
+        }
+    } else { # if not divisive just select icp runs
+        if (is.null(icp.round)) {
+            icp.round <- 1
+        }
+    }
+    
+    # Summarise
+    all.col.names <- c(t(outer(icp.run, icp.round, paste, sep = "_")))
+    out <- data.frame(row.names = colnames(object))
+    for (p in seq_along(probs)) {
+        idx <- apply(X = probs[[p]], MARGIN = 1, FUN = function(x) which.max(x))
+        clts <- sapply(X = idx, FUN = function(x) colnames(probs[[p]])[x])
+        clt.prob <- apply(X = probs[[p]], MARGIN = 1, FUN = function(x) max(x))
+        col.names <- paste("icp_run_round", all.col.names[p], c("clusters", "probs"), sep = "_")
+        tmp.tbl <- data.frame(clts, clt.prob)
+        colnames(tmp.tbl) <- col.names
+        out <- cbind(out, tmp.tbl)
+    }
+    if ("mean" %in% funs) {
+        out$mean_probs <- matrixStats::rowMeans2(as.matrix(out[,grepl("icp_run_round_\\w+_probs", colnames(out))]))
+        if (scale.funs) {
+            out$scaled_mean_probs <- (((out$mean_probs) - min(out$mean_probs)) / (max(out$mean_probs) - min(out$mean_probs)))
+        }
+    }
+    if ("median" %in% funs) {
+        out$median_probs <- matrixStats::rowMedians(as.matrix(out[,grepl("icp_run_round_\\w+_probs", colnames(out))]))
+        if (scale.funs) {
+            out$scaled_median_probs <- (((out$median_probs) - min(out$median_probs)) / (max(out$median_probs) - min(out$median_probs)))
+        }
+    }
+    
+    # Return table
+    if (save.in.sce) {
+        colData(object) <- cbind(colData(object), out)
+        return(object)
+    } else{
+        return(out)
+    }
+}
+#' @rdname SummariseCellClusterProbability
+#' @aliases SummariseCellClusterProbability
+setMethod("SummariseCellClusterProbability", signature(object = "SingleCellExperiment"),
+          SummariseCellClusterProbability.SingleCellExperiment)
