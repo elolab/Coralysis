@@ -2420,7 +2420,7 @@ SummariseCellClusterProbability.SingleCellExperiment <- function(object, icp.run
     stopifnot(any(is.null(funs), any(funs %in% c("mean", "median"))), is.logical(scale.funs), is.logical(save.in.sce))
     
     # Retrieve probability & clustering
-    probs <- GetClusterProbability(object = object, icp.run = icp.run, icp.round = icp.round, concatenate = FALSE)
+    probs <- GetCellClusterProbability(object = object, icp.run = icp.run, icp.round = icp.round, concatenate = FALSE)
     
     # Retrieve important params
     L <- metadata(object)$iloreg$L
