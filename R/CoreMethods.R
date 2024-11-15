@@ -2480,3 +2480,149 @@ SummariseCellClusterProbability.SingleCellExperiment <- function(object, icp.run
 #' @aliases SummariseCellClusterProbability
 setMethod("SummariseCellClusterProbability", signature(object = "SingleCellExperiment"),
           SummariseCellClusterProbability.SingleCellExperiment)
+
+#' @title Get feature coefficients
+#' 
+#' @description Get feature coefficients from ICP models. 
+#' 
+#' @param object An object of \code{SingleCellExperiment} class with ICP cell 
+#' cluster probability tables saved in \code{metadata(object)$iloreg$joint.probability}. 
+#' After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}. 
+#' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
+#' retrieve a specific set of tables. 
+#' @param icp.round ICP round(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' By default \code{NULL}, i.e., all are retrieved. Only relevant if probabilities
+#' were obtained with the function \code{RunParallelDivisiveICP}, i.e., divisive ICP
+#' was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1}, 
+#' i.e., only one round. 
+#' 
+#' @name GetFeatureCoefficients
+#' 
+#' @return A list of feature coefficient weights per cluster per ICP run/round.  
+#' 
+#' @keywords Feature coefficients weights
+#'  
+#' @importFrom S4Vectors metadata metadata<-
+#' 
+GetFeatureCoefficients.SingleCellExperiment <- function(object, icp.run = NULL, icp.round = NULL) {
+    
+    # Retrieve important params
+    L <- metadata(object)$iloreg$L
+    k <- metadata(object)$iloreg$k
+    
+    # Check input 
+    stopifnot(is(object, "SingleCellExperiment"), any(is.null(icp.run), (is.numeric(icp.run) && all(icp.run <= L))), 
+              is.numeric(L), is.numeric(k), any(is.null(icp.round), is.numeric(icp.round)))
+    
+    # Retrieve coefficients
+    # If ICP run is NULL retrieve all
+    if (is.null(icp.run)) {
+        icp.run <- seq_len(L)
+    }
+    # If divisive ICP, retrieve the right ICP run round
+    divisive.icp <- metadata(object)$iloreg$divisive.icp
+    if (isTRUE(divisive.icp)) { 
+        rounds <- log2(k)
+        if (is.null(icp.round)) {
+            icp.round <- seq_len(rounds)
+        }
+        icp.run.tbl <- matrix(data = seq_len(L*rounds), ncol = rounds, byrow = TRUE)
+        pick.icp <- c(t(icp.run.tbl[icp.run, icp.round]))
+    } else { # if not divisive just select icp runs
+        pick.icp <- icp.run
+    }
+    models <- metadata(object)$iloreg$models[pick.icp]
+    feature2coeff <- row.names(object) 
+    names(feature2coeff) <- paste0("W", 1:length(feature2coeff))
+    feature.coeffs <- lapply(X = models, FUN = function(x) {
+        apply(X = x$W[,-ncol(x$W), drop=FALSE], MARGIN = 1, FUN = function(y) {
+            idx <- which(y != 0)
+            data.frame("feature" = feature2coeff[idx], "coeff" = y[idx])
+        })
+    }) 
+    df.feature.coeffs <- lapply(X = feature.coeffs, FUN = function(x) {
+        Reduce(function(y1, y2) merge(y1, y2, by = "feature", all.x = TRUE, all.y = TRUE), x) %>% 
+            `colnames<-`(c("feature", paste0("coeff_clt", names(x)))) %>% 
+            replace(is.na(.), 0)
+    })
+    names(df.feature.coeffs) <- paste0("icp_", pick.icp)
+    
+    # Return
+    return(df.feature.coeffs)
+}
+#' @rdname GetFeatureCoefficients
+#' @aliases GetFeatureCoefficients
+setMethod("GetFeatureCoefficients", signature(object = "SingleCellExperiment"),
+          GetFeatureCoefficients.SingleCellExperiment)
+
+#' @title Majority voting features by label
+#' 
+#' @description Get ICP feature coefficients for a label of interest by majority voting label across ICP clusters. 
+#' 
+#' @param object An object of \code{SingleCellExperiment} class with ICP cell 
+#' cluster probability tables saved in \code{metadata(object)$iloreg$joint.probability}. 
+#' After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}. 
+#' @param label Label of interest available in \code{colData(object)}. 
+#' 
+#' @name MajorityVotingFeatures
+#' 
+#' @return A list of with a list of data frames with feature weights per label and a data frame with a summary by label. 
+#' 
+#' @keywords Majority voting feature coefficients weights
+#' 
+#' @importFrom SummarizedExperiment colData colData<-
+#' 
+MajorityVotingFeatures.SingleCellExperiment <- function(object, label) {
+    
+    # Check input 
+    stopifnot(is(object, "SingleCellExperiment"), (label %in% colnames(colData(object))))
+    
+    # Cell clusterings
+    cell.clts <- SummariseCellClusterProbability(object = object, icp.run = NULL, 
+                                                 icp.round = NULL, funs = NULL, 
+                                                 scale.funs = FALSE, save.in.sce = FALSE)
+    cell.clts <- cell.clts[,grepl("icp_run_round_\\w+_clusters", colnames(cell.clts))]
+    
+    # Split cell cluster table by label
+    cell.clts.label <- split(x = cell.clts, f = colData(object)[, label, drop=TRUE])
+    cell.clts.counts <- apply(X = cell.clts, MARGIN = 2, FUN = function(x) table(x))
+    clts.label.counts <- lapply(X = cell.clts.label, FUN = function(x) {
+        apply(X = x, MARGIN = 2, FUN = function(y) table(y)) 
+    })
+    
+    # geometric mean formula
+    geometric_mean <- function(x) exp(mean(log(x)))
+    labels <- names(clts.label.counts)
+    out <- data.frame("label" = labels, "icp_run" = 0, "icp_round" = 0, "cluster" = "", score = 0)
+    res <- clts.label.score <- list()
+    for (cell in names(clts.label.counts)) {
+        clts.label.props[[cell]] <- list()
+        for (icp in names(cell.clts.counts)) {
+            tmp <- clts.label.counts[[cell]][[icp]]
+            pick.clts <- names(tmp)
+            label.per.clts <- (tmp / sum(tmp)) 
+            cluster.label <- (tmp / cell.clts.counts[[icp]][pick.clts]) 
+            clts.label.score[[cell]][[icp]] <- apply(X = data.frame(label.per.clts, cluster.label)[,c(2,4)], MARGIN = 1, FUN = function(x) geometric_mean(x))
+        }
+        idx.max <- which.max(unlist(clts.label.score[[cell]]))
+        score <- unlist(clts.label.score[[cell]])[idx.max]
+        id <- strsplit(x = names(unlist(clts.label.counts[[cell]])[idx.max]), split = "_")[[1]]
+        out[out$label==cell, c("icp_run", "icp_round", "score")] <- c(as.numeric(id[4:5]), score)
+        out[out$label==cell, "cluster"] <- gsub(pattern = "clusters.", replacement = "", x = id[6])
+        # Get coefficients
+        pick.clt <- paste0("coeff_clt", out[out$label==cell, "cluster"])
+        res[[cell]] <- GetFeatureCoefficients(object = object, icp.run = out[out$label==cell, "icp_run"], 
+                                              icp.round = out[out$label==cell, "icp_round"])[[1]] %>% 
+            select(all_of(c("feature", pick.clt))) %>% 
+            filter(.data[[pick.clt]] != 0)
+    }
+    
+    # Return
+    res.out <- list("feature_coeff" = res, "summary" = out)
+    return(res.out)
+}
+#' @rdname MajorityVotingFeatures
+#' @aliases MajorityVotingFeatures
+setMethod("MajorityVotingFeatures", signature(object = "SingleCellExperiment"),
+          MajorityVotingFeatures.SingleCellExperiment)

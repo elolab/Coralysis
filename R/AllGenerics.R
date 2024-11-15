@@ -230,6 +230,20 @@ setGeneric("SummariseCellClusterProbability", signature = "object",
            })
 
 #' @export
+setGeneric("GetFeatureCoefficients", signature = "object",
+           function(object,
+                    icp.run = NULL,
+                    icp.round = NULL) {
+               standardGeneric("GetFeatureCoefficients")
+           })
+
+#' @export
+setGeneric("MajorityVotingFeatures", signature = "object",
+           function(object, label) {
+               standardGeneric("MajorityVotingFeatures")
+           })
+
+#' @export
 setGeneric("RunParallelDivisiveICP", signature = "object",
            function(object, batch.label = NULL, 
                     k = 16, d = 0.3, L = 50, 
