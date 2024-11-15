@@ -130,8 +130,7 @@ ref <- RunUMAP(ref, return.model = TRUE)
 # 3) Project & predict query cell labels 
 # start <- Sys.time()
 set.seed(1024)
-map <- ReferenceMapping(ref = ref, query = query, ref.label = "cell_type",
-                        scale.query = FALSE, project.umap = TRUE)
+map <- ReferenceMapping(ref = ref, query = query, ref.label = "cell_type", project.umap = TRUE)
 # stop <- Sys.time()
 # print(stop - start) # Time difference of 2.380615 mins
 
