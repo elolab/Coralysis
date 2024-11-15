@@ -60,7 +60,7 @@ PlotDimRed.SingleCellExperiment <- function(object, color.by, dimred, dims, use.
     if (label) {
         data.plot <- data.plot %>% as.data.frame() %>% group_by(.data[[color.by]]) %>% 
             mutate(x = mean(.data[[axes[1]]]), y = mean(.data[[axes[2]]]), label = .data[[color.by]]) %>% 
-            mutate_at(vars(label), funs(replace(., duplicated(.), NA)))
+            mutate_at(vars(label), list(~replace(., duplicated(.), NA)))
     }
     p <- ggplot(data = data.plot, mapping = aes(x = .data[[axes[1]]], y = .data[[axes[2]]], color = .data[[color.by]])) + 
         scale_color_manual(values = use.color) + 
