@@ -651,7 +651,6 @@ LogisticRegression <- function(training.sparse.matrix = NULL,
 #'
 #' @importFrom dplyr group_by %>% top_n
 #'
-#'
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))

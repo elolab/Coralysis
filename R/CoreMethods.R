@@ -2504,6 +2504,7 @@ setMethod("SummariseCellClusterProbability", signature(object = "SingleCellExper
 #' @keywords Feature coefficients weights
 #'  
 #' @importFrom S4Vectors metadata metadata<-
+#' @importFrom dplyr %>%
 #' 
 GetFeatureCoefficients.SingleCellExperiment <- function(object, icp.run = NULL, icp.round = NULL) {
     
@@ -2572,6 +2573,7 @@ setMethod("GetFeatureCoefficients", signature(object = "SingleCellExperiment"),
 #' @keywords Majority voting feature coefficients weights
 #' 
 #' @importFrom SummarizedExperiment colData colData<-
+#' @importFrom dplyr %>% select filter all_of
 #' 
 MajorityVotingFeatures.SingleCellExperiment <- function(object, label) {
     
