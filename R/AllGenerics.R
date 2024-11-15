@@ -274,3 +274,22 @@ setGeneric("ReferenceMapping", signature = c("ref", "query"),
                     dimred.name.prefix = "") {
                standardGeneric("ReferenceMapping")
            })
+
+#' @export
+setGeneric("PlotDimRed", signature = "object",
+           function(object, color.by, dimred = tail(reducedDimNames(object), n=1), 
+                    dims = 1:2, use.color = NULL,  
+                    point.size = 1, point.stroke = 1, legend.nrow = 2, seed.color = 123, 
+                    label = FALSE, plot.theme = theme_classic(), 
+                    rasterise = (ncol(object)<=3e4), rasterise.dpi = 300, 
+                    legend.justification = "center", legend.size = 10, legend.title = color.by) {
+               standardGeneric("PlotDimRed")
+           })
+
+#' @export
+setGeneric("PlotExpression", signature = "object",
+           function(object, color.by, dimred = tail(reducedDimNames(object), n=1), 
+                    scale.values = FALSE, color.scale = "inferno", plot.theme = theme_classic(),
+                    legend.title = color.by, point.size = 1, point.stroke = 1) {
+               standardGeneric("PlotExpression")
+           })
