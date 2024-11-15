@@ -2597,7 +2597,7 @@ MajorityVotingFeatures.SingleCellExperiment <- function(object, label) {
     out <- data.frame("label" = labels, "icp_run" = 0, "icp_round" = 0, "cluster" = "", score = 0)
     res <- clts.label.score <- list()
     for (cell in names(clts.label.counts)) {
-        clts.label.props[[cell]] <- list()
+        clts.label.score[[cell]] <- list()
         for (icp in names(cell.clts.counts)) {
             tmp <- clts.label.counts[[cell]][[icp]]
             pick.clts <- names(tmp)
