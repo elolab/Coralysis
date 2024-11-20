@@ -155,3 +155,169 @@ PlotExpression.SingleCellExperiment <- function(object, color.by, dimred, scale.
 setMethod("PlotExpression", signature(object = "SingleCellExperiment"),
           PlotExpression.SingleCellExperiment)
 
+
+#' @title Plot cluster tree 
+#' 
+#' @description Plot cluster tree by or cluster probability or categorical variable.
+#' 
+#' @param object An object of \code{SingleCellExperiment} class.
+#' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
+#' retrieve a specific set of tables. 
+#' @param color.by Categorical variable available in \code{colData(object)} to 
+#' plot. If \code{NULL} the cluster probability is represented instead. 
+#' By default \code{NULL}.  
+#' @param use.color Character specifying the colors. By default \code{NULL}, i.e., 
+#' colors are randomly chosen based on the seed given at \code{seed.color}. 
+#' @param seed.color Seed to randomly select colors. By default \code{123}.
+#' @param legend.title Legend title. By default the same as given at \code{color.by}.
+#' Ignored if \code{color.by} is \code{NULL}.
+#' @param return.data Return data frame used to plot. Logical. By default \code{FALSE}, 
+#' i.e., only the plot is returned.
+#' 
+#' @name PlotClusterTree
+#' 
+#' @return A plot of class \code{ggplot} or a list with a plot of class \code{ggplot} and a data frame. 
+#' 
+#' @keywords Dimensional reduction visualization
+#'
+#' @import ggplot2
+#' @importFrom S4Vectors metadata
+#' @importFrom SummarizedExperiment colData colData<-
+#' @importFrom dplyr %>% mutate summarise group_by across all_of ungroup n
+#'
+PlotClusterTree.SingleCellExperiment <- function(object, icp.run, color.by, use.color, 
+                                                 seed.color, legend.title, return.data) {
+    
+    # Get probabilities for icp.run
+    divisive <- metadata(object)$iloreg$divisive
+    stopifnot(divisive)
+    k <- metadata(object)$iloreg$k
+    icp.round <- 1:log2(k)
+    probs <- GetCellClusterProbability(object = object, icp.run = icp.run, icp.round = icp.round, concatenate = FALSE)
+    
+    # Parse data to plot
+    k.rounds.inverted <- rev(2**icp.round)
+    node.pos <- node.seg <- list()
+    for (i in seq_along(k.rounds.inverted)) {
+        if (i == 1) {
+            node.pos[[i]] <- 1:k.rounds.inverted[i]
+        } else {
+            node.pos[[i]] <- node.pos[[ii]][c(T, F)] + value
+        }
+        ii <- i
+        value <- diff(node.pos[[ii]][1:2])/2
+        node.seg[[i]] <- sort(c(node.pos[[ii]][c(T, F)] + value, node.pos[[ii]][c(F, T)] - value)) 
+    }
+    node.pos <- rev(node.pos)
+    node.seg <- rev(node.seg)
+    names(node.seg) <- names(node.pos) <- paste0("K", rev(k.rounds.inverted))
+    
+    # Get clusters & cell cluster probability
+    cell.clusters <- SummariseCellClusterProbability(object = object, icp.run = icp.run, 
+                                                     icp.round = icp.round, funs = NULL, 
+                                                     save.in.sce = FALSE)
+    
+    # Parse data
+    df.list <- list()
+    col.names <- colnames(cell.clusters)
+    for (i in icp.round) {
+        df.list[[i]] <- data.frame(
+            "K" = as.factor(i), 
+            "k" = as.numeric(cell.clusters[,col.names[c(T,F)][i]]), 
+            "p" = cell.clusters[,col.names[c(F,T)][i]]
+        )
+        df.list[[i]][,"start"] <- node.pos[[i]][df.list[[i]][,"k"]]
+        df.list[[i]][,"end"] <- node.seg[[i]][df.list[[i]][,"k"]]
+        df.list[[i]] <- cbind(df.list[[i]], colData(object))
+    }
+    df <- do.call(rbind, df.list)
+    
+    # Plot cluster tree
+    if (is.null(color.by)) { # if 'color.by' is NULL, plot median cluster probability tree
+        group.by <- c("K", "k", "start", "end")
+        df <- df %>%
+            group_by(., across(all_of(group.by))) %>% 
+            summarise(., median = median(p), n = n(), .groups = "keep") %>% 
+            ungroup(.) %>% 
+            mutate(., Kannot = factor(paste0("K", 2**(icp.round))[K], levels = rev(paste0("K", 2**(icp.round)))))
+        p <- ggplot(data = df, mapping = aes(x = start, y = Kannot)) +
+            geom_segment(mapping = aes(x = start, xend = start, 
+                                       yend = as.numeric(Kannot)+1, y = Kannot),
+                         color = "black") +
+            geom_segment(mapping = aes(x = start, xend = end, 
+                                       y = as.numeric(Kannot)+1, yend = as.numeric(Kannot)+1), 
+                         color = "black") + 
+            geom_point(mapping = aes(size = n, color = median)) + 
+            theme_minimal() + 
+            theme(panel.grid.minor.x = element_blank(), 
+                  panel.grid.major.x = element_blank(), 
+                  axis.title.x = element_blank(),
+                  axis.title.y = element_blank(),
+                  axis.text.x = element_blank(), 
+                  legend.position = "bottom", 
+                  legend.box = "horizontal", 
+                  legend.title.position = "top", 
+                  axis.text.y = element_text(size = 14, face = "italic"), 
+                  plot.title = element_text(hjust = 0.5), 
+                  legend.title.align = 0.5) + 
+            scale_color_viridis_c(name = "Median Cluster Probability", limits = c(0, 1)) + 
+            scale_size(name = "Cell Cluster Size") + 
+            ggtitle(paste0("Divisive ICP Cluster Tree (L=", icp.run, ")"))
+    } else { # plot cluster tree by 'color.by'
+        group.by <- c("K", "k", "start", "end", color.by) 
+        df <- df %>%
+            group_by(., across(all_of(group.by))) %>% 
+            summarise(., n = n(), .groups = "keep") %>% 
+            ungroup(.) %>% 
+            mutate(., Kannot = factor(paste0("K", 2**(icp.round))[K], levels = rev(paste0("K", 2**(icp.round))))) %>% 
+            tidyr::pivot_wider(., names_from = .data[[color.by]], values_from = n)
+        df[is.na(df)] <- 0
+        object[[color.by]] <- as.factor(object[[color.by]])
+        if (is.null(use.color)) {
+            color.palettes <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
+            color.palette <- unlist(mapply(RColorBrewer::brewer.pal, color.palettes$maxcolors, rownames(color.palettes)))
+            ngroups <- nlevels(object[[color.by]])
+            set.seed(seed.color)
+            use.color <- sample(color.palette, ngroups)
+        }
+        p <- ggplot(data = df) +
+            geom_segment(mapping = aes(x = start, xend = start, 
+                                       yend = as.numeric(Kannot)+1, y = Kannot),
+                         color = "black") +
+            geom_segment(mapping = aes(x = start, xend = end, 
+                                       y = as.numeric(Kannot)+1, yend = as.numeric(Kannot)+1), 
+                         color = "black") + 
+            scatterpie::geom_scatterpie(data = df, mapping = aes(x = start, y = as.numeric(Kannot), group = k), 
+                                        cols = levels(object[[color.by]])) + 
+            coord_equal() + 
+            theme_minimal() + 
+            theme(panel.grid.minor.x = element_blank(), 
+                  panel.grid.major.x = element_blank(), 
+                  axis.title.x = element_blank(),
+                  axis.title.y = element_blank(),
+                  axis.text.x = element_blank(), 
+                  legend.title.position = "top", 
+                  legend.title = element_text(hjust = 0.5, size = 12.5),
+                  axis.text.y = element_text(size = 14, face = "italic"), 
+                  plot.title = element_text(hjust = 0.5), 
+                  legend.position = "bottom", 
+                  legend.box = "horizontal", 
+                  #legend.title.align = 0.5, 
+                  legend.text = element_text(size=12),
+                  legend.spacing.y = unit(2, "cm")) + 
+            ggtitle(paste0("Divisive ICP Cluster Tree (L=", icp.run, ")")) + 
+            scale_fill_manual(name = legend.title, values = use.color) + 
+            guides(fill = guide_legend(override.aes = list(size=3.5)))
+    }
+    if (return.data) {
+        out <- list(data = df, plot = p)
+        return(out)
+    } else {
+        return(p)
+    }
+}
+#' @rdname PlotClusterTree
+#' @aliases PlotClusterTree
+setMethod("PlotClusterTree", signature(object = "SingleCellExperiment"),
+          PlotClusterTree.SingleCellExperiment)

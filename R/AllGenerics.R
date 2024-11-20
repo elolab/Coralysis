@@ -293,3 +293,11 @@ setGeneric("PlotExpression", signature = "object",
                     legend.title = color.by, point.size = 1, point.stroke = 1) {
                standardGeneric("PlotExpression")
            })
+
+#' @export
+setGeneric("PlotClusterTree", signature = "object",
+           function(object, icp.run, color.by = NULL, use.color = NULL, 
+                    seed.color = 123, legend.title = color.by, 
+                    return.data = FALSE) {
+               standardGeneric("PlotClusterTree")
+           })
