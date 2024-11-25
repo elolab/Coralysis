@@ -1278,8 +1278,7 @@ GeneScatterPlot.SingleCellExperiment <- function(object,
                                                  nrow,
                                                  ncol) {
 
-  if (dim.reduction.type=="umap")
-  {
+  if (dim.reduction.type=="umap") {
     two.dim.data <- reducedDim(object,"UMAP")
     xlab <- "UMAP_1"
     ylab <- "UMAP_2"
@@ -1296,8 +1295,7 @@ GeneScatterPlot.SingleCellExperiment <- function(object,
 
     df <- as.data.frame(two.dim.data)
 
-    if (!(genes %in% rownames(object)))
-    {
+    if (!(genes %in% rownames(object))) {
       stop("invalid gene name")
     }
 
@@ -1305,14 +1303,11 @@ GeneScatterPlot.SingleCellExperiment <- function(object,
     df$group <- color.by
     colnames(df) <- c("dim1","dim2","group")
 
-    if (title=="")
-    {
-
-      if (plot.expressing.cells.last)
-      {
+    # Plot
+    if (plot.expressing.cells.last) {
         df <- df[order(df$group,decreasing = FALSE),]
-      }
-      p<-ggplot(df, aes_string(x='dim1', y='dim2')) +
+    }
+    p<-ggplot(df, aes_string(x='dim1', y='dim2')) +
         geom_point(size=point.size,aes_string(color='group')) +
         scale_colour_gradient2(low = muted("red"), mid = "lightgrey",
                                high = "blue",name = genes) +
@@ -1322,29 +1317,16 @@ GeneScatterPlot.SingleCellExperiment <- function(object,
               panel.grid.minor = element_blank(),
               panel.background = element_blank(),
               axis.line = element_line(colour = "black"))
-
-
-    } else {
-      p<-ggplot(df, aes_string(x='dim1', y='dim2')) +
-        geom_point(size=point.size,aes_string(color='group')) +
-        scale_colour_gradient2(low = muted("red"), mid = "lightgrey",
-                               high = "blue",name = genes) +
-        xlab(xlab) +
-        ylab(ylab) +
-        theme(panel.grid.major = element_blank(),
-              panel.grid.minor = element_blank(),
-              panel.background = element_blank(),
-              axis.line = element_line(colour = "black")) +
-        ggtitle(title) +
-        theme(plot.title = element_text(hjust = 0.5))
-
+    
+    if (title != "") {
+        p <- p + ggtitle(title) +
+            theme(plot.title = element_text(hjust = 0.5))
     }
     if (return.plot) {
       return(p)
     } else {
       print(p)
     }
-
   } else {
 
     plot_list <- list()
@@ -1361,13 +1343,11 @@ GeneScatterPlot.SingleCellExperiment <- function(object,
       df$group <- color.by
       colnames(df) <- c("dim1","dim2","group")
 
-      if (plot.expressing.cells.last)
-      {
+      # Plot 
+      if (plot.expressing.cells.last) {
         df <- df[order(df$group,decreasing = FALSE),]
       }
-
-      if (title=="") {
-        p<-ggplot(df, aes_string(x='dim1', y='dim2')) +
+      p<-ggplot(df, aes_string(x='dim1', y='dim2')) +
           geom_point(size=point.size,aes_string(color='group')) +
           scale_colour_gradient2(low = muted("red"), mid = "lightgrey",
                                  high = "blue",name = gene) +
@@ -1377,24 +1357,11 @@ GeneScatterPlot.SingleCellExperiment <- function(object,
                 panel.grid.minor = element_blank(),
                 panel.background = element_blank(),
                 axis.line = element_line(colour = "black"))
-      } else {
-        p<-ggplot(df, aes_string(x='dim1', y='dim2')) +
-          geom_point(size=point.size,aes_string(color='group')) +
-          scale_colour_gradient2(low = muted("red"), mid = "lightgrey",
-                                 high = "blue",name = gene) +
-          xlab(xlab) +
-          ylab(ylab) +
-          theme(panel.grid.major = element_blank(),
-                panel.grid.minor = element_blank(),
-                panel.background = element_blank(),
-                axis.line = element_line(colour = "black")) +
-          ggtitle(title) +
-          theme(plot.title = element_text(hjust = 0.5))
-
+      if (title != "") {
+         p <- p + ggtitle(title) +
+              theme(plot.title = element_text(hjust = 0.5))
       }
-
       plot_list[[gene]] <- p
-
     }
 
     p <- plot_grid(plotlist = plot_list,align = "hv",nrow = nrow, ncol = ncol)
