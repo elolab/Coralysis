@@ -301,3 +301,11 @@ setGeneric("PlotClusterTree", signature = "object",
                     return.data = FALSE) {
                standardGeneric("PlotClusterTree")
            })
+
+#' @export
+setGeneric("BinCellClusterProbability", signature = "object",
+           function(object, label, icp.run = NULL, icp.round = NULL, 
+                    funs = "mean", bins = 20, aggregate.bins.by = "mean", 
+                    use.assay = "logcounts") {
+               standardGeneric("BinCellClusterProbability")
+           })
