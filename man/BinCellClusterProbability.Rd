@@ -33,7 +33,8 @@ BinCellClusterProbability.SingleCellExperiment(
 cluster probability tables saved in \code{metadata(object)$iloreg$joint.probability}. 
 After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}.}
 
-\item{label}{.}
+\item{label}{Label of interest available in \code{colData(object)} to group by the 
+bins of cell cluster probability.}
 
 \item{icp.run}{ICP run(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
 By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 

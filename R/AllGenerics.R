@@ -309,3 +309,21 @@ setGeneric("BinCellClusterProbability", signature = "object",
                     use.assay = "logcounts") {
                standardGeneric("BinCellClusterProbability")
            })
+
+#' @export
+setGeneric("CellClusterProbabilityDistribution", signature = "object",
+           function(object, label, group, probability = "scaled_mean_probs") {
+               standardGeneric("CellClusterProbabilityDistribution")
+           })
+
+#' @export
+setGeneric("TabulateCellBinsByGroup", signature = "object",
+           function(object, group, relative = FALSE, margin = 1) {
+               standardGeneric("TabulateCellBinsByGroup")
+           })
+
+#' @export
+setGeneric("CellBinsFeatureCorrelation", signature = "object",
+           function(object, labels = NULL, method = "pearson") {
+               standardGeneric("CellBinsFeatureCorrelation")
+           })
