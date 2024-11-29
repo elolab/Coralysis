@@ -233,8 +233,7 @@ CellBinsFeatureCorrelation.SingleCellExperiment <- function(object, labels, meth
     # Check input
     stopifnot(is(object, "SingleCellExperiment"),
               (is.null(labels) || (is.character(labels) && all(labels %in% object$label))), 
-              (is.character(method) && any(method %in% c("pearson", "kendall", "spearman"))),
-              (is.character(group) && (length(group)==1) && (group %in% colnames(metadata(object)$iloreg))))
+              (is.character(method) && any(method %in% c("pearson", "kendall", "spearman"))))
     
     # Retrieve 'labels' if not given
     if (!is.factor(object$label)) {
