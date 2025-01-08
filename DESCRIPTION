@@ -16,12 +16,12 @@ Authors@R: c(person("António", "Sousa",
              role=c("aut")))
 License: GPL-3
 Imports: 
-    Matrix (<=1.6.5), 
+    Matrix (<= 1.6.5), 
     parallel, 
     foreach, 
     aricode, 
     LiblineaR, 
-    SparseM (<=1.82), 
+    SparseM (<= 1.82), 
     ggplot2, 
     cowplot, 
     RSpectra, 
