@@ -21,7 +21,7 @@ Imports:
     foreach, 
     aricode, 
     LiblineaR, 
-    SparseM (<=1.81), 
+    SparseM (<=1.82), 
     ggplot2, 
     cowplot, 
     RSpectra, 
