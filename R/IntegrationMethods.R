@@ -85,8 +85,9 @@
 #' (randomly sample two clusters out of every cluster previously found),
 #' \code{"cluster"} or \code{"cluster.batch"} (sample two clusters out of every 
 #' cluster previously found based on the cluster probability distribution across
-#' batches or per batch). By default \code{"cluster.batch"}. Change to \code{random}
-#' or \code{cluster} if \code{batch.label} is \code{NULL}.
+#' batches or per batch). By default \code{"cluster.batch"}. If \code{batch.label} 
+#' is \code{NULL}, it is automatically set to \code{cluster}. It can be set to 
+#' \code{random} if explicitly provided. 
 #' @param allow.free.k Allow free \code{k} (logical). Allow ICP algorithm to 
 #' decrease the \code{k} given in case it does not find \code{k} target clusters. 
 #' By default \code{TRUE}. 
@@ -132,6 +133,16 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
     if (!is(object,"SingleCellExperiment")) {
         stop("object must of 'sce' class")
         return(object)
+    }
+    
+    if (!is.null(batch.label)) {
+        metadata(object)$iloreg$batch.label <- batch.label
+    } else {
+        if (divisive.method == "cluster.batch") {
+            cat("WARNING: Setting 'divisive.method' to 'cluster' as 'batch.label=NULL'.", 
+                "\nIf 'batch.label=NULL', 'divisive.method' can be one of: 'cluster', 'random'.")
+            divisive.method <- "cluster"
+        }
     }
     
     if (!(is.numeric(k) && (k > 1) && ((log2(k) %% 1) == 0))) {

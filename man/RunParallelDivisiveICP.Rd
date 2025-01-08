@@ -155,8 +155,9 @@ density sampling is performed in a batch wise manner.}
 (randomly sample two clusters out of every cluster previously found),
 \code{"cluster"} or \code{"cluster.batch"} (sample two clusters out of every 
 cluster previously found based on the cluster probability distribution across
-batches or per batch). By default \code{"cluster.batch"}. Change to \code{random}
-or \code{cluster} if \code{batch.label} is \code{NULL}.}
+batches or per batch). By default \code{"cluster.batch"}. If \code{batch.label} 
+is \code{NULL}, it is automatically set to \code{cluster}. It can be set to 
+\code{random} if explicitly provided.}
 
 \item{allow.free.k}{Allow free \code{k} (logical). Allow ICP algorithm to 
 decrease the \code{k} given in case it does not find \code{k} target clusters. 
