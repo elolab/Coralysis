@@ -48,9 +48,12 @@
 #' Set \code{1} to disable parallelism altogether or \code{0} to use all
 #' available threas except one. Default is \code{0}.
 #' @param icp.batch.size A positive integer that specifies how many cells 
-#' to randomly select for each ICP run from the complete data set. 
-#' This is a new feature intended to speed up the process
-#' with larger data sets. Default is \code{Inf}, which means using all cells.
+#' to randomly select. It behaves differently depending on \code{build.train.set}. 
+#' If \code{build.train.set=FALSE}, it randomly samples cells for each ICP run 
+#' from the complete dataset. If \code{build.train.set=TRUE}, it randomly samples 
+#' cells once, before building the training set with the sampled cells (per batch 
+#' if \code{batch.label=NULL}).
+#' Default is \code{Inf}, which means using all cells.
 #' @param train.with.bnn Train data with batch nearest neighbors. Default is 
 #' \code{TRUE}. Only used if \code{batch.label} is given.   
 #' @param train.k.nn Train data with batch nearest neighbors using \code{k} 
@@ -66,7 +69,7 @@
 #' the same value is given for all.    
 #' @param build.train.set Logical specifying if a training set should be built 
 #' from the data or the whole data should be used for training. By default 
-#' \code{FALSE}.
+#' \code{TRUE}.
 #' @param build.train.params A list of parameters to be passed to the function
 #' \code{AggregateDataByBatch()}.
 #' @param scale.by A character specifying if the data should be scaled by \code{cell}
@@ -198,7 +201,38 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
     metadata(object)$iloreg$divisive.icp <- TRUE
     
     if (build.train.set) {
-        build.train.params <- c(list(object = object, batch.label = batch.label), build.train.params)
+        if (!is.infinite(icp.batch.size)) { # check if dataset should be sampled
+            if (!is.null(batch.label)) {
+                # sample cells per batch dataset
+                cellidx.by.batch <- split(x = 1:ncol(object), f = object[[batch.label]])
+                ncells.by.batch <- unlist(lapply(X = cellidx.by.batch, FUN = length))
+                ncells.by.batch[ncells.by.batch > icp.batch.size] <- icp.batch.size
+                if (any(ncells.by.batch < icp.batch.size)) { # check if any batch dataset has lower number of cells than icp.batch.size
+                    cat("WARNING: the number of cells in one or more batch dataset(s)", 
+                        "\nis lower than the 'icp.batch.size':", icp.batch.size,
+                        "\nUsing all the available cells instead:\n", 
+                        ncells.by.batch[ncells.by.batch < icp.batch.size])
+                } 
+                pick.cells <- lapply(X = seq_along(ncells.by.batch), FUN = function(x) { # sample cell barcode names per batch dataset
+                    sample(x = cellidx.by.batch[[x]], size = ncells.by.batch[[x]], replace = FALSE) 
+                })
+                pick.cells <- unlist(pick.cells)
+            } else {
+                # Sample complete dataset
+                if (ncol(object) < icp.batch.size) {
+                    message(cat("WARNING: the number of cells in current batch is", 
+                                ncol(object), "lower than the 'icp.batch.size' -", 
+                                icp.batch.size, "\nUsing all the available cells instead:", 
+                                ncol(object)))
+                    icp.batch.size <- ncol(object)
+                }
+                pick.cells <- sample(x = 1:ncol(object), size = icp.batch.size, replace = FALSE) 
+            }
+            icp.batch.size <- Inf # prevent recurrent sampling below in 'RunDivisiveICP'
+        } else { # use all the cells from all the batch datasets
+            pick.cells <- 1:ncol(object)
+        }
+        build.train.params <- c(list(object = object[,pick.cells], batch.label = batch.label), build.train.params)
         clustered.object <- do.call(AggregateDataByBatch, build.train.params)
         dataset <- t(logcounts(clustered.object))
     } else {
@@ -413,11 +447,9 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
                            cluster.seed = NULL, divisive.method = "random", 
                            allow.free.k = FALSE, ari.cutoff = 0.5) {
     
-    #first_round <- TRUE
     metrics <- NULL
     idents <- list()
     iterations <- 1
-    #probs <- NULL
     
     if ((!is.infinite(icp.batch.size)) & icp.batch.size > 2) {
         if (nrow(normalized.data) < icp.batch.size) {

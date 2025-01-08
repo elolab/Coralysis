@@ -110,9 +110,12 @@ Set \code{1} to disable parallelism altogether or \code{0} to use all
 available threas except one. Default is \code{0}.}
 
 \item{icp.batch.size}{A positive integer that specifies how many cells 
-to randomly select for each ICP run from the complete data set. 
-This is a new feature intended to speed up the process
-with larger data sets. Default is \code{Inf}, which means using all cells.}
+to randomly select. It behaves differently depending on \code{build.train.set}. 
+If \code{build.train.set=FALSE}, it randomly samples cells for each ICP run 
+from the complete dataset. If \code{build.train.set=TRUE}, it randomly samples 
+cells once, before building the training set with the sampled cells (per batch 
+if \code{batch.label=NULL}).
+Default is \code{Inf}, which means using all cells.}
 
 \item{train.with.bnn}{Train data with batch nearest neighbors. Default is 
 \code{TRUE}. Only used if \code{batch.label} is given.}
@@ -132,7 +135,7 @@ the same value is given for all.}
 
 \item{build.train.set}{Logical specifying if a training set should be built 
 from the data or the whole data should be used for training. By default 
-\code{FALSE}.}
+\code{TRUE}.}
 
 \item{build.train.params}{A list of parameters to be passed to the function
 \code{AggregateDataByBatch()}.}
