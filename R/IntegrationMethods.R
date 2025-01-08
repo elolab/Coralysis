@@ -10,10 +10,10 @@
 #' in the cell metadata \code{colData(object)} with the batch labels (\code{character} 
 #' or \code{factor}) to use. The variable provided must not contain \code{NAs}.
 #' By default \code{NULL}, i.e., cells are sampled evenly regardless their batch. 
-#' @param k A positive integer greater or equal to \code{2}, denoting
-#' the number of clusters in Iterative Clustering Projection (ICP).
-#' Decreasing \code{k} leads to smaller cell populations diversity
-#' and vice versa. Default is \code{16}.
+#' @param k A positive integer power of two, i.e., \code{2**n}, where \code{n>0},
+#' specifying the number of clusters in the last Iterative Clustering Projection (ICP)
+#' round. Decreasing \code{k} leads to smaller cell populations diversity and vice versa. 
+#' Default is \code{16}, i.e., the divisive clustering 2 -> 4 -> 8 -> 16 is performed. 
 #' @param d A numeric greater than \code{0} and smaller than \code{1} that
 #' determines how many cells \code{n} are down- or oversampled from each cluster
 #' into the training data (\code{n=N/k*d}), where \code{N} is the total number
@@ -131,9 +131,8 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
         return(object)
     }
     
-    if (!is.numeric(k) | all(k < 2) | all(k%%1 != 0))
-    {
-        stop("k must be positive integer(s) and greater than 1")
+    if (!(is.numeric(k) && (k > 1) && ((log2(k) %% 1) == 0))) {
+        stop("k must be a positive integer power of two")
     } else {
         metadata(object)$iloreg$k <- k
     }
@@ -349,8 +348,10 @@ setMethod("RunParallelDivisiveICP", signature(object = "SingleCellExperiment"),
 #' given in \code{normalized.data}. The character batch labels need to be named
 #' with the cells names given in the rows of \code{normalized.data}. 
 #' By default \code{NULL}, i.e., cells are sampled evenly regardless their batch. 
-#' @param k A positive integer greater or equal to 2, denoting the number of
-#' clusters in ICP. Default is \code{8}.
+#' @param k A positive integer power of two, i.e., \code{2**n}, where \code{n>0},
+#' specifying the number of clusters in the last Iterative Clustering Projection (ICP)
+#' round. Decreasing \code{k} leads to smaller cell populations diversity and vice versa. 
+#' Default is \code{16}, i.e., the divisive clustering 2 -> 4 -> 8 -> 16 is performed. 
 #' @param d A numeric that defines how many cells per cluster should be
 #' down- and oversampled (d in ceiling(N/k*d)), when stratified.downsampling=FALSE,
 #' or what fraction should be downsampled in the stratified approach
@@ -405,7 +406,7 @@ setMethod("RunParallelDivisiveICP", signature(object = "SingleCellExperiment"),
 #' @import SparseM
 #'
 RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL, 
-                           k = 8, d = 0.3, r = 5, C = 5,
+                           k = 16, d = 0.3, r = 5, C = 5,
                            reg.type = "L1", max.iter = 200, 
                            icp.batch.size=Inf, train.with.bnn = TRUE, 
                            train.k.nn = 10, train.k.nn.prop = NULL, 

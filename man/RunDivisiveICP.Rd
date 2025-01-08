@@ -7,7 +7,7 @@
 RunDivisiveICP(
   normalized.data = NULL,
   batch.label = NULL,
-  k = 8,
+  k = 16,
   d = 0.3,
   r = 5,
   C = 5,
@@ -33,8 +33,10 @@ given in \code{normalized.data}. The character batch labels need to be named
 with the cells names given in the rows of \code{normalized.data}. 
 By default \code{NULL}, i.e., cells are sampled evenly regardless their batch.}
 
-\item{k}{A positive integer greater or equal to 2, denoting the number of
-clusters in ICP. Default is \code{8}.}
+\item{k}{A positive integer power of two, i.e., \code{2**n}, where \code{n>0},
+specifying the number of clusters in the last Iterative Clustering Projection (ICP)
+round. Decreasing \code{k} leads to smaller cell populations diversity and vice versa. 
+Default is \code{16}, i.e., the divisive clustering 2 -> 4 -> 8 -> 16 is performed.}
 
 \item{d}{A numeric that defines how many cells per cluster should be
 down- and oversampled (d in ceiling(N/k*d)), when stratified.downsampling=FALSE,

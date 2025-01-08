@@ -64,10 +64,10 @@ in the cell metadata \code{colData(object)} with the batch labels (\code{charact
 or \code{factor}) to use. The variable provided must not contain \code{NAs}.
 By default \code{NULL}, i.e., cells are sampled evenly regardless their batch.}
 
-\item{k}{A positive integer greater or equal to \code{2}, denoting
-the number of clusters in Iterative Clustering Projection (ICP).
-Decreasing \code{k} leads to smaller cell populations diversity
-and vice versa. Default is \code{16}.}
+\item{k}{A positive integer power of two, i.e., \code{2**n}, where \code{n>0},
+specifying the number of clusters in the last Iterative Clustering Projection (ICP)
+round. Decreasing \code{k} leads to smaller cell populations diversity and vice versa. 
+Default is \code{16}, i.e., the divisive clustering 2 -> 4 -> 8 -> 16 is performed.}
 
 \item{d}{A numeric greater than \code{0} and smaller than \code{1} that
 determines how many cells \code{n} are down- or oversampled from each cluster
