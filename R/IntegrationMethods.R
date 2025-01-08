@@ -140,7 +140,8 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
     } else {
         if (divisive.method == "cluster.batch") {
             cat("WARNING: Setting 'divisive.method' to 'cluster' as 'batch.label=NULL'.", 
-                "\nIf 'batch.label=NULL', 'divisive.method' can be one of: 'cluster', 'random'.")
+                "\nIf 'batch.label=NULL', 'divisive.method' can be one of: 'cluster', 'random'.", 
+                "\n")
             divisive.method <- "cluster"
         }
     }
