@@ -1,9 +1,6 @@
-#' @title Run ICP divisive clustering parallerly with increasing number of Ks
+#' @title Multi-level integration
 #'
-#' @description
-#' This functions runs in parallel \code{L} ICP runs, which is the computational
-#' bottleneck of ILoReg2. With ~ 3,000 cells this step should be completed
-#' in ~ 2 h and ~ 1 h with 3 and 12 logical processors (threads), respectively.
+#' @description Run divisive ICP clustering in parallel in order to perform multi-level integration.
 #'
 #' @param object An object of \code{SingleCellExperiment} class.
 #' @param batch.label A variable name (of class \code{character}) available 
@@ -52,8 +49,8 @@
 #' If \code{build.train.set=FALSE}, it randomly samples cells for each ICP run 
 #' from the complete dataset. If \code{build.train.set=TRUE}, it randomly samples 
 #' cells once, before building the training set with the sampled cells (per batch 
-#' if \code{batch.label=NULL}).
-#' Default is \code{Inf}, which means using all cells.
+#' if \code{batch.label} different than \code{NULL}). Default is \code{Inf}, 
+#' which means using all cells.
 #' @param train.with.bnn Train data with batch nearest neighbors. Default is 
 #' \code{TRUE}. Only used if \code{batch.label} is given.   
 #' @param train.k.nn Train data with batch nearest neighbors using \code{k} 
@@ -71,7 +68,7 @@
 #' from the data or the whole data should be used for training. By default 
 #' \code{TRUE}.
 #' @param build.train.params A list of parameters to be passed to the function
-#' \code{AggregateDataByBatch()}.
+#' \code{AggregateDataByBatch()}. Only provided if \code{build.train.set} is \code{TRUE}. 
 #' @param scale.by A character specifying if the data should be scaled by \code{cell}
 #' or by \code{gene} before training. Default is \code{NULL}, i.e., the data is 
 #' not scaled before training.
@@ -99,7 +96,7 @@
 #'
 #' @name RunParallelDivisiveICP
 #'
-#' @return an object of \code{SingleCellExperiment} class
+#' @return A \code{SingleCellExperiment} object.
 #'
 #' @keywords iterative clustering projection ICP logistic regression LIBLINEAR
 #'
@@ -115,6 +112,18 @@
 #' @import SparseM
 #' @importFrom SingleCellExperiment logcounts
 #' @importFrom methods is
+#' 
+#' @examples
+#' # Packages
+#' library("SingleCellExperiment")
+#' library("Coralysis")
+#' 
+#' # Prepare data
+#' pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
 #'
 RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label, 
                                                         k, d, L, r, C,
@@ -131,12 +140,12 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
                                                         verbose) {
     
     if (!is(object,"SingleCellExperiment")) {
-        stop("object must of 'sce' class")
+        stop("object must be of 'sce' class")
         return(object)
     }
     
     if (!is.null(batch.label)) {
-        metadata(object)$iloreg$batch.label <- batch.label
+        metadata(object)$coralysis$batch.label <- batch.label
     } else {
         if (divisive.method == "cluster.batch") {
             cat("WARNING: Setting 'divisive.method' to 'cluster' as 'batch.label=NULL'.", 
@@ -149,73 +158,124 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
     if (!(is.numeric(k) && (k > 1) && ((log2(k) %% 1) == 0))) {
         stop("k must be a positive integer power of two")
     } else {
-        metadata(object)$iloreg$k <- k
+        metadata(object)$coralysis$k <- k
     }
     
-    if (!is.numeric(d) | d >= 1 | d <= 0)
-    {
+    if (!is.numeric(d) | d >= 1 | d <= 0) {
         stop("d must be a numeric and in the range of (0,1)")
     } else {
-        metadata(object)$iloreg$d <- d
+        metadata(object)$coralysis$d <- d
     }
     
-    if (!is.numeric(L) | L <= 0 | L%%1!=0)
-    {
+    if (!is.numeric(L) | L <= 0 | L%%1!=0) {
         stop("L must be a positive integer and greater than 0")
     } else {
-        metadata(object)$iloreg$L <- L
+        metadata(object)$coralysis$L <- L
     }
     
-    if (!is.numeric(r) | r <= 0 | r%%1!=0)
-    {
+    if (!is.numeric(r) | r <= 0 | r%%1!=0) {
         stop("r must be a positive integer and greater than 0")
     } else {
-        metadata(object)$iloreg$r <- r
+        metadata(object)$coralysis$r <- r
     }
     
-    if (!is.numeric(C) | C <= 0)
-    {
+    if (!is.numeric(C) | C <= 0) {
         stop("C must be a numeric and greater than 0")
     } else {
-        metadata(object)$iloreg$C <- C
+        metadata(object)$coralysis$C <- C
     }
     
-    if (!is.character(reg.type) | (reg.type != "L1" & reg.type != "L2"))
-    {
+    if (!is.character(reg.type) | (reg.type != "L1" & reg.type != "L2")) {
         stop("reg.type parameter must be either 'L1' or 'L2'")
     } else {
-        metadata(object)$iloreg$reg.type <- reg.type
+        metadata(object)$coralysis$reg.type <- reg.type
     }
     
-    if (!is.numeric(max.iter) | max.iter <= 0 | max.iter%%1 != 0)
-    {
+    if (!is.numeric(max.iter) | max.iter <= 0 | max.iter%%1 != 0) {
         stop("max.iter must be a positive integer and greater than 0")
     } else {
-        metadata(object)$iloreg$max.iter <- max.iter
+        metadata(object)$coralysis$max.iter <- max.iter
     }
     
-    if (!is.numeric(threads) | threads < 0 | threads%%1 != 0)
-    {
+    if (!is.numeric(threads) | threads < 0 | threads%%1 != 0) {
         stop("threads must be a positive integer or 0 (0 = use all available - 1)")
     } else {
-        metadata(object)$iloreg$threads <- threads
+        metadata(object)$coralysis$threads <- threads
     }
     
-    if (!is.infinite(icp.batch.size))
-    {
-        if (!is.numeric(icp.batch.size) | icp.batch.size <= 2 | icp.batch.size%%1 != 0)
-        {
+    if (!is.infinite(icp.batch.size)) {
+        if (!is.numeric(icp.batch.size) | icp.batch.size <= 2 | icp.batch.size%%1 != 0) {
             stop("icp.batch.size must be a positive integer > 2 or Inf (0 = use all cells in ICP)")
-        } else {
-            metadata(object)$iloreg$icp.batch.size <- icp.batch.size
+        }
+    } else {
+        metadata(object)$coralysis$icp.batch.size <- icp.batch.size
+    }
+    
+    if (!is.logical(build.train.set)) {
+        stop("'build.train.set' must be logical")
+    } else {
+        metadata(object)$coralysis$build.train.set <- build.train.set
+        
+        if (build.train.set) {
+            if (!is.list(build.train.params)) {
+                stop("'build.train.params' must be a list")
+            }
+            metadata(object)$coralysis$build.train.params <- build.train.params
         }
     }
-    metadata(object)$iloreg$divisive.icp <- TRUE
+    
+    if(!(is.null(scale.by) || ((length(scale.by)==1) && (scale.by %in% c("cell", "gene"))))) {
+        stop("'scale.by' must be NULL or one of 'cell'/'gene'")
+    } else {
+        metadata(object)$coralysis$scale.by <- scale.by
+    }
+    
+    if (!is.logical(use.cluster.seed)) {
+        stop("'use.cluster.seed' must be logical")
+    } else {
+        metadata(object)$coralysis$use.cluster.seed <- use.cluster.seed
+    }
+    
+    if (!is.logical(allow.free.k)) {
+        stop("'allow.free.k' must be logical")
+    } else {
+        metadata(object)$coralysis$allow.free.k <- allow.free.k
+    }
+    
+    if (!(is.numeric(ari.cutoff) && (length(ari.cutoff)==1) && ((ari.cutoff >= 0) || (ari.cutoff < 1)))) {
+        stop("'ari.cutoff' must be a numeric value ranging between [0,1[")
+    } else {
+        metadata(object)$coralysis$ari.cutoff <- ari.cutoff
+    }
+    
+    if (!(is.character(divisive.method) && (length(divisive.method)==1) && (divisive.method %in% c("random", "cluster", "cluster.batch")))) {
+        stop("'divisive.method' must be a character among one of 'random'/'cluster'/'cluster.batch'")
+    } else {
+        metadata(object)$coralysis$divisive.method <- divisive.method
+    }
+    
+    if (!is.logical(train.with.bnn)) {
+        stop("'train.with.bnn' must be logical")
+    } else {
+        metadata(object)$coralysis$train.with.bnn <- train.with.bnn
+        if (!(is.null(train.k.nn.prop) || (is.numeric(train.k.nn.prop) && (length(train.k.nn.prop)==1) && ((train.k.nn.prop > 0) || (train.k.nn.prop < 1))))) {
+            stop("'train.k.nn.prop' must be NULL or ranging between ]0,1[")
+        } else {
+            metadata(object)$coralysis$train.k.nn.prop <- train.k.nn.prop
+            if (is.null(train.k.nn.prop) && !(is.numeric(train.k.nn) && (length(train.k.nn)==1) && (train.k.nn%%1 == 0))) {
+                stop("'train.k.nn' must be an integer")
+            } else {
+                metadata(object)$coralysis$train.k.nn <- train.k.nn
+            }
+        }
+    }
+    metadata(object)$coralysis$divisive.icp <- TRUE
     
     if (build.train.set) {
         if (!is.infinite(icp.batch.size)) { # check if dataset should be sampled
             if (!is.null(batch.label)) {
                 # sample cells per batch dataset
+                message("\nDownsampling dataset by batch using random sampling.")
                 cellidx.by.batch <- split(x = 1:ncol(object), f = object[[batch.label]])
                 ncells.by.batch <- unlist(lapply(X = cellidx.by.batch, FUN = length))
                 ncells.by.batch[ncells.by.batch > icp.batch.size] <- icp.batch.size
@@ -231,6 +291,7 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
                 pick.cells <- unlist(pick.cells)
             } else {
                 # Sample complete dataset
+                message("\nDownsampling overall dataset using random sampling.")
                 if (ncol(object) < icp.batch.size) {
                     message(cat("WARNING: the number of cells in current batch is", 
                                 ncol(object), "lower than the 'icp.batch.size' -", 
@@ -244,8 +305,10 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
         } else { # use all the cells from all the batch datasets
             pick.cells <- 1:ncol(object)
         }
+        message("\nBuilding training set...")
         build.train.params <- c(list(object = object[,pick.cells], batch.label = batch.label), build.train.params)
         clustered.object <- do.call(AggregateDataByBatch, build.train.params)
+        message("Training set successfully built.")
         dataset <- t(logcounts(clustered.object))
     } else {
         dataset <- t(logcounts(object))
@@ -263,18 +326,20 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
     }
     
     if (use.cluster.seed) {
+        message("\nComputing cluster seed.")
         cluster.seed <- SamplePCACells(data = dataset, batch = batch.label, 
                                        q.split = 0.5, p=30, use.pc="PC1", 
                                        center=TRUE, scale.=TRUE)
     } else {
         cluster.seed <- NULL
     }
-    metadata(object)$iloreg$scale.by <- scale.by
+    metadata(object)$coralysis$scale.by <- scale.by
     if (!is.null(scale.by)) {
+        message(cat("Scaling data by", scale.by, ".\n"))
         if (scale.by=="cell") {
             dataset <- Scale(x = as(dataset, "sparseMatrix"), scale.by="row")
         }
-        if (scale.by=="gene"){
+        if (scale.by=="gene") {
             dataset <- ScaleByBatch(x = dataset, batch = batch.label)
         }
     }
@@ -298,6 +363,7 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
         clusterCall(cl, function(x) .libPaths(x), .libPaths()) # Exporting .libPaths from master to the workers
     }
     
+    message("\nInitializing divisive ICP clustering...\n")
     if (parallelism) {
         pb <- txtProgressBar(min = 1, max = L, style = 3)
         progress <- function(n) setTxtProgressBar(pb, n)
@@ -308,7 +374,7 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
                        .maxcombine = 1000,
                        .inorder = FALSE,
                        .multicombine = TRUE,
-                       .packages=c("ILoReg2", "parallel"),
+                       .packages=c("Coralysis", "parallel"),
                        .options.snow = opts)  %dorng% {
                            tryCatch(expr = {
                                message(paste0("\nICP run: ", task))
@@ -344,13 +410,15 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
             })
         }
     }
-    metadata(object)$iloreg$metrics <-
+    message("\nDivisive ICP clustering completed successfully.")
+    metadata(object)$coralysis$metrics <-
         lapply(out, function(x) x$metrics)
-    metadata(object)$iloreg$metrics <- unlist(metadata(object)$iloreg$metrics, recursive = FALSE)
-    metadata(object)$iloreg$models <-
+    metadata(object)$coralysis$metrics <- unlist(metadata(object)$coralysis$metrics, recursive = FALSE)
+    metadata(object)$coralysis$models <-
         lapply(out, function(x) x$model)
-    metadata(object)$iloreg$models <- unlist(metadata(object)$iloreg$models, recursive = FALSE)
+    metadata(object)$coralysis$models <- unlist(metadata(object)$coralysis$models, recursive = FALSE)
     
+    message("\nPredicting cell cluster probabilities using ICP models...")
     if (build.train.set) {
         test.data <- t(logcounts(object))
         colnames(test.data) <- paste0("W", 1:ncol(test.data))
@@ -364,15 +432,17 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
                 test.data <- ScaleByBatch(x = test.data, batch = batch.label)
             }
         }
-        metadata(object)$iloreg$joint.probability <- 
-            lapply(metadata(object)$iloreg$models, function(x) {
+        metadata(object)$coralysis$joint.probability <- 
+            lapply(metadata(object)$coralysis$models, function(x) {
                 predict(x, test.data, proba=TRUE)$probabilities
             })
     } else {
-        metadata(object)$iloreg$joint.probability <-
+        metadata(object)$coralysis$joint.probability <-
             unlist(lapply(out, function(x) x$probabilities), recursive = FALSE)
     }
-
+    message("Prediction of cell cluster probabilities completed successfully.")
+    message("\nMulti-level integration completed successfully.")
+    
     return(object)
 }
 #' @rdname RunParallelDivisiveICP
@@ -380,12 +450,13 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
 setMethod("RunParallelDivisiveICP", signature(object = "SingleCellExperiment"),
           RunParallelDivisiveICP.SingleCellExperiment)
 
-#' @title Iterative Clustering Projection (ICP) divisive clustering
+#' @title Divisive Iterative Clustering Projection (ICP) clustering
 #'
 #' @description
-#' The function implements Iterative Clustering Projection (ICP): a
-#' supervised learning-based clustering, which maximizes clustering similarity
-#' between the clustering and its projection by logistic regression.
+#' The function implements divisive Iterative Clustering Projection (ICP) clustering: 
+#' a supervised learning-based clustering, which maximizes clustering similarity
+#' between the clustering and its projection by logistic regression, doing it in 
+#' a divisive clustering manner.
 #'
 #' @param normalized.data A sparse matrix (dgCMatrix) containing
 #' normalized gene expression data with cells in rows and genes in columns.
@@ -538,7 +609,7 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
             names(res_prediction$predictions) <- row.names(normalized.data)
             rownames(res_prediction$probabilities) <- row.names(normalized.data)
             
-            message(paste0("probability matrix dimensions = ",paste(dim(res_prediction$probabilities),collapse = " ")))
+            message(paste0("probability matrix dimensions = ",paste(dim(res_prediction$probabilities), collapse = " ")))
             
             # Projected clusters
             ident_2 <- res_prediction$predictions

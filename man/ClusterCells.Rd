@@ -18,7 +18,7 @@ data. By default \code{TRUE}.}
 \item{emb.name}{Which embedding to use. By default \code{"PCA"}.}
 }
 \value{
-Clusters.
+A SingleCellExperiment object with clusters.
 }
 \description{
 The function clusters cells with the K-means++ algorithm

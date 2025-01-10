@@ -1,7 +1,7 @@
 #' @export
-setGeneric("PrepareILoReg2",signature = "object",
+setGeneric("PrepareData",signature = "object",
            function(object) {
-             standardGeneric("PrepareILoReg2")
+             standardGeneric("PrepareData")
            })
 
 #' @export
@@ -269,7 +269,7 @@ setGeneric("ReferenceMapping", signature = c("ref", "query"),
            function(ref, query, ref.label,
                     scale.query.by = NULL, 
                     project.umap = FALSE, 
-                    select.icp.models = metadata(ref)$iloreg$pca.params$select.icp.tables, 
+                    select.icp.models = metadata(ref)$coralysis$pca.params$select.icp.tables, 
                     k.nn = 10, 
                     dimred.name.prefix = "") {
                standardGeneric("ReferenceMapping")

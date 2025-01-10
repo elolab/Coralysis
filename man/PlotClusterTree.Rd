@@ -29,7 +29,7 @@ PlotClusterTree.SingleCellExperiment(
 \arguments{
 \item{object}{An object of \code{SingleCellExperiment} class.}
 
-\item{icp.run}{ICP run(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+\item{icp.run}{ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
 retrieve a specific set of tables.}
 

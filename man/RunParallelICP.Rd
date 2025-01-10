@@ -138,13 +138,13 @@ an object of \code{SingleCellExperiment} class
 }
 \description{
 This functions runs in parallel \code{L} ICP runs, which is the computational
-bottleneck of ILoReg2. With ~ 3,000 cells this step should be completed
+bottleneck of Coralysis. With ~ 3,000 cells this step should be completed
 in ~ 2 h and ~ 1 h with 3 and 12 logical processors (threads), respectively.
 }
 \examples{
 library(SingleCellExperiment)
 sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-sce <- PrepareILoReg2(sce)
+sce <- PrepareData(sce)
 ## These settings are just to accelerate the example, use the defaults.
 sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,r=1,k=5)
 

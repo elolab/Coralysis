@@ -1,15 +1,13 @@
-Package: ILoReg2
+Package: Coralysis
 Type: Package
-Title: LoReg2: sensitive cell population identification through multi-level integration of single-cell RNA-seq data
-Version: 2.0.0
-Description: ILoReg2 is an R package for sensitive identification of shared cell types/states across heterogeneous single-cell RNA-sequencing (scRNA-seq) datasets through “puzzle” integration. 
-             The method involves multiple divisive clustering rounds to blend in the batch effect and to highlight the biological signal, utilizing our Iterative Clustering Projection (ICP) algorithm to progressively focus on low- to high-level features. 
-             In addition, the tool enables training a reference model for projecting and annotating new datasets through reference-mapping.
+Title: Coralysis: sensitive identification of cell types and states in single-cell data via multi-level integration
+Version: 0.1.0
+Description: Coralysis is an R package featuring a multi-level integration algorithm for sensitive integration, reference-mapping, and cell state identification in single-cell data.
 Authors@R: c(person("António", "Sousa",
              email = "aggode@utu.fi",
              role=c("cre", "aut")),
              person("Johannes", "Smolander",
-             role=c("aut")),
+             role=c("ctb", "aut")),
              person("Sini", "Junttila",
              role=c("aut")),
              person("Laura L", "Elo",
@@ -63,5 +61,5 @@ biocViews: SingleCell, Software, Clustering, DimensionReduction,
            DataRepresentation, DifferentialExpression, Transcription,
            GeneExpression
 NeedsCompilation: no
-URL: https://github.com/elolab/ILoReg2
-BugReports: https://github.com/elolab/ILoReg2/issues
+URL: https://github.com/elolab/Coralysis
+BugReports: https://github.com/elolab/Coralysis/issues

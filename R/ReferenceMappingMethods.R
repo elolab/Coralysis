@@ -2,9 +2,9 @@
 #'
 #' @description
 #' This function allows to project new query data sets onto a reference built 
-#' with ILoReg as well as transfer cell labels from the reference to queries. 
+#' with Coralysis as well as transfer cell labels from the reference to queries. 
 #'
-#' @param ref An object of \code{SingleCellExperiment} class trained with ILoReg
+#' @param ref An object of \code{SingleCellExperiment} class trained with Coralysis
 #' and after running \code{RunPCA(..., return.model = TRUE)} function. 
 #' @param query An object of \code{SingleCellExperiment} class to project onto 
 #' \code{ref}.
@@ -17,7 +17,7 @@
 #' default \code{FALSE}. If \code{TRUE}, the \code{ref} object needs to have a 
 #' UMAP embedding obtained with \code{RunUMAP(..., return.model = TRUE)} function. 
 #' @param selecte.icp.models Select the reference ICP models to use for query 
-#' cluster probability prediction. By default \code{metadata(ref)$iloreg$pca.params$select.icp.tables}, 
+#' cluster probability prediction. By default \code{metadata(ref)$coralysis$pca.params$select.icp.tables}, 
 #' i.e., the models selected to compute the reference PCA are selected. 
 #' If \code{NULL} all are used. Otherwise a numeric vector should be given
 #' to select the ICP models of interest.    
@@ -47,10 +47,10 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
               (ref.label %in% colnames(colData(ref))), any(is.null(scale.query.by), (scale.query.by %in% c("cell", "gene"))), 
               is.logical(project.umap), any(is.null(select.icp.models), is.numeric(select.icp.models)), 
               all(is.numeric(k.nn), (length(k.nn)==1)), is.character(dimred.name.prefix))
-    if (is.null(metadata(ref)$iloreg$pca.model)) {
+    if (is.null(metadata(ref)$coralysis$pca.model)) {
         stop("PCA model does not exist. Run 'RunPCA(...)' with 'return.model = TRUE'.")
     }
-    if (project.umap & is.null(metadata(ref)$iloreg$umap.model)) {
+    if (project.umap & is.null(metadata(ref)$coralysis$umap.model)) {
         stop("UMAP model does not exist. Run 'RunUMAP(...)' with 'return.model = TRUE'.")
     }
     
@@ -68,14 +68,14 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
     
     # Get model data
     if (is.null(select.icp.models)) {
-        n.icps <- length(metadata(ref)$iloreg$joint.probability)
+        n.icps <- length(metadata(ref)$coralysis$joint.probability)
         select.icp.models <- 1:n.icps
-        select.icp.tables <- metadata(ref)$iloreg$pca.params$select.icp.tables
+        select.icp.tables <- metadata(ref)$coralysis$pca.params$select.icp.tables
     } else {
-        select.icp.tables <- seq_along(metadata(ref)$iloreg$pca.params$select.icp.tables)
+        select.icp.tables <- seq_along(metadata(ref)$coralysis$pca.params$select.icp.tables)
     }
-    models <- metadata(ref)$iloreg$models[select.icp.models]
-    pca.model <- metadata(ref)$iloreg$pca.model
+    models <- metadata(ref)$coralysis$models[select.icp.models]
+    pca.model <- metadata(ref)$coralysis$pca.model
     
     # Predict cluster probabilities
     query.data <- t(logcounts(query[ref.genes[pick.genes],]))
@@ -105,20 +105,20 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
                                prob = TRUE)
     
     # Add predictions to query object
-    metadata(query)$iloreg <- list()
-    metadata(query)$iloreg$joint.probability <- query.probs   
+    metadata(query)$coralysis <- list()
+    metadata(query)$coralysis$joint.probability <- query.probs   
     reducedDim(x = query, type = paste0(dimred.name.prefix, "PCA")) <- query.pca
     query[["ilo_labels"]] <- preds.labels
     query[["ilo_labels_prob"]] <- attr(preds.labels, "prob")
     
     # Project data onto ref UMAP
     if (project.umap) {
-        umap.model <- metadata(ref)$iloreg$umap.model
+        umap.model <- metadata(ref)$coralysis$umap.model
         if (is(umap.model, "umap")) { # from 'umap::umap' - class 'umap'
-            dims <- seq_len(ncol(metadata(ref)$iloreg$umap.model$data))
+            dims <- seq_len(ncol(metadata(ref)$coralysis$umap.model$data))
             query.umap <- predict(umap.model, query.pca[,dims])
         } else { # from 'uwot::umap' - class 'list'
-            dims <- seq_len(metadata(ref)$iloreg$umap.model$metric$euclidean$ndim)
+            dims <- seq_len(metadata(ref)$coralysis$umap.model$metric$euclidean$ndim)
             query.umap <- uwot::umap_transform(X = query.pca[,dims], model = umap.model)
         }
         row.names(query.umap) <- colnames(query)

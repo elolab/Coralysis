@@ -50,7 +50,7 @@ over the nonliner dimensionality reduction, e.g. t-SNE or UMAP.
 \examples{
 library(SingleCellExperiment)
 sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-sce <- PrepareILoReg2(sce)
+sce <- PrepareData(sce)
 ## These settings are just to accelerate the example, use the defaults.
 sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 sce <- RunPCA(sce,p=5)
@@ -58,7 +58,7 @@ sce <- RunTSNE(sce)
 sce <- HierarchicalClustering(sce)
 sce <- SelectKClusters(sce,K=5)
 ## Change the names to the first five alphabets and Visualize the annotation.
-custom_annotation <- plyr::mapvalues(metadata(sce)$iloreg$clustering.manual,
+custom_annotation <- plyr::mapvalues(metadata(sce)$coralysis$clustering.manual,
                                      c(1,2,3,4,5),
                                      LETTERS[1:5])
 AnnotationScatterPlot(sce,

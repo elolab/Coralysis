@@ -16,14 +16,14 @@ GetFeatureCoefficients.SingleCellExperiment(
 }
 \arguments{
 \item{object}{An object of \code{SingleCellExperiment} class with ICP cell 
-cluster probability tables saved in \code{metadata(object)$iloreg$joint.probability}. 
+cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
 After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}.}
 
-\item{icp.run}{ICP run(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+\item{icp.run}{ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
 retrieve a specific set of tables.}
 
-\item{icp.round}{ICP round(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+\item{icp.round}{ICP round(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 By default \code{NULL}, i.e., all are retrieved. Only relevant if probabilities
 were obtained with the function \code{RunParallelDivisiveICP}, i.e., divisive ICP
 was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1}, 

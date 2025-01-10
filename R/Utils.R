@@ -264,14 +264,21 @@ RunICP <- function(normalized.data = NULL, batch.label = NULL,
 #' data. By default \code{TRUE}. 
 #' @param emb.name Which embedding to use. By default \code{"PCA"}. 
 #'
-#' @return Clusters.
+#' @return A SingleCellExperiment object with clusters.
 #'
 #' @keywords cluster
 #' 
 #' @importFrom flexclust kcca kccaFamily
 #'
 ClusterCells <- function(object, nclusters=500, use.emb=TRUE, emb.name="PCA") {
+    
+    # Check input params
+    stopifnot(is(object, "SingleCellExperiment"), 
+              (is.numeric(nclusters) && (nclusters%%1 == 0)), 
+              (is.logical(use.emb)))
+    
     if (use.emb) {
+        stopifnot(is.character(emb.name) && (length(emb.name)==1) && (emb.name %in% reducedDimNames(object)))
         data.cluster <- reducedDim(object, emb.name)
     } else {
         data.cluster <- t(logcounts(object))
@@ -654,7 +661,7 @@ LogisticRegression <- function(training.sparse.matrix = NULL,
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)

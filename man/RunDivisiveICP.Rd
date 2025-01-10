@@ -2,7 +2,7 @@
 % Please edit documentation in R/IntegrationMethods.R
 \name{RunDivisiveICP}
 \alias{RunDivisiveICP}
-\title{Iterative Clustering Projection (ICP) divisive clustering}
+\title{Divisive Iterative Clustering Projection (ICP) clustering}
 \usage{
 RunDivisiveICP(
   normalized.data = NULL,
@@ -98,9 +98,10 @@ A list that includes the probability matrix and the clustering
 similarity measures: ARI, NMI, etc.
 }
 \description{
-The function implements Iterative Clustering Projection (ICP): a
-supervised learning-based clustering, which maximizes clustering similarity
-between the clustering and its projection by logistic regression.
+The function implements divisive Iterative Clustering Projection (ICP) clustering: 
+a supervised learning-based clustering, which maximizes clustering similarity
+between the clustering and its projection by logistic regression, doing it in 
+a divisive clustering manner.
 }
 \keyword{ICP}
 \keyword{clustering}

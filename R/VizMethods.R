@@ -161,7 +161,7 @@ setMethod("PlotExpression", signature(object = "SingleCellExperiment"),
 #' @description Plot cluster tree by or cluster probability or categorical variable.
 #' 
 #' @param object An object of \code{SingleCellExperiment} class.
-#' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 #' By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
 #' retrieve a specific set of tables. 
 #' @param color.by Categorical variable available in \code{colData(object)} to 
@@ -190,9 +190,9 @@ PlotClusterTree.SingleCellExperiment <- function(object, icp.run, color.by, use.
                                                  seed.color, legend.title, return.data) {
     
     # Get probabilities for icp.run
-    divisive <- metadata(object)$iloreg$divisive
+    divisive <- metadata(object)$coralysis$divisive
     stopifnot(divisive)
-    k <- metadata(object)$iloreg$k
+    k <- metadata(object)$coralysis$k
     icp.round <- 1:log2(k)
     probs <- GetCellClusterProbability(object = object, icp.run = icp.run, icp.round = icp.round, concatenate = FALSE)
     

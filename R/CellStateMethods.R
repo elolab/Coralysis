@@ -3,14 +3,14 @@
 #' @description Bin cell cluster probability by a given cell label.
 #' 
 #' @param object An object of \code{SingleCellExperiment} class with ICP cell 
-#' cluster probability tables saved in \code{metadata(object)$iloreg$joint.probability}. 
+#' cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
 #' After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}. 
 #' @param label Label of interest available in \code{colData(object)} to group by the 
 #' bins of cell cluster probability. 
-#' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 #' By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
 #' retrieve a specific set of tables. 
-#' @param icp.round ICP round(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' @param icp.round ICP round(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 #' By default \code{NULL}, i.e., all are retrieved. Only relevant if probabilities
 #' were obtained with the function \code{RunParallelDivisiveICP}, i.e., divisive ICP
 #' was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1}, 
@@ -40,11 +40,11 @@ BinCellClusterProbability.SingleCellExperiment <- function(object, label, icp.ru
                                                            funs, bins, aggregate.bins.by, 
                                                            use.assay) {
     # Retrieve important params
-    L <- metadata(object)$iloreg$L
-    k <- metadata(object)$iloreg$k
+    L <- metadata(object)$coralysis$L
+    k <- metadata(object)$coralysis$k
     
     # Check input params
-    stopifnot(is(object, "SingleCellExperiment"), is(metadata(object)$iloreg$joint.probability, "list"), 
+    stopifnot(is(object, "SingleCellExperiment"), is(metadata(object)$coralysis$joint.probability, "list"), 
               is.numeric(L), is.numeric(k), any(is.null(icp.run), (is.numeric(icp.run) && all(icp.run <= L))), 
               any(is.null(icp.round), (is.numeric(icp.round))), 
               ((length(funs)==1) && is.character(funs) && (funs %in% c("mean", "median"))), 
@@ -85,7 +85,7 @@ BinCellClusterProbability.SingleCellExperiment <- function(object, label, icp.ru
     bins.by.label <- as.data.frame(cbind(colData(object), bins.by.label))
     sce <- SingleCellExperiment(assays = list("exp" = gexp.bins), 
                                 colData = DataFrame(col.data), 
-                                metadata = list("iloreg" = bins.by.label))
+                                metadata = list("coralysis" = bins.by.label))
     assayNames(sce) <- use.assay
     return(sce)
 }
@@ -127,7 +127,7 @@ setMethod("BinCellClusterProbability", signature(object = "SingleCellExperiment"
 CellClusterProbabilityDistribution.SingleCellExperiment <- function(object, label, group, probability) {
     
     # Check input 
-    stopifnot(is(object, "SingleCellExperiment"), is(metadata(object)$iloreg$joint.probability, "list"), 
+    stopifnot(is(object, "SingleCellExperiment"), is(metadata(object)$coralysis$joint.probability, "list"), 
               (is.character(label) && (length(label)==1) && (label %in% colnames(colData(object)))), 
               (is.character(group) && (length(group)==1) && (label %in% colnames(colData(object)))), 
               (is.character(probability) && (length(probability)==1) && 
@@ -181,11 +181,11 @@ setMethod("CellClusterProbabilityDistribution", signature(object = "SingleCellEx
 #'
 TabulateCellBinsByGroup.SingleCellExperiment <- function(object, group, relative, margin) {
     # Check input
-    stopifnot(is(object, "SingleCellExperiment"), is(metadata(object)$iloreg, "data.frame"), 
-              (is.character(group) && (length(group)==1) && (group %in% colnames(metadata(object)$iloreg))))
+    stopifnot(is(object, "SingleCellExperiment"), is(metadata(object)$coralysis, "data.frame"), 
+              (is.character(group) && (length(group)==1) && (group %in% colnames(metadata(object)$coralysis))))
     
     # Parse data 
-    col.data <- metadata(object)$iloreg
+    col.data <- metadata(object)$coralysis
     
     # Split by label 
     col.data.by.label <- split(x = col.data, f = col.data$label)

@@ -12,7 +12,7 @@ MajorityVotingFeatures.SingleCellExperiment(object, label)
 }
 \arguments{
 \item{object}{An object of \code{SingleCellExperiment} class with ICP cell 
-cluster probability tables saved in \code{metadata(object)$iloreg$joint.probability}. 
+cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
 After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}.}
 
 \item{label}{Label of interest available in \code{colData(object)}.}

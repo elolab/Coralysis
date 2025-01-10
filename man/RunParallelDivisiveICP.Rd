@@ -4,7 +4,7 @@
 \alias{RunParallelDivisiveICP}
 \alias{RunParallelDivisiveICP.SingleCellExperiment}
 \alias{RunParallelDivisiveICP,SingleCellExperiment-method}
-\title{Run ICP divisive clustering parallerly with increasing number of Ks}
+\title{Multi-level integration}
 \usage{
 RunParallelDivisiveICP.SingleCellExperiment(
   object,
@@ -114,8 +114,8 @@ to randomly select. It behaves differently depending on \code{build.train.set}.
 If \code{build.train.set=FALSE}, it randomly samples cells for each ICP run 
 from the complete dataset. If \code{build.train.set=TRUE}, it randomly samples 
 cells once, before building the training set with the sampled cells (per batch 
-if \code{batch.label=NULL}).
-Default is \code{Inf}, which means using all cells.}
+if \code{batch.label} different than \code{NULL}). Default is \code{Inf}, 
+which means using all cells.}
 
 \item{train.with.bnn}{Train data with batch nearest neighbors. Default is 
 \code{TRUE}. Only used if \code{batch.label} is given.}
@@ -138,7 +138,7 @@ from the data or the whole data should be used for training. By default
 \code{TRUE}.}
 
 \item{build.train.params}{A list of parameters to be passed to the function
-\code{AggregateDataByBatch()}.}
+\code{AggregateDataByBatch()}. Only provided if \code{build.train.set} is \code{TRUE}.}
 
 \item{scale.by}{A character specifying if the data should be scaled by \code{cell}
 or by \code{gene} before training. Default is \code{NULL}, i.e., the data is 
@@ -171,12 +171,23 @@ value that can range between 0 (include all) and lower than 1.}
 of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'.}
 }
 \value{
-an object of \code{SingleCellExperiment} class
+A \code{SingleCellExperiment} object.
 }
 \description{
-This functions runs in parallel \code{L} ICP runs, which is the computational
-bottleneck of ILoReg2. With ~ 3,000 cells this step should be completed
-in ~ 2 h and ~ 1 h with 3 and 12 logical processors (threads), respectively.
+Run divisive ICP clustering in parallel in order to perform multi-level integration.
+}
+\examples{
+# Packages
+library("SingleCellExperiment")
+library("Coralysis")
+
+# Prepare data
+pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+
 }
 \keyword{ICP}
 \keyword{LIBLINEAR}

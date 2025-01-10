@@ -23,13 +23,13 @@ ReferenceMapping.SingleCellExperiment(
   ref.label,
   scale.query.by = NULL,
   project.umap = FALSE,
-  select.icp.models = metadata(ref)$iloreg$pca.params$select.icp.tables,
+  select.icp.models = metadata(ref)$coralysis$pca.params$select.icp.tables,
   k.nn = 10,
   dimred.name.prefix = ""
 )
 }
 \arguments{
-\item{ref}{An object of \code{SingleCellExperiment} class trained with ILoReg
+\item{ref}{An object of \code{SingleCellExperiment} class trained with Coralysis
 and after running \code{RunPCA(..., return.model = TRUE)} function.}
 
 \item{query}{An object of \code{SingleCellExperiment} class to project onto 
@@ -55,7 +55,7 @@ computed PCA and UMAP. By default nothing is added, i.e.,
 \code{dimred.name.prefix = ""}.}
 
 \item{selecte.icp.models}{Select the reference ICP models to use for query 
-cluster probability prediction. By default \code{metadata(ref)$iloreg$pca.params$select.icp.tables}, 
+cluster probability prediction. By default \code{metadata(ref)$coralysis$pca.params$select.icp.tables}, 
 i.e., the models selected to compute the reference PCA are selected. 
 If \code{NULL} all are used. Otherwise a numeric vector should be given
 to select the ICP models of interest.}
@@ -65,7 +65,7 @@ An object of \code{SingleCellExperiment} class.
 }
 \description{
 This function allows to project new query data sets onto a reference built 
-with ILoReg as well as transfer cell labels from the reference to queries.
+with Coralysis as well as transfer cell labels from the reference to queries.
 }
 \keyword{ICP}
 \keyword{LIBLINEAR}

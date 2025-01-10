@@ -11,7 +11,7 @@ PCAElbowPlot.SingleCellExperiment(object, return.plot)
 \S4method{PCAElbowPlot}{SingleCellExperiment}(object, return.plot = FALSE)
 }
 \arguments{
-\item{object}{object of class 'iloreg'}
+\item{object}{object of class 'coralysis'}
 
 \item{return.plot}{logical indicating if the ggplot2 object
 should be returned (default FALSE)}
@@ -26,7 +26,7 @@ to deduce an appropriate value for p.
 \examples{
 library(SingleCellExperiment)
 sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-sce <- PrepareILoReg2(sce)
+sce <- PrepareData(sce)
 ## These settings are just to accelerate the example, use the defaults.
 sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 sce <- RunPCA(sce,p=5)

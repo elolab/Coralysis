@@ -1,5 +1,5 @@
 ---
-title: "ILoReg2: sensitive cell population identification through multi-level integration of single-cell RNA-seq data"
+title: "Coralysis: sensitive cell population identification through multi-level integration of single-cell data"
 output: html_document
 date: "2024-08-27"
 ---
@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r packages}
 # Packages
 library("SingleCellExperiment")
-library("ILoReg2")
+library("Coralysis")
 library("scater")
 library("ggplot2")
 #library("scran") 
@@ -21,7 +21,7 @@ library("ggplot2")
 ```
 
 ```{r data}
-# Import data distributed with ILoReg2
+# Import data distributed with Coralysis
 data("pbmc_10Xassays") # it imports object as sce
 pbmc_10Xassays
 ```
@@ -42,10 +42,10 @@ unint.cell.plot <- plotTSNE(pbmc_10Xassays, colour_by = "cell_type", point_size 
 cowplot::plot_grid(unint.batch.plot, unint.cell.plot, rel_widths = c(0.45, 0.55))
 ```
 
-Run integration with `ILoReg2`. Provide the batch label column name in `colData(pbmc_10Xassays)` to the parameter `batch.label`.  
+Run integration with `Coralysis`. Provide the batch label column name in `colData(pbmc_10Xassays)` to the parameter `batch.label`.  
 
 ```{r integration, fig.width=7, fig.height=2.5}
-# Perform integration with ILoReg2
+# Perform integration with Coralysis
 # start <- Sys.time()
 set.seed(1024)
 pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", threads = 4)
@@ -76,7 +76,7 @@ pbmc_10Xassays <- SelectKClusters(pbmc_10Xassays, K = 16)
 
 # Plot clustering
 clt.plot <- ClusteringScatterPlot(pbmc_10Xassays, dim.reduction.type = "tsne", return.plot = TRUE, 
-                                  point.size = 0.01, show.legend = FALSE, title = "ILoReg2 clusters")
+                                  point.size = 0.01, show.legend = FALSE, title = "Coralysis clusters")
 cowplot::plot_grid(int.batch.plot, int.cell.plot, clt.plot, ncol = 3, 
                    rel_widths = c(0.325, 0.375, 0.275), align = "h")
 ```
@@ -105,7 +105,7 @@ head(dge.clt2vs6)
 
 ## Reference-mapping
 
-Perform reference-mapping with `ILoReg2`, 
+Perform reference-mapping with `Coralysis`, 
 
 ```{r reference-mapping, fig.width=16, fig.height=3}
 ## Reference-mapping

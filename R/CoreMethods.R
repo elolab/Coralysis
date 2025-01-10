@@ -1,17 +1,17 @@
-#' @title Prepare \code{SingleCellExperiment} object for \code{ILoReg2} analysis
+#' @title Prepare \code{SingleCellExperiment} object for  analysis
 #'
 #' @description
-#' This function prepares the \code{SingleCellExperiment} object for
-#' \code{ILoReg2} analysis. The only required input is an object of class
-#' \code{SingleCellExperiment} with at least data in the \code{logcounts} slot.
+#' This function prepares the \code{SingleCellExperiment} object for analysis. 
+#' The only required input is an object of class \code{SingleCellExperiment} 
+#' with at least data in the \code{logcounts} slot.
 #'
-#' @param object an object of \code{SingleCellExperiment} class
+#' @param object An object of \code{SingleCellExperiment} class.
 #'
-#' @name PrepareILoReg2
+#' @name PrepareData
 #'
-#' @return an object of \code{SingleCellExperiment} class
+#' @return An object of \code{SingleCellExperiment} class.
 #'
-#' @keywords prepare iloreg clean normalized data
+#' @keywords prepare clean normalized data
 #'
 #' @importFrom SummarizedExperiment colData colData<- rowData rowData<- assayNames
 #' @importFrom S4Vectors metadata metadata<-
@@ -21,9 +21,9 @@
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #'
-PrepareILoReg2.SingleCellExperiment <- function(object) {
+PrepareData.SingleCellExperiment <- function(object) {
     
     # Check that there are data in `logcounts` slot
     if (!("logcounts" %in% assayNames(object))) {
@@ -48,7 +48,7 @@ PrepareILoReg2.SingleCellExperiment <- function(object) {
     if (is(logcounts(object), "matrix")) {
         logcounts(object) <- Matrix::Matrix(logcounts(object), sparse = TRUE)
         message(paste("Converting object of `matrix` class into `dgCMatrix`.",
-                      " Please note that ILoReg2 has been designed to work with ",
+                      " Please note that Coralysis has been designed to work with ",
                       "sparse data, i.e. data with ",
                       "a high proportion of zero values! Dense data will likely " ,
                       "increase run time and memory usage drastically!",sep=""))
@@ -56,7 +56,7 @@ PrepareILoReg2.SingleCellExperiment <- function(object) {
     else if (is(logcounts(object), "data.frame")) {
         logcounts(object) <- Matrix::Matrix(as.matrix(logcounts(object)), sparse = TRUE)
         message(paste("Converting object of `data.frame` class into `dgCMatrix`.",
-                      " Please note that ILoReg2 has been designed to work with ",
+                      " Please note that Coralysis has been designed to work with ",
                       "sparse data, i.e. data with ",
                       "a high proportion of zero values!",sep = ""))
     }
@@ -78,21 +78,21 @@ PrepareILoReg2.SingleCellExperiment <- function(object) {
                   " genes remain after filtering genes with only zero values.",
                   sep = ""))
     
-    # Create a place into `metadata`` slot for the data from ILoReg2
-    metadata(object)$iloreg <- list()
+    # Create a place into `metadata`` slot for the data from Coralysis
+    metadata(object)$coralysis <- list()
     
     return(object)
 }
-#' @rdname PrepareILoReg2
-#' @aliases PrepareILoReg2
-setMethod("PrepareILoReg2", signature(object = "SingleCellExperiment"),
-          PrepareILoReg2.SingleCellExperiment)
+#' @rdname PrepareData
+#' @aliases PrepareData
+setMethod("PrepareData", signature(object = "SingleCellExperiment"),
+          PrepareData.SingleCellExperiment)
 
 #' @title Run ICP runs parallerly
 #'
 #' @description
 #' This functions runs in parallel \code{L} ICP runs, which is the computational
-#' bottleneck of ILoReg2. With ~ 3,000 cells this step should be completed
+#' bottleneck of Coralysis. With ~ 3,000 cells this step should be completed
 #' in ~ 2 h and ~ 1 h with 3 and 12 logical processors (threads), respectively.
 #'
 #' @param object An object of \code{SingleCellExperiment} class.
@@ -184,7 +184,7 @@ setMethod("PrepareILoReg2", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,r=1,k=5)
 #'
@@ -208,56 +208,56 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
   {
     stop("k must be a positive integer and greater than 1")
   } else {
-    metadata(object)$iloreg$k <- k
+    metadata(object)$coralysis$k <- k
   }
 
   if (!is.numeric(d) | d >= 1 | d <= 0)
   {
     stop("d must be a numeric and in the range of (0,1)")
   } else {
-    metadata(object)$iloreg$d <- d
+    metadata(object)$coralysis$d <- d
   }
 
   if (!is.numeric(L) | L <= 0 | L%%1!=0)
   {
     stop("L must be a positive integer and greater than 0")
   } else {
-    metadata(object)$iloreg$L <- L
+    metadata(object)$coralysis$L <- L
   }
 
   if (!is.numeric(r) | r <= 0 | r%%1!=0)
   {
     stop("r must be a positive integer and greater than 0")
   } else {
-    metadata(object)$iloreg$r <- r
+    metadata(object)$coralysis$r <- r
   }
 
   if (!is.numeric(C) | C <= 0)
   {
     stop("C must be a numeric and greater than 0")
   } else {
-    metadata(object)$iloreg$C <- C
+    metadata(object)$coralysis$C <- C
   }
 
   if (!is.character(reg.type) | (reg.type != "L1" & reg.type != "L2"))
   {
     stop("reg.type parameter must be either 'L1' or 'L2'")
   } else {
-    metadata(object)$iloreg$reg.type <- reg.type
+    metadata(object)$coralysis$reg.type <- reg.type
   }
 
   if (!is.numeric(max.iter) | max.iter <= 0 | max.iter%%1 != 0)
   {
     stop("max.iter must be a positive integer and greater than 0")
   } else {
-    metadata(object)$iloreg$max.iter <- max.iter
+    metadata(object)$coralysis$max.iter <- max.iter
   }
 
   if (!is.numeric(threads) | threads < 0 | threads%%1 != 0)
   {
     stop("threads must be a positive integer or 0 (0 = use all available - 1)")
   } else {
-    metadata(object)$iloreg$threads <- threads
+    metadata(object)$coralysis$threads <- threads
   }
     
   if (!is.infinite(icp.batch.size))
@@ -266,7 +266,7 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
     {
       stop("icp.batch.size must be a positive integer > 2 or Inf (0 = use all cells in ICP)")
     } else {
-      metadata(object)$iloreg$icp.batch.size <- icp.batch.size
+      metadata(object)$coralysis$icp.batch.size <- icp.batch.size
     }
   }
 
@@ -322,7 +322,7 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
                    .maxcombine = 1000,
                    .inorder = FALSE,
                    .multicombine = TRUE,
-                   .packages=c("ILoReg2", "parallel"),
+                   .packages=c("Coralysis", "parallel"),
                    .options.snow = opts)  %dorng% {
                      tryCatch(expr = {
                        message(paste0("\nICP run: ", task))
@@ -356,10 +356,10 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
     }
   }
 
-  metadata(object)$iloreg$metrics <-
+  metadata(object)$coralysis$metrics <-
     lapply(out, function(x) x$metrics)
   
-  metadata(object)$iloreg$models <-
+  metadata(object)$coralysis$models <-
       lapply(out, function(x) x$model)
 
   if (build.train.set) {
@@ -368,21 +368,21 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
       if (scale) {
           test.data <- Scale(x = as(test.data, "sparseMatrix"), scale.by="row")
       }
-      metadata(object)$iloreg$joint.probability <- 
-          lapply(metadata(object)$iloreg$models, function(x) {
+      metadata(object)$coralysis$joint.probability <- 
+          lapply(metadata(object)$coralysis$models, function(x) {
               predict(x, test.data, proba=TRUE)$probabilities
               })
   } else {
-      metadata(object)$iloreg$joint.probability <-
+      metadata(object)$coralysis$joint.probability <-
           lapply(out, function(x) x$probabilities)
   }
     
   # Order output lists by increasing standard deviation of cluster probability tables 
-  sds <- unlist(lapply(metadata(object)$iloreg$joint.probability, sd))
+  sds <- unlist(lapply(metadata(object)$coralysis$joint.probability, sd))
   order.list <- order(sds)
-  metadata(object)$iloreg$joint.probability <- metadata(object)$iloreg$joint.probability[order.list]
-  metadata(object)$iloreg$metrics <- metadata(object)$iloreg$metrics[order.list]
-  metadata(object)$iloreg$models <- metadata(object)$iloreg$models[order.list]
+  metadata(object)$coralysis$joint.probability <- metadata(object)$coralysis$joint.probability[order.list]
+  metadata(object)$coralysis$metrics <- metadata(object)$coralysis$metrics[order.list]
+  metadata(object)$coralysis$models <- metadata(object)$coralysis$models[order.list]
 
   return(object)
 }
@@ -391,10 +391,9 @@ RunParallelICP.SingleCellExperiment <- function(object, batch.label,
 setMethod("RunParallelICP", signature(object = "SingleCellExperiment"),
           RunParallelICP.SingleCellExperiment)
 
-#' @title Aggregates cell gene expression by clusters per batch
+#' @title Aggregates gene expression by cell clusters, per batch if provided.
 #'
-#' @description
-#' The function aggregates cell gene expression by clusters per batch.
+#' @description The function aggregates gene expression by cell clusters, per batch if provided.
 #'
 #' @param object An object of \code{SingleCellExperiment} class.
 #' @param batch.label A variable name (of class \code{character}) available 
@@ -404,13 +403,13 @@ setMethod("RunParallelICP", signature(object = "SingleCellExperiment"),
 #' @param batch.label Cluster identities vector corresponding to the cells in 
 #' \code{mtx}.
 #' @param nhvg Integer of the number of highly variable genes to select. By default 
-#' \code{30}. 
+#' \code{2000}. 
 #' @param p Integer. By default \code{30}. 
 #' @param ... Parameters to be passed to \code{ClusterCells()} function. 
 #'
 #' @name AggregateDataByBatch
 #' 
-#' @return Matrix of gene expressed aggregated by clusters.
+#' @return A SingleCellExperiment object with gene expression aggregated by clusters.
 #'
 #' @keywords aggregated gene expression batches
 #'
@@ -421,6 +420,13 @@ setMethod("RunParallelICP", signature(object = "SingleCellExperiment"),
 #' 
 AggregateDataByBatch.SingleCellExperiment <- function(object, batch.label, 
                                                       nhvg, p, ...) {
+    
+    # Check input params
+    stopifnot(is(object, "SingleCellExperiment"), 
+              (is.null(batch.label) || (is.character(batch.label) && (batch.label %in% colnames(colData(object))))), 
+              (is.numeric(nhvg) && (nhvg%%1 == 0) && (nhvg <= nrow(object))), 
+              (is.numeric(p) && (p%%1 == 0) && (p <= nrow(object))))
+    
     if (is.null(batch.label)) {
         batch.label <- "batch"
         object[[batch.label]] <- "single"
@@ -503,7 +509,7 @@ setMethod("AggregateDataByBatch", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -513,7 +519,7 @@ RunPCA.SingleCellExperiment <- function(object, p, scale, center, threshold,
                                         method, return.model, select.icp.tables) {
     
     # Check conditions
-    if (p > metadata(object)$iloreg$L*metadata(object)$iloreg$k) {
+    if (p > metadata(object)$coralysis$L*metadata(object)$coralysis$k) {
         stop(paste0("p larger than number of joint probabilities. Decrease p"))
     }
     if (return.model) {
@@ -525,24 +531,24 @@ RunPCA.SingleCellExperiment <- function(object, p, scale, center, threshold,
     }
     
     # Get ICP tables
-    n.icps <- length(metadata(object)$iloreg$joint.probability)
+    n.icps <- length(metadata(object)$coralysis$joint.probability)
     if (is.null(select.icp.tables)) {
         select.icp.tables <- 1:n.icps
-        divisive.icp <- metadata(object)$iloreg$divisive.icp
+        divisive.icp <- metadata(object)$coralysis$divisive.icp
         if (!is.null(divisive.icp)) {
-            L <- metadata(object)$iloreg$L
-            k <- metadata(object)$iloreg$k  
+            L <- metadata(object)$coralysis$L
+            k <- metadata(object)$coralysis$k  
             Ks <- log2(k) # divisive K rounds (if k=16: 2 --> 4 --> 8 --> 16, i.e., Ks = 4 rounds)
             select.icp.tables <- seq(Ks, Ks * L, Ks) # select a ICP table every Ks round
             message(paste0("Divisive ICP: selecting ICP tables multiple of ", Ks))
         }
     }
     if (threshold == 0) {
-        X <- do.call(cbind, metadata(object)$iloreg$joint.probability[select.icp.tables])
+        X <- do.call(cbind, metadata(object)$coralysis$joint.probability[select.icp.tables])
     } else {
-        icp_runs_logical <- unlist(lapply(metadata(object)$iloreg$metrics, function(x) x["ARI",])) >= threshold
+        icp_runs_logical <- unlist(lapply(metadata(object)$coralysis$metrics, function(x) x["ARI",])) >= threshold
         icp_runs_logical <- (icp_runs_logical & ((1:n.icps) %in% select.icp.tables))
-        X <- do.call(cbind, metadata(object)$iloreg$joint.probability[icp_runs_logical])
+        X <- do.call(cbind, metadata(object)$coralysis$joint.probability[icp_runs_logical])
     }
     
     # Calculate PCA
@@ -562,15 +568,15 @@ RunPCA.SingleCellExperiment <- function(object, p, scale, center, threshold,
     if (method == "stats") {
         pca <- stats::prcomp(x = X, scale. = scale, center = center, rank = p)
         if (return.model) {
-            metadata(object)$iloreg$pca.model <- pca
+            metadata(object)$coralysis$pca.model <- pca
         }
         pca <- pca$x
     }
     
     # Saving PCA into SCE object (& params)
     reducedDim(object, type = "PCA") <- pca
-    metadata(object)$iloreg$p <- p # saving due to compatibility issues
-    metadata(object)$iloreg$pca.params <-  list("p" = p, "scale" = scale, 
+    metadata(object)$coralysis$p <- p # saving due to compatibility issues
+    metadata(object)$coralysis$pca.params <-  list("p" = p, "scale" = scale, 
                                                 "threshold" = threshold, 
                                                 "center" = center,
                                                 "method" = method, 
@@ -593,7 +599,7 @@ setMethod("RunPCA", signature(object = "SingleCellExperiment"),
 #' Draw an elbow plot of the standard deviations of the principal components
 #' to deduce an appropriate value for p.
 #'
-#' @param object object of class 'iloreg'
+#' @param object object of class 'coralysis'
 #' @param return.plot logical indicating if the ggplot2 object
 #' should be returned (default FALSE)
 #'
@@ -612,7 +618,7 @@ setMethod("RunPCA", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -621,10 +627,10 @@ setMethod("RunPCA", signature(object = "SingleCellExperiment"),
 PCAElbowPlot.SingleCellExperiment <- function(object, return.plot) {
 
   df <- matrix(apply(reducedDim(object,"PCA"),2,sd),
-               nrow = metadata(object)$iloreg$p,
+               nrow = metadata(object)$coralysis$p,
                ncol = 1,
                dimnames =
-                 list(seq_len(metadata(object)$iloreg$p),"SD"))
+                 list(seq_len(metadata(object)$coralysis$p),"SD"))
   df <- melt(df)
 
   p <- ggplot(df, aes_string(x = 'Var1', y = 'value')) +
@@ -679,7 +685,7 @@ setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -721,7 +727,7 @@ RunUMAP.SingleCellExperiment <- function(object, dims, dimred.type, return.model
     
     # Model
     if (return.model) {
-        metadata(object)$iloreg$umap.model <- umap.out
+        metadata(object)$coralysis$umap.model <- umap.out
     } else {
         if (umap.method == "uwot") { # Turn matrix into a list to match 'umap' output structure 
             umap.out <- list("embedding" = umap.out)
@@ -769,7 +775,7 @@ setMethod("RunUMAP", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -825,7 +831,7 @@ setMethod("RunTSNE", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -835,7 +841,7 @@ HierarchicalClustering.SingleCellExperiment <- function(object) {
 
   hc <- hclust.vector(reducedDim(object,"PCA"), method = "ward")
 
-  metadata(object)$iloreg$hc <- hc
+  metadata(object)$coralysis$hc <- hc
 
   return(object)
 }
@@ -873,7 +879,7 @@ setMethod("HierarchicalClustering", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -889,7 +895,7 @@ CalcSilhInfo.SingleCellExperiment <-
     sis <- c()
     for (k in seq(K.start,K.end,1))
     {
-      clustering <- cutree(metadata(object)$iloreg$hc,k=k)
+      clustering <- cutree(metadata(object)$coralysis$hc,k=k)
 
       si <- silhouette(clustering,dmatrix = distance_matrix)
       avgsi <- summary(si)$avg.width
@@ -903,15 +909,15 @@ CalcSilhInfo.SingleCellExperiment <-
                    ", average silhouette score: ",
                    sis[which.max(sis)]))
 
-    clustering <- factor(cutree(as.dendrogram(metadata(object)$iloreg$hc),
+    clustering <- factor(cutree(as.dendrogram(metadata(object)$coralysis$hc),
                                 k = k_optimal))
     names(clustering) <- colnames(object)
 
-    metadata(object)$iloreg$clustering.optimal <- clustering
-    metadata(object)$iloreg$K.optimal <- k_optimal
+    metadata(object)$coralysis$clustering.optimal <- clustering
+    metadata(object)$coralysis$K.optimal <- k_optimal
 
     names(sis) <- seq(K.start,K.end,1)
-    metadata(object)$iloreg$silhouette.information <- sis
+    metadata(object)$coralysis$silhouette.information <- sis
 
     return(object)
   }
@@ -944,7 +950,7 @@ setMethod("CalcSilhInfo", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -954,7 +960,7 @@ setMethod("CalcSilhInfo", signature(object = "SingleCellExperiment"),
 #'
 SilhouetteCurve.SingleCellExperiment <- function(object, return.plot) {
 
-  sis <- metadata(object)$iloreg$silhouette.information
+  sis <- metadata(object)$coralysis$silhouette.information
   df <- data.frame(cbind(names(sis),sis),
                    stringsAsFactors = FALSE)
   colnames(df) <- c("K","AvgSilhouette")
@@ -1003,7 +1009,7 @@ setMethod("SilhouetteCurve", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -1012,11 +1018,11 @@ setMethod("SilhouetteCurve", signature(object = "SingleCellExperiment"),
 #'
 SelectKClusters.SingleCellExperiment <- function(object, K) {
 
-  clustering <- factor(cutree(as.dendrogram(metadata(object)$iloreg$hc),k=K))
+  clustering <- factor(cutree(as.dendrogram(metadata(object)$coralysis$hc),k=K))
   names(clustering) <- colnames(object)
 
-  metadata(object)$iloreg$clustering.manual <- clustering
-  metadata(object)$iloreg$K.manual <- K
+  metadata(object)$coralysis$clustering.manual <- clustering
+  metadata(object)$coralysis$K.manual <- K
 
   return(object)
 
@@ -1051,7 +1057,7 @@ setMethod("SelectKClusters", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -1065,7 +1071,7 @@ MergeClusters.SingleCellExperiment <- function(object,
 
   clusters.to.merge <- as.character(clusters.to.merge)
 
-  clustering_old <- metadata(object)$iloreg$clustering.manual
+  clustering_old <- metadata(object)$coralysis$clustering.manual
   clusters_old <- levels(clustering_old)
 
   if (sum(clusters.to.merge %in% clusters_old)!=length(clusters.to.merge))
@@ -1087,8 +1093,8 @@ MergeClusters.SingleCellExperiment <- function(object,
   clustering_new <- factor(clustering_new)
   names(clustering_new) <- names(clustering_old)
 
-  metadata(object)$iloreg$clustering.manual <- clustering_new
-  metadata(object)$iloreg$K.manual <- length(levels(clustering_new))
+  metadata(object)$coralysis$clustering.manual <- clustering_new
+  metadata(object)$coralysis$K.manual <- length(levels(clustering_new))
 
   return(object)
 
@@ -1105,7 +1111,7 @@ setMethod("MergeClusters", signature(object = "SingleCellExperiment"),
 #' RenameAllClusters function enables renaming all cluster at once.
 #'
 #' @param object of \code{SingleCellExperiment} class
-#' @param new.cluster.names object of class 'iloreg'
+#' @param new.cluster.names object of class 'coralysis'
 #'
 #' @name RenameAllClusters
 #'
@@ -1119,7 +1125,7 @@ setMethod("MergeClusters", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -1131,7 +1137,7 @@ RenameAllClusters.SingleCellExperiment <- function(object, new.cluster.names) {
 
   new.cluster.names <- as.character(new.cluster.names)
 
-  clustering_old <- metadata(object)$iloreg$clustering.manual
+  clustering_old <- metadata(object)$coralysis$clustering.manual
   clusters_old <- levels(clustering_old)
 
   if (length(clusters_old) != length(new.cluster.names))
@@ -1143,7 +1149,7 @@ RenameAllClusters.SingleCellExperiment <- function(object, new.cluster.names) {
 
   clustering_new <- mapvalues(clustering_old,clusters_old,new.cluster.names)
 
-  metadata(object)$iloreg$clustering.manual <- clustering_new
+  metadata(object)$coralysis$clustering.manual <- clustering_new
 
   return(object)
 
@@ -1177,7 +1183,7 @@ setMethod("RenameAllClusters", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -1197,7 +1203,7 @@ RenameCluster.SingleCellExperiment <- function(object,
     stop("'old.cluster.name' or 'new.cluster.name' empty\n")
   }
 
-  clustering_old <- metadata(object)$iloreg$clustering.manual
+  clustering_old <- metadata(object)$coralysis$clustering.manual
   clusters_old <- levels(clustering_old)
   clustering_old <- as.character(clustering_old)
   names(clustering_old) <- colnames(object)
@@ -1213,7 +1219,7 @@ RenameCluster.SingleCellExperiment <- function(object,
   clustering_new <- factor(clustering_new)
   names(clustering_new) <- names(clustering_old)
 
-  metadata(object)$iloreg$clustering.manual <- clustering_new
+  metadata(object)$coralysis$clustering.manual <- clustering_new
 
   return(object)
 
@@ -1259,7 +1265,7 @@ setMethod("RenameCluster", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -1413,7 +1419,7 @@ setMethod("GeneScatterPlot", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -1447,12 +1453,12 @@ ClusteringScatterPlot.SingleCellExperiment <- function(object,
 
   if (clustering.type=="manual")
   {
-    color.by <- metadata(object)$iloreg$clustering.manual
+    color.by <- metadata(object)$coralysis$clustering.manual
   } else if (clustering.type=="optimal")
   {
-    color.by <- metadata(object)$iloreg$clustering.optimal
+    color.by <- metadata(object)$coralysis$clustering.optimal
   } else {
-    clustering <- metadata(object)$iloreg$clustering.manual
+    clustering <- metadata(object)$coralysis$clustering.manual
     message("clustering.type='manual'")
   }
 
@@ -1560,7 +1566,7 @@ setMethod("ClusteringScatterPlot", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -1583,12 +1589,12 @@ FindAllGeneMarkers.SingleCellExperiment <- function(object,
 
   if (clustering.type=="manual")
   {
-    clustering <- metadata(object)$iloreg$clustering.manual
+    clustering <- metadata(object)$coralysis$clustering.manual
   } else if (clustering.type=="optimal")
   {
-    clustering <- metadata(object)$iloreg$clustering.optimal
+    clustering <- metadata(object)$coralysis$clustering.optimal
   } else {
-    clustering <- metadata(object)$iloreg$clustering.manual
+    clustering <- metadata(object)$coralysis$clustering.manual
     cat("clustering.type='manual'")
   }
 
@@ -1788,7 +1794,7 @@ setMethod("FindAllGeneMarkers", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -1812,12 +1818,12 @@ FindGeneMarkers.SingleCellExperiment <- function(object,
 
   if (clustering.type=="manual")
   {
-    clustering <- metadata(object)$iloreg$clustering.manual
+    clustering <- metadata(object)$coralysis$clustering.manual
   } else if (clustering.type=="optimal")
   {
-    clustering <- metadata(object)$iloreg$clustering.optimal
+    clustering <- metadata(object)$coralysis$clustering.optimal
   } else {
-    clustering <- metadata(object)$iloreg$clustering.manual
+    clustering <- metadata(object)$coralysis$clustering.manual
     cat("clustering.type='manual'")
   }
 
@@ -2021,7 +2027,7 @@ setMethod("FindGeneMarkers", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -2038,12 +2044,12 @@ VlnPlot.SingleCellExperiment <- function(object,
 
   if (clustering.type=="manual")
   {
-    clustering <- metadata(object)$iloreg$clustering.manual
+    clustering <- metadata(object)$coralysis$clustering.manual
   } else if (clustering.type=="optimal")
   {
-    clustering <- metadata(object)$iloreg$clustering.optimal
+    clustering <- metadata(object)$coralysis$clustering.optimal
   } else {
-    clustering <- metadata(object)$iloreg$clustering.manual
+    clustering <- metadata(object)$coralysis$clustering.manual
     message("clustering.type='manual'")
   }
 
@@ -2110,7 +2116,7 @@ setMethod("VlnPlot", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,r=1,k=5) # Use L=200
 #' sce <- RunPCA(sce,p=5)
@@ -2129,12 +2135,12 @@ GeneHeatmap.SingleCellExperiment <- function(object,
 
   if (clustering.type=="manual")
   {
-    clustering <- metadata(object)$iloreg$clustering.manual
+    clustering <- metadata(object)$coralysis$clustering.manual
   } else if (clustering.type=="optimal")
   {
-    clustering <- metadata(object)$iloreg$clustering.optimal
+    clustering <- metadata(object)$coralysis$clustering.optimal
   } else {
-    clustering <- metadata(object)$iloreg$clustering.manual
+    clustering <- metadata(object)$coralysis$clustering.manual
     cat("clustering.type='manual'")
   }
 
@@ -2192,7 +2198,7 @@ setMethod("GeneHeatmap", signature(object = "SingleCellExperiment"),
 #' @examples
 #' library(SingleCellExperiment)
 #' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareILoReg2(sce)
+#' sce <- PrepareData(sce)
 #' ## These settings are just to accelerate the example, use the defaults.
 #' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
 #' sce <- RunPCA(sce,p=5)
@@ -2200,7 +2206,7 @@ setMethod("GeneHeatmap", signature(object = "SingleCellExperiment"),
 #' sce <- HierarchicalClustering(sce)
 #' sce <- SelectKClusters(sce,K=5)
 #' ## Change the names to the first five alphabets and Visualize the annotation.
-#' custom_annotation <- plyr::mapvalues(metadata(sce)$iloreg$clustering.manual,
+#' custom_annotation <- plyr::mapvalues(metadata(sce)$coralysis$clustering.manual,
 #'                                      c(1,2,3,4,5),
 #'                                      LETTERS[1:5])
 #' AnnotationScatterPlot(sce,
@@ -2280,12 +2286,12 @@ setMethod("AnnotationScatterPlot", signature(object = "SingleCellExperiment"),
 #' @description Get ICP cell cluster probability table(s)
 #' 
 #' @param object An object of \code{SingleCellExperiment} class with ICP cell 
-#' cluster probability tables saved in \code{metadata(object)$iloreg$joint.probability}. 
+#' cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
 #' After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}. 
-#' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 #' By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
 #' retrieve a specific set of tables. 
-#' @param icp.round ICP round(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' @param icp.round ICP round(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 #' By default \code{NULL}, i.e., all are retrieved. Only relevant if probabilities
 #' were obtained with the function \code{RunParallelDivisiveICP}, i.e., divisive ICP
 #' was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1}, 
@@ -2306,11 +2312,11 @@ setMethod("AnnotationScatterPlot", signature(object = "SingleCellExperiment"),
 GetCellClusterProbability.SingleCellExperiment <- function(object, icp.run, icp.round, concatenate) {
     
     # Retrieve important params
-    L <- metadata(object)$iloreg$L
-    k <- metadata(object)$iloreg$k
+    L <- metadata(object)$coralysis$L
+    k <- metadata(object)$coralysis$k
     
     # Check input params
-    stopifnot(is(object, "SingleCellExperiment"), is(metadata(object)$iloreg$joint.probability, "list"), 
+    stopifnot(is(object, "SingleCellExperiment"), is(metadata(object)$coralysis$joint.probability, "list"), 
               is.numeric(L), is.numeric(k), any(is.null(icp.run), (is.numeric(icp.run) && all(icp.run <= L))), 
               any(is.null(icp.round), (is.numeric(icp.round))), is.logical(concatenate))
     
@@ -2320,7 +2326,7 @@ GetCellClusterProbability.SingleCellExperiment <- function(object, icp.run, icp.
     }
     
     # If divisive ICP, retrieve the right ICP run round
-    divisive.icp <- metadata(object)$iloreg$divisive.icp
+    divisive.icp <- metadata(object)$coralysis$divisive.icp
     if (isTRUE(divisive.icp)) { 
         rounds <- log2(k)
         stopifnot(all(icp.round <= rounds)) # all icp.round need to be equal or lower than rounds
@@ -2334,7 +2340,7 @@ GetCellClusterProbability.SingleCellExperiment <- function(object, icp.run, icp.
     }
     
     # Return probabilities
-    probs <- metadata(object)$iloreg$joint.probability[pick.icp]
+    probs <- metadata(object)$coralysis$joint.probability[pick.icp]
     if (concatenate) {
         probs <- do.call(cbind, probs)
     }
@@ -2351,12 +2357,12 @@ setMethod("GetCellClusterProbability", signature(object = "SingleCellExperiment"
 #' @description Summarise ICP cell cluster probability table(s)
 #' 
 #' @param object An object of \code{SingleCellExperiment} class with ICP cell 
-#' cluster probability tables saved in \code{metadata(object)$iloreg$joint.probability}. 
+#' cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
 #' After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}. 
-#' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 #' By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
 #' retrieve a specific set of tables. 
-#' @param icp.round ICP round(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' @param icp.round ICP round(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 #' By default \code{NULL}, i.e., all are retrieved. Only relevant if probabilities
 #' were obtained with the function \code{RunParallelDivisiveICP}, i.e., divisive ICP
 #' was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1}, 
@@ -2390,15 +2396,15 @@ SummariseCellClusterProbability.SingleCellExperiment <- function(object, icp.run
     probs <- GetCellClusterProbability(object = object, icp.run = icp.run, icp.round = icp.round, concatenate = FALSE)
     
     # Retrieve important params
-    L <- metadata(object)$iloreg$L
-    k <- metadata(object)$iloreg$k
+    L <- metadata(object)$coralysis$L
+    k <- metadata(object)$coralysis$k
     
     # If ICP run is NULL retrieve all
     if (is.null(icp.run)) {
         icp.run <- seq_len(L)
     }
     # If divisive ICP, retrieve the right ICP run round
-    divisive.icp <- metadata(object)$iloreg$divisive.icp
+    divisive.icp <- metadata(object)$coralysis$divisive.icp
     if (isTRUE(divisive.icp)) { 
         rounds <- log2(k)
         if (is.null(icp.round)) {
@@ -2453,12 +2459,12 @@ setMethod("SummariseCellClusterProbability", signature(object = "SingleCellExper
 #' @description Get feature coefficients from ICP models. 
 #' 
 #' @param object An object of \code{SingleCellExperiment} class with ICP cell 
-#' cluster probability tables saved in \code{metadata(object)$iloreg$joint.probability}. 
+#' cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
 #' After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}. 
-#' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 #' By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
 #' retrieve a specific set of tables. 
-#' @param icp.round ICP round(s) to retrieve from \code{metadata(object)$iloreg$joint.probability}. 
+#' @param icp.round ICP round(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 #' By default \code{NULL}, i.e., all are retrieved. Only relevant if probabilities
 #' were obtained with the function \code{RunParallelDivisiveICP}, i.e., divisive ICP
 #' was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1}, 
@@ -2476,8 +2482,8 @@ setMethod("SummariseCellClusterProbability", signature(object = "SingleCellExper
 GetFeatureCoefficients.SingleCellExperiment <- function(object, icp.run = NULL, icp.round = NULL) {
     
     # Retrieve important params
-    L <- metadata(object)$iloreg$L
-    k <- metadata(object)$iloreg$k
+    L <- metadata(object)$coralysis$L
+    k <- metadata(object)$coralysis$k
     
     # Check input 
     stopifnot(is(object, "SingleCellExperiment"), any(is.null(icp.run), (is.numeric(icp.run) && all(icp.run <= L))), 
@@ -2489,7 +2495,7 @@ GetFeatureCoefficients.SingleCellExperiment <- function(object, icp.run = NULL, 
         icp.run <- seq_len(L)
     }
     # If divisive ICP, retrieve the right ICP run round
-    divisive.icp <- metadata(object)$iloreg$divisive.icp
+    divisive.icp <- metadata(object)$coralysis$divisive.icp
     if (isTRUE(divisive.icp)) { 
         rounds <- log2(k)
         if (is.null(icp.round)) {
@@ -2500,7 +2506,7 @@ GetFeatureCoefficients.SingleCellExperiment <- function(object, icp.run = NULL, 
     } else { # if not divisive just select icp runs
         pick.icp <- icp.run
     }
-    models <- metadata(object)$iloreg$models[pick.icp]
+    models <- metadata(object)$coralysis$models[pick.icp]
     feature2coeff <- row.names(object) 
     names(feature2coeff) <- paste0("W", 1:length(feature2coeff))
     feature.coeffs <- lapply(X = models, FUN = function(x) {
@@ -2529,7 +2535,7 @@ setMethod("GetFeatureCoefficients", signature(object = "SingleCellExperiment"),
 #' @description Get ICP feature coefficients for a label of interest by majority voting label across ICP clusters. 
 #' 
 #' @param object An object of \code{SingleCellExperiment} class with ICP cell 
-#' cluster probability tables saved in \code{metadata(object)$iloreg$joint.probability}. 
+#' cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
 #' After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}. 
 #' @param label Label of interest available in \code{colData(object)}. 
 #' 

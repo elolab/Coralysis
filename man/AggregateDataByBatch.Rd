@@ -4,7 +4,7 @@
 \alias{AggregateDataByBatch}
 \alias{AggregateDataByBatch.SingleCellExperiment}
 \alias{AggregateDataByBatch,SingleCellExperiment-method}
-\title{Aggregates cell gene expression by clusters per batch}
+\title{Aggregates gene expression by cell clusters, per batch if provided.}
 \usage{
 AggregateDataByBatch.SingleCellExperiment(object, batch.label, nhvg, p, ...)
 
@@ -17,17 +17,17 @@ AggregateDataByBatch.SingleCellExperiment(object, batch.label, nhvg, p, ...)
 \code{mtx}.}
 
 \item{nhvg}{Integer of the number of highly variable genes to select. By default 
-\code{30}.}
+\code{2000}.}
 
 \item{p}{Integer. By default \code{30}.}
 
 \item{...}{Parameters to be passed to \code{ClusterCells()} function.}
 }
 \value{
-Matrix of gene expressed aggregated by clusters.
+A SingleCellExperiment object with gene expression aggregated by clusters.
 }
 \description{
-The function aggregates cell gene expression by clusters per batch.
+The function aggregates gene expression by cell clusters, per batch if provided.
 }
 \keyword{aggregated}
 \keyword{batches}
