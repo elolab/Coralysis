@@ -190,8 +190,8 @@ PlotClusterTree.SingleCellExperiment <- function(object, icp.run, color.by, use.
                                                  seed.color, legend.title, return.data) {
     
     # Get probabilities for icp.run
-    divisive <- metadata(object)$coralysis$divisive
-    stopifnot(divisive)
+    divisive.icp <- metadata(object)$coralysis$divisive.icp
+    stopifnot(divisive.icp)
     k <- metadata(object)$coralysis$k
     icp.round <- 1:log2(k)
     probs <- GetCellClusterProbability(object = object, icp.run = icp.run, icp.round = icp.round, concatenate = FALSE)
