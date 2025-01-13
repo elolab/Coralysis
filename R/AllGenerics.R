@@ -72,7 +72,7 @@ setGeneric("GeneScatterPlot", signature = "object",
 #' @export
 setGeneric("FindAllGeneMarkers", signature = "object",
            function(object,
-                    clustering.type = "manual",
+                    clustering.label,
                     test = "wilcox",
                     log2fc.threshold = 0.25,
                     min.pct = 0.1,

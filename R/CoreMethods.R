@@ -140,7 +140,7 @@ setMethod("PrepareData", signature(object = "SingleCellExperiment"),
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
 #' 
 #' # Run PCA 
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays)
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #'
 RunPCA.SingleCellExperiment <- function(object, p, scale, center, threshold,
                                         method, return.model, select.icp.tables) {
@@ -252,7 +252,7 @@ setMethod("RunPCA", signature(object = "SingleCellExperiment"),
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
 #' 
 #' # Run PCA 
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays)
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # Plot Elbow
 #' PCAElbowPlot(pbmc_10Xassays)
@@ -325,7 +325,7 @@ setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
 #' 
 #' # Run PCA 
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays)
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # Run UMAP
 #' set.seed(123)
@@ -423,7 +423,7 @@ setMethod("RunUMAP", signature(object = "SingleCellExperiment"),
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
 #' 
 #' # Run PCA 
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays)
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # Run t-SNE
 #' set.seed(123)
@@ -468,38 +468,35 @@ setMethod("RunTSNE", signature(object = "SingleCellExperiment"),
 #' but this might lead to missing weak signals.
 #'
 #' @param object of \code{SingleCellExperiment} class
-#' @param clustering.type "manual" or "optimal". "manual" refers to the
-#' clustering formed using the "SelectKClusters" function and "optimal"
-#' to the clustering formed using the "CalcSilhInfo" function.
-#' Default is "manual".
-#' @param test Which test to use. Only "wilcoxon" (the Wilcoxon rank-sum test,
+#' @param clustering.label A variable name (of class \code{character}) available 
+#' in the cell metadata \code{colData(object)} with the clustering labels 
+#' (\code{character} or \code{factor}) to use.
+#' @param test Which test to use. Only "wilcox" (the Wilcoxon rank-sum test,
 #' AKA Mann-Whitney U test) is supported at the moment.
 #' @param log2fc.threshold Filters out genes that have log2 fold-change of the
-#' averaged gene expression values below this threshold.
-#' Default is \code{0.25}.
+#' averaged gene expression values below this threshold. Default is \code{0.25}.
 #' @param min.pct Filters out genes that have dropout rate (fraction of cells
-#' expressing a gene) below this threshold in both comparison groups
-#' Default is \code{0.1}.
+#' expressing a gene) below this threshold in both comparison groups. Default is 
+#' \code{0.1}.
 #' @param min.diff.pct Filters out genes that do not have this minimum
 #' difference in the dropout rates (fraction of cells expressing a gene)
 #' between the two comparison groups. Default is \code{NULL}.
 #' @param min.cells.group The minimum number of cells in the two comparison
 #' groups to perform the DE analysis. If the number of cells is below the
-#' threshold, then the DE analysis of this cluster is skipped.
-#' Default is \code{3}.
-#' @param max.cells.per.cluster The maximun number of cells per cluster if
-#' downsampling is performed to speed up the DE analysis.
-#' Default is \code{NULL}, i.e. no downsampling.
-#' @param return.thresh If only.pos=TRUE, then return only genes that have the
+#' threshold, then the DE analysis of this cluster is skipped. Default is \code{3}.
+#' @param max.cells.per.cluster The maximum number of cells per cluster if
+#' downsampling is performed to speed up the DE analysis. Default is \code{NULL}, 
+#' i.e., no downsampling.
+#' @param return.thresh If \code{only.pos=TRUE}, then return only genes that have the
 #' adjusted p-value (adjusted by the Bonferroni method) below or equal to this
 #' threshold. Default is \code{0.01}.
 #' @param only.pos Whether to return only genes that have an adjusted p-value
-#' (adjusted by the Bonferroni method) below or equal to the threshold.
-#' Default is \code{FALSE}.
+#' (adjusted by the Bonferroni method) below or equal to the threshold. Default 
+#' is \code{FALSE}.
 #'
 #' @name FindAllGeneMarkers
 #'
-#' @return a data frame of the results if positive results were found, else NULL
+#' @return A data frame of the results if positive results were found, else \code{NULL}.
 #'
 #' @keywords differential expression DE analysis gene markers
 #'
@@ -519,7 +516,7 @@ setMethod("RunTSNE", signature(object = "SingleCellExperiment"),
 #' gene_markers <- FindAllGeneMarkers(sce)
 #'
 FindAllGeneMarkers.SingleCellExperiment <- function(object,
-                                                    clustering.type,
+                                                    clustering.label,
                                                     test,
                                                     log2fc.threshold,
                                                     min.pct,
@@ -529,152 +526,129 @@ FindAllGeneMarkers.SingleCellExperiment <- function(object,
                                                     return.thresh,
                                                     only.pos) {
 
-  number.of.expressed.genes <- nrow(object)
-
-  if (clustering.type=="manual")
-  {
-    clustering <- metadata(object)$coralysis$clustering.manual
-  } else if (clustering.type=="optimal")
-  {
-    clustering <- metadata(object)$coralysis$clustering.optimal
-  } else {
-    clustering <- metadata(object)$coralysis$clustering.manual
-    cat("clustering.type='manual'")
-  }
-
-  data <- logcounts(object)
-
-  clusters <- levels(clustering)
-
-  # Downsample each cluster
-  if (!is.null(max.cells.per.cluster))
-  {
-    cells_downsampled <- c()
-    for (cluster in clusters)
-    {
-      cells_in_cluster <- table(clustering)[cluster]
-      if (max.cells.per.cluster < cells_in_cluster)
-      {
-        inds <- sample(seq_len(cells_in_cluster),
-                       size = max.cells.per.cluster,
-                       replace = FALSE)
-        names_cluster <- names(clustering[clustering==cluster])
-        cells_downsampled <- c(cells_downsampled,names_cluster[inds])
-      }
-    }
-    data <- data[,cells_downsampled]
-    clustering <- clustering[cells_downsampled]
-  }
-
-  # Compare cells from each cluster against all other clusters
-  results_list <- list()
-
-  for (cluster in clusters)
-  {
-    cat("-----------------------------------\n")
-    cat(paste0("testing cluster ",cluster,"\n"))
-    # Extract data
-
-    data_cluster <- data[,clustering==cluster]
-    data_other <- data[,clustering!=cluster]
-
-    # Skip if the number of cells in the test
-    # or the reference set is lower than min.cells.group
-    if (ncol(data_cluster) < min.cells.group | ncol(data_other) < min.cells.group)
-    {
-      cat("-----------------------------------\n")
-      next
-    }
-
-    # min.pct filter
-    genes.pct_cluster <- apply(data_cluster,1,function(x) sum(x!=0))/ncol(data_cluster)
-    genes.pct_other <- apply(data_other,1,function(x) sum(x!=0))/ncol(data_other)
-
-    genes_to_include <- rownames(data_cluster)[genes.pct_cluster>=min.pct | genes.pct_other >= min.pct]
-
-    data_cluster <- data_cluster[genes_to_include,,drop=FALSE]
-    data_other <- data_other[genes_to_include,,drop=FALSE]
-
-    cat(paste0(nrow(data_cluster)," genes left after min.pct filtering\n"))
-    if (nrow(data_cluster)==0)
-    {
-      cat("-----------------------------------\n")
-      next
-    }
-
-    # min.diff.pct filter
-    if (!is.null(min.diff.pct))
-    {
-      genes.pct_cluster <- genes.pct_cluster[genes_to_include]
-      genes.pct_other <- genes.pct_other[genes_to_include]
-
-      genes_to_include <- rownames(data_cluster)[abs(genes.pct_cluster-genes.pct_other) >= min.diff.pct]
-
-      data_cluster <- data_cluster[genes_to_include,,drop=FALSE]
-      data_other <- data_other[genes_to_include,,drop=FALSE]
-
-    }
-
-    cat(paste0(nrow(data_cluster)," genes left after min.diff.pct filtering\n"))
-    if (nrow(data_cluster)==0)
-    {
-      cat("-----------------------------------\n")
-      next
-    }
-
-    # logfc.threshold filter
-    # Calculate log2 fold changes
-    cluster_aves <- apply(data_cluster,1,mean)
-    other_aves <- apply(data_other,1,mean)
-
-    log2FC <- cluster_aves - other_aves
+    # Check input params
+    stopifnot(is(object, "SingleCellExperiment"), 
+              all(is.character(clustering.label), length(clustering.label)==1, clustering.label %in% colnames(colData(object)), (is.character(object[[clustering.label]]) || is.factor(object[[clustering.label]]))), 
+              test == "wilcox", 
+              (is.numeric(log2fc.threshold) && (length(log2fc.threshold)==1) && (log2fc.threshold > 0)), 
+              (is.numeric(min.pct) && (length(min.pct)==1) && ((min.pct >= 0) && (min.pct <= 1))), 
+              (is.null(min.diff.pct) || (is.numeric(min.diff.pct) && (length(min.diff.pct)==1) && ((min.diff.pct >= 0) && (min.diff.pct <= 1)))), 
+              (is.numeric(min.cells.group) && (length(min.cells.group)==1) && (min.cells.group > 0)), 
+              (is.null(max.cells.per.cluster) || (is.numeric(max.cells.per.cluster) && (length(max.cells.per.cluster)==1) && (max.cells.per.cluster > 0))), 
+              (is.numeric(return.thresh) && (length(return.thresh)==1) && (return.thresh > 0)), 
+              is.logical(only.pos) && (length(only.pos)==1))
     
-    genes_to_include <- rownames(data_cluster)[log2FC >= log2fc.threshold | log2FC <= -log2fc.threshold]
-
-    data_cluster <- data_cluster[genes_to_include,,drop=FALSE]
-    data_other <- data_other[genes_to_include,,drop=FALSE]
-
-
-    cat(paste0(nrow(data_cluster)," genes left after log2fc.threshold filtering\n"))
-    if (nrow(data_cluster)==0)
-    {
-      cat("-----------------------------------\n")
-      next
+    # Retrieve data & no. of genes
+    number.of.expressed.genes <- nrow(object)
+    data <- logcounts(object)
+    
+    # Retrieve clustering as factor
+    clustering <- object[[clustering.label]]
+    if (is.character(clustering)) { # if character, coerce to factor
+        clustering <- as.factor(clustering)
     }
-
-    # Run DE test
-
-    if (test=="wilcox")
-    {
-      wilcox.res <- lapply(rownames(data_cluster),function(x) wilcox.test(x=data_cluster[x,],y=data_other[x,]))
-      p_values <- unlist(lapply(wilcox.res,function(x) x$p.value))
-      names(p_values) <- rownames(data_cluster)
-
-      # Adjust p-values
-      adj_p_values <- p.adjust(p_values, method = "bonferroni", n = number.of.expressed.genes)
-
-      res <- cbind(p_values,adj_p_values,log2FC[names(p_values)],genes.pct_cluster[names(p_values)],genes.pct_other[names(p_values)],abs(genes.pct_cluster-genes.pct_other)[names(p_values)])
-      colnames(res) <- c("p.value","adj.p.value","log2FC","pct.1","pct.2","diff.pct")
-      res <- as.data.frame(res)
-      res$cluster <- cluster
-      res$gene <- names(p_values)
+    names(clustering) <- colnames(object)
+    clusters <- levels(clustering)
+    
+    # Downsample each cluster
+    if (!is.null(max.cells.per.cluster)) {
+        cells_downsampled <- c()
+        for (cluster in clusters) {
+            cells_in_cluster <- table(clustering)[cluster]
+            if (max.cells.per.cluster < cells_in_cluster) {
+                inds <- sample(seq_len(cells_in_cluster), size = max.cells.per.cluster, replace = FALSE)
+                names_cluster <- names(clustering[clustering==cluster])
+                cells_downsampled <- c(cells_downsampled,names_cluster[inds])
+          }
+        }
+        data <- data[,cells_downsampled]
+        clustering <- clustering[cells_downsampled]
     }
-
-    results_list[[cluster]] <- res
-
-    cat("-----------------------------------\n")
-
-  }
-
-  results_df <- do.call(rbind,results_list)
-  rownames(results_df) <- make.unique(unlist(lapply(results_list,rownames)))
-
-  if(only.pos) {
-    results_df <- results_df[results_df$adj.p.value <= return.thresh,]
+    
+    # Compare cells from each cluster against all other clusters
+    results_list <- list()
+    for (cluster in clusters) {
+        cat("-----------------------------------\n")
+        cat(paste0("testing cluster ",cluster,"\n"))
+        
+        # Extract data
+        data_cluster <- data[,clustering==cluster]
+        data_other <- data[,clustering!=cluster]
+        
+        # Skip if the number of cells in the test
+        # or the reference set is lower than min.cells.group
+        if (ncol(data_cluster) < min.cells.group | ncol(data_other) < min.cells.group) {
+            cat("-----------------------------------\n")
+            next
+        }
+        # min.pct filter
+        genes.pct_cluster <- apply(data_cluster,1,function(x) sum(x!=0))/ncol(data_cluster)
+        genes.pct_other <- apply(data_other,1,function(x) sum(x!=0))/ncol(data_other)
+        genes_to_include <- rownames(data_cluster)[genes.pct_cluster>=min.pct | genes.pct_other >= min.pct]
+        data_cluster <- data_cluster[genes_to_include,,drop=FALSE]
+        data_other <- data_other[genes_to_include,,drop=FALSE]
+        cat(paste0(nrow(data_cluster)," genes left after min.pct filtering\n"))
+        if (nrow(data_cluster)==0) {
+            cat("-----------------------------------\n")
+            next
+        }
+    
+        # min.diff.pct filter
+        if (!is.null(min.diff.pct)) {
+            genes.pct_cluster <- genes.pct_cluster[genes_to_include]
+            genes.pct_other <- genes.pct_other[genes_to_include]
+            genes_to_include <- rownames(data_cluster)[abs(genes.pct_cluster-genes.pct_other) >= min.diff.pct]
+            data_cluster <- data_cluster[genes_to_include,,drop=FALSE]
+            data_other <- data_other[genes_to_include,,drop=FALSE]
+        }
+        cat(paste0(nrow(data_cluster)," genes left after min.diff.pct filtering\n"))
+        if (nrow(data_cluster)==0) {
+            cat("-----------------------------------\n")
+            next
+        }
+    
+        # logfc.threshold filter
+        # Calculate log2 fold changes
+        cluster_aves <- apply(data_cluster,1,mean)
+        other_aves <- apply(data_other,1,mean)
+        log2FC <- cluster_aves - other_aves
+        genes_to_include <- rownames(data_cluster)[log2FC >= log2fc.threshold | log2FC <= -log2fc.threshold]
+        data_cluster <- data_cluster[genes_to_include,,drop=FALSE]
+        data_other <- data_other[genes_to_include,,drop=FALSE]
+        cat(paste0(nrow(data_cluster)," genes left after log2fc.threshold filtering\n"))
+        if (nrow(data_cluster)==0) {
+            cat("-----------------------------------\n")
+            next
+        }
+    
+        # Run DE test
+        if (test=="wilcox") {
+            wilcox.res <- lapply(rownames(data_cluster),function(x) wilcox.test(x=data_cluster[x,], y=data_other[x,]))
+            p_values <- unlist(lapply(wilcox.res, function(x) x$p.value))
+            names(p_values) <- rownames(data_cluster)
+            
+            # Adjust p-values
+            adj_p_values <- p.adjust(p_values, method = "bonferroni", n = number.of.expressed.genes)
+            
+            res <- cbind(p_values,adj_p_values,log2FC[names(p_values)],genes.pct_cluster[names(p_values)],genes.pct_other[names(p_values)],abs(genes.pct_cluster-genes.pct_other)[names(p_values)])
+            colnames(res) <- c("p.value","adj.p.value","log2FC","pct.1","pct.2","diff.pct")
+            res <- as.data.frame(res)
+            res$cluster <- cluster
+            res$gene <- names(p_values)
+        }
+        results_list[[cluster]] <- res
+        cat("-----------------------------------\n")
+    }
+    
+    results_df <- do.call(rbind,results_list)
+    rownames(results_df) <- make.unique(unlist(lapply(results_list,rownames)))
+    
+    if(only.pos) {
+        results_df <- results_df[results_df$adj.p.value <= return.thresh,]
+        return(results_df)
+    }
+    
     return(results_df)
-  }
-  return(results_df)
-
 }
 #' @rdname FindAllGeneMarkers
 #' @aliases FindAllGeneMarkers

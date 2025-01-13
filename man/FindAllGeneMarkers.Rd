@@ -8,7 +8,7 @@
 \usage{
 FindAllGeneMarkers.SingleCellExperiment(
   object,
-  clustering.type,
+  clustering.label,
   test,
   log2fc.threshold,
   min.pct,
@@ -21,7 +21,7 @@ FindAllGeneMarkers.SingleCellExperiment(
 
 \S4method{FindAllGeneMarkers}{SingleCellExperiment}(
   object,
-  clustering.type = "manual",
+  clustering.label,
   test = "wilcox",
   log2fc.threshold = 0.25,
   min.pct = 0.1,
@@ -35,21 +35,19 @@ FindAllGeneMarkers.SingleCellExperiment(
 \arguments{
 \item{object}{of \code{SingleCellExperiment} class}
 
-\item{clustering.type}{"manual" or "optimal". "manual" refers to the
-clustering formed using the "SelectKClusters" function and "optimal"
-to the clustering formed using the "CalcSilhInfo" function.
-Default is "manual".}
+\item{clustering.label}{A variable name (of class \code{character}) available 
+in the cell metadata \code{colData(object)} with the clustering labels 
+(\code{character} or \code{factor}) to use.}
 
-\item{test}{Which test to use. Only "wilcoxon" (the Wilcoxon rank-sum test,
+\item{test}{Which test to use. Only "wilcox" (the Wilcoxon rank-sum test,
 AKA Mann-Whitney U test) is supported at the moment.}
 
 \item{log2fc.threshold}{Filters out genes that have log2 fold-change of the
-averaged gene expression values below this threshold.
-Default is \code{0.25}.}
+averaged gene expression values below this threshold. Default is \code{0.25}.}
 
 \item{min.pct}{Filters out genes that have dropout rate (fraction of cells
-expressing a gene) below this threshold in both comparison groups
-Default is \code{0.1}.}
+expressing a gene) below this threshold in both comparison groups. Default is 
+\code{0.1}.}
 
 \item{min.diff.pct}{Filters out genes that do not have this minimum
 difference in the dropout rates (fraction of cells expressing a gene)
@@ -57,23 +55,22 @@ between the two comparison groups. Default is \code{NULL}.}
 
 \item{min.cells.group}{The minimum number of cells in the two comparison
 groups to perform the DE analysis. If the number of cells is below the
-threshold, then the DE analysis of this cluster is skipped.
-Default is \code{3}.}
+threshold, then the DE analysis of this cluster is skipped. Default is \code{3}.}
 
-\item{max.cells.per.cluster}{The maximun number of cells per cluster if
-downsampling is performed to speed up the DE analysis.
-Default is \code{NULL}, i.e. no downsampling.}
+\item{max.cells.per.cluster}{The maximum number of cells per cluster if
+downsampling is performed to speed up the DE analysis. Default is \code{NULL}, 
+i.e., no downsampling.}
 
-\item{return.thresh}{If only.pos=TRUE, then return only genes that have the
+\item{return.thresh}{If \code{only.pos=TRUE}, then return only genes that have the
 adjusted p-value (adjusted by the Bonferroni method) below or equal to this
 threshold. Default is \code{0.01}.}
 
 \item{only.pos}{Whether to return only genes that have an adjusted p-value
-(adjusted by the Bonferroni method) below or equal to the threshold.
-Default is \code{FALSE}.}
+(adjusted by the Bonferroni method) below or equal to the threshold. Default 
+is \code{FALSE}.}
 }
 \value{
-a data frame of the results if positive results were found, else NULL
+A data frame of the results if positive results were found, else \code{NULL}.
 }
 \description{
 FindAllGeneMarkers enables identifying gene markers for all 

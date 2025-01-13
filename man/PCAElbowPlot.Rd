@@ -36,7 +36,7 @@ set.seed(123)
 pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
 
 # Run PCA 
-pbmc_10Xassays <- RunPCA(pbmc_10Xassays)
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 
 # Plot Elbow
 PCAElbowPlot(pbmc_10Xassays)
