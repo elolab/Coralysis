@@ -19,6 +19,7 @@
 #' data(pbmc3k_500)
 "pbmc3k_500"
 
+
 #' A toy SCE dataset of two 10X PBMCs 3' assays downsampled to 2K cells.
 #'
 #' Two 10X PBMCs 3' assays, V1 and V2, downsampled to 2K cells (1K per assay).  
@@ -128,6 +129,7 @@ AggregateClusterExpression <- function(mtx, cluster, select.features = NULL,
     return(ps)
 }
 
+
 #' @title Scale a sparse matrix by row or column
 #'
 #' @description Faster implementation of \code{scale} function. It diverges from 
@@ -193,6 +195,7 @@ Scale <- function(x, center=TRUE, scale=TRUE, scale.by="col") {
     return(x)
 }
 
+
 #' @title Scale sparse matrix by genes (column) by batch
 #'
 #' @description Scales genes by batch
@@ -217,6 +220,7 @@ ScaleByBatch <- function(x, batch) {
     return(x)
 }
 
+
 #' @title Down- and oversample data
 #'
 #' @description
@@ -239,6 +243,7 @@ DownOverSampling <- function(x, n = 50) {
   return(res)
 }
 
+
 #' @title Down- and oversample data evenly batches
 #'
 #' @description
@@ -260,6 +265,7 @@ DownOverSampleEvenlyBatches <- function(x, batch, n = 50) {
     downsample.batch <- unlist(downsample.batch)
     return(downsample.batch)
 }
+
 
 #' @title Find batch k nearest neighbors  
 #'
@@ -310,6 +316,7 @@ FindBatchKNN <- function(idx, group, prob, k = 10) {
     return(knn.idx)
 }
 
+
 #' @title Find batch k nearest neighbors per cluster 
 #'
 #' @description
@@ -346,6 +353,7 @@ FindClusterBatchKNN <- function(preds, probs, batch, k = 10, k.prop = NULL) {
     }
     return(clt.knn)
 }
+
 
 #' @title Clustering projection using logistic regression from
 #' the LiblineaR R package
@@ -432,57 +440,4 @@ LogisticRegression <- function(training.sparse.matrix = NULL,
   prediction <- predict(model, proba = TRUE, test.sparse.matrix)
 
   return(list(prediction = prediction, model = model))
-}
-
-#' @title Select top or bottom N genes based on a selection criterion
-#'
-#' @description
-#' The SelectTopGenes function enables selecting top or bottom N genes based
-#' on a criterion (e.g. log2FC or adj.p.value).
-#'
-#' @param gene.markers A data frame of the gene markers found by
-#' FindAllGeneMarkers function.
-#' @param top.N How many top or bottom genes to select. Default is \code{10}.
-#' @param criterion.type Which criterion to use for selecting the genes.
-#' Default is "log2FC".
-#' @param inverse Whether to select bottom instead of top N genes.
-#' Default is \code{FALSE}.
-#'
-#' @return an object of `data.frame` class
-#'
-#' @keywords select top bottom N genes
-#'
-#' @importFrom dplyr group_by %>% top_n
-#'
-#' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- HierarchicalClustering(sce)
-#' sce <- SelectKClusters(sce,K=5)
-#' gene_markers <- FindAllGeneMarkers(sce)
-#' ## Select top 10 markers based on log2 fold-change
-#' top10_log2FC <- SelectTopGenes(gene_markers,
-#'                                top.N = 10,
-#'                                criterion.type = "log2FC",
-#'                                inverse = FALSE)
-#'
-#' @export
-#'
-SelectTopGenes <- function(gene.markers = NULL, top.N = 10,
-                           criterion.type = "log2FC", inverse=FALSE)
-{
-
-  if (inverse)
-  {
-    top.N <- -top.N
-  }
-
-  gene.markers %>%
-    group_by(.data$cluster) %>% top_n(top.N, get(criterion.type)) -> top_N
-
-  return(top_N)
 }
