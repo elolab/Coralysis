@@ -11,7 +11,7 @@ FindClusterBatchKNN(preds, probs, batch, k = 10, k.prop = NULL)
 
 \item{probs}{A numeric matrix with cell cluster probabilities.}
 
-\item{batch}{A numeric vector with cell probabilities corresponding to \code{idx}.}
+\item{batch}{A character with batch labels.}
 
 \item{k}{The number of nearest neighbors to search for. Default is \code{10}.}
 

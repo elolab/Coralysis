@@ -522,7 +522,7 @@ FindBatchKNN <- function(idx, group, prob, k = 10) {
 #'
 #' @param preds A numeric vector with the cell cluster predictions.
 #' @param probs A numeric matrix with cell cluster probabilities.
-#' @param batch A numeric vector with cell probabilities corresponding to \code{idx}.
+#' @param batch A character with batch labels.
 #' @param k The number of nearest neighbors to search for. Default is \code{10}.
 #' @param k.prop A numeric (higher than 0 and lower than 1) corresponding to the 
 #' fraction of cells per cluster to use as \code{k} nearest neighbors. Default 
