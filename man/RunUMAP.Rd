@@ -50,19 +50,29 @@ or \code{?uwot::umap} depending if \code{umap.method} is \code{"umap"} or
 \code{"uwot"}.}
 }
 \value{
-Object of \code{SingleCellExperiment} class.
+A \code{SingleCellExperiment} object.
 }
 \description{
-Run nonlinear dimensionality reduction using UMAP with a dimensional reduction as input.
+Run nonlinear dimensionality reduction using UMAP with a dimensional 
+reduction as input.
 }
 \examples{
-library(SingleCellExperiment)
-sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-sce <- PrepareData(sce)
-## These settings are just to accelerate the example, use the defaults.
-sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-sce <- RunPCA(sce,p=5)
-sce <- RunUMAP(sce)
+# Import package
+library("SingleCellExperiment")
+
+# Prepare SCE object for analysis
+pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+
+# Run PCA 
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays)
+
+# Run UMAP
+set.seed(123)
+pbmc_10Xassays <- RunUMAP(pbmc_10Xassays, dimred.type = "PCA")
 
 }
 \keyword{Approximation}

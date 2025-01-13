@@ -4,7 +4,7 @@
 \alias{PrepareData}
 \alias{PrepareData.SingleCellExperiment}
 \alias{PrepareData,SingleCellExperiment-method}
-\title{Prepare \code{SingleCellExperiment} object for  analysis}
+\title{Prepare \code{SingleCellExperiment} object for analysis}
 \usage{
 PrepareData.SingleCellExperiment(object)
 
@@ -17,14 +17,16 @@ PrepareData.SingleCellExperiment(object)
 An object of \code{SingleCellExperiment} class.
 }
 \description{
-This function prepares the \code{SingleCellExperiment} object for analysis. 
-The only required input is an object of class \code{SingleCellExperiment} 
+This function prepares the \code{SingleCellExperiment} object 
+for analysis. The only required input is an object of class \code{SingleCellExperiment} 
 with at least data in the \code{logcounts} slot.
 }
 \examples{
-library(SingleCellExperiment)
-sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-sce <- PrepareData(sce)
+# Import package
+library("SingleCellExperiment")
+
+# Run function
+pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
 
 }
 \keyword{clean}

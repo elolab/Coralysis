@@ -4,7 +4,7 @@
 \alias{FindAllGeneMarkers}
 \alias{FindAllGeneMarkers.SingleCellExperiment}
 \alias{FindAllGeneMarkers,SingleCellExperiment-method}
-\title{identification of gene markers for all clusters}
+\title{Identification of gene markers for all clusters}
 \usage{
 FindAllGeneMarkers.SingleCellExperiment(
   object,
@@ -76,11 +76,11 @@ Default is \code{FALSE}.}
 a data frame of the results if positive results were found, else NULL
 }
 \description{
-FindAllGeneMarkers enables identifying gene markers for all clusters at once.
-This is done by differential expresission analysis where cells from one
-cluster are compared against the cells from the rest of the clusters.
-Gene and cell filters can be applied to accelerate
-the analysis, but this might lead to missing weak signals.
+FindAllGeneMarkers enables identifying gene markers for all 
+clusters at once. This is done by differential expresission analysis where 
+cells from one cluster are compared against the cells from the rest of the 
+clusters. Gene and cell filters can be applied to accelerate the analysis, 
+but this might lead to missing weak signals.
 }
 \examples{
 library(SingleCellExperiment)

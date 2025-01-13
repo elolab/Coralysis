@@ -4,8 +4,8 @@
 \alias{RunTSNE}
 \alias{RunTSNE.SingleCellExperiment}
 \alias{RunTSNE,SingleCellExperiment-method}
-\title{Barnes-Hut implementation of t-Distributed Stochastic
-Neighbor Embedding (t-SNE)}
+\title{Barnes-Hut implementation of t-Distributed Stochastic Neighbor Embedding 
+(t-SNE)}
 \usage{
 RunTSNE.SingleCellExperiment(
   object,
@@ -44,20 +44,29 @@ given should match the parameters accepted by the \code{Rtsne} function. Check
 possible parameters with \code{?Rtsne::Rtsne}.}
 }
 \value{
-object of \code{SingleCellExperiment} class
+A \code{SingleCellExperiment} object.
 }
 \description{
-Run nonlinear dimensionality reduction using t-SNE with the
+Run nonlinear dimensionality reduction using t-SNE with the 
 PCA-transformed consensus matrix as input.
 }
 \examples{
-library(SingleCellExperiment)
-sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-sce <- PrepareData(sce)
-## These settings are just to accelerate the example, use the defaults.
-sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-sce <- RunPCA(sce,p=5)
-sce <- RunTSNE(sce)
+# Import package
+library("SingleCellExperiment")
+
+# Prepare SCE object for analysis
+pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+
+# Run PCA 
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays)
+
+# Run t-SNE
+set.seed(123)
+pbmc_10Xassays <- RunTSNE(pbmc_10Xassays, dimred.type = "PCA")
 
 }
 \keyword{Barnes-Hut}

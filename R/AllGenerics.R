@@ -16,10 +16,10 @@ setGeneric("AggregateDataByBatch", signature = "object",
 setGeneric("RunPCA", signature = "object",
            function(object,
                     p = 50,
-                    scale = FALSE,
+                    scale = TRUE,
                     center = TRUE,
                     threshold = 0,
-                    method = "RSpectra", 
+                    method = "irlba", 
                     return.model = FALSE, 
                     select.icp.tables = NULL) {
              standardGeneric("RunPCA")
@@ -56,56 +56,6 @@ setGeneric("RunTSNE", signature = "object",
            })
 
 #' @export
-setGeneric("HierarchicalClustering", signature = "object",
-           function(object) {
-             standardGeneric("HierarchicalClustering")
-           })
-
-#' @export
-setGeneric("CalcSilhInfo", signature = "object",
-           function(object,
-                    K.start = 2, K.end = 50) {
-             standardGeneric("CalcSilhInfo")
-           })
-
-#' @export
-setGeneric("SilhouetteCurve", signature = "object",
-           function(object,
-                    return.plot = FALSE) {
-             standardGeneric("SilhouetteCurve")
-           })
-
-#' @export
-setGeneric("SelectKClusters", signature = "object",
-           function(object,
-                    K = NULL) {
-             standardGeneric("SelectKClusters")
-           })
-
-#' @export
-setGeneric("MergeClusters", signature = "object",
-           function(object,
-                    clusters.to.merge = "",
-                    new.name = "") {
-             standardGeneric("MergeClusters")
-           })
-
-#' @export
-setGeneric("RenameAllClusters", signature = "object",
-           function(object,
-                    new.cluster.names = "") {
-             standardGeneric("RenameAllClusters")
-           })
-
-#' @export
-setGeneric("RenameCluster", signature = "object",
-           function(object,
-                    old.cluster.name = "",
-                    new.cluster.name = "") {
-             standardGeneric("RenameCluster")
-           })
-
-#' @export
 setGeneric("GeneScatterPlot", signature = "object",
            function(object,
                     genes = "",
@@ -117,18 +67,6 @@ setGeneric("GeneScatterPlot", signature = "object",
                     nrow = NULL,
                     ncol = NULL) {
              standardGeneric("GeneScatterPlot")
-           })
-
-#' @export
-setGeneric("ClusteringScatterPlot",signature = "object",
-           function(object,
-                    clustering.type = "manual",
-                    return.plot = FALSE,
-                    dim.reduction.type = "",
-                    point.size = 0.7,
-                    title = "",
-                    show.legend = TRUE) {
-             standardGeneric("ClusteringScatterPlot")
            })
 
 #' @export
@@ -179,17 +117,6 @@ setGeneric("GeneHeatmap", signature = "object",
                     clustering.type = "manual",
                     gene.markers = NULL) {
              standardGeneric("GeneHeatmap")
-           })
-
-#' @export
-setGeneric("AnnotationScatterPlot", signature = "object",
-           function(object,
-                    annotation = NULL,
-                    return.plot = FALSE,
-                    dim.reduction.type = "",
-                    point.size = 0.7,
-                    show.legend = FALSE) {
-             standardGeneric("AnnotationScatterPlot")
            })
 
 #' @export

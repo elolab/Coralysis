@@ -1,8 +1,7 @@
-#' @title Prepare \code{SingleCellExperiment} object for  analysis
+#' @title Prepare \code{SingleCellExperiment} object for analysis
 #'
-#' @description
-#' This function prepares the \code{SingleCellExperiment} object for analysis. 
-#' The only required input is an object of class \code{SingleCellExperiment} 
+#' @description This function prepares the \code{SingleCellExperiment} object 
+#' for analysis. The only required input is an object of class \code{SingleCellExperiment} 
 #' with at least data in the \code{logcounts} slot.
 #'
 #' @param object An object of \code{SingleCellExperiment} class.
@@ -19,9 +18,11 @@
 #' @importFrom methods is
 #'
 #' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
+#' # Import package
+#' library("SingleCellExperiment")
+#' 
+#' # Run function
+#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
 #'
 PrepareData.SingleCellExperiment <- function(object) {
     
@@ -89,100 +90,23 @@ setMethod("PrepareData", signature(object = "SingleCellExperiment"),
           PrepareData.SingleCellExperiment)
 
 
-#' @title Aggregates gene expression by cell clusters, per batch if provided.
-#'
-#' @description The function aggregates gene expression by cell clusters, per batch if provided.
-#'
-#' @param object An object of \code{SingleCellExperiment} class.
-#' @param batch.label A variable name (of class \code{character}) available 
-#' in the cell metadata \code{colData(object)} with the batch labels (\code{character} 
-#' or \code{factor}) to use. The variable provided must not contain \code{NAs}.
-#' By default \code{NULL}, i.e., cells are sampled evenly regardless their batch. 
-#' @param batch.label Cluster identities vector corresponding to the cells in 
-#' \code{mtx}.
-#' @param nhvg Integer of the number of highly variable genes to select. By default 
-#' \code{2000}. 
-#' @param p Integer. By default \code{30}. 
-#' @param ... Parameters to be passed to \code{ClusterCells()} function. 
-#'
-#' @name AggregateDataByBatch
-#' 
-#' @return A SingleCellExperiment object with gene expression aggregated by clusters.
-#'
-#' @keywords aggregated gene expression batches
-#'
-#' @importFrom SingleCellExperiment logcounts cbind
-#' @importFrom S4Vectors DataFrame metadata
-#' @importFrom scran getTopHVGs
-#' @importFrom irlba prcomp_irlba
-#' 
-AggregateDataByBatch.SingleCellExperiment <- function(object, batch.label, 
-                                                      nhvg, p, ...) {
-    
-    # Check input params
-    stopifnot(is(object, "SingleCellExperiment"), 
-              (is.null(batch.label) || (is.character(batch.label) && (batch.label %in% colnames(colData(object))))), 
-              (is.numeric(nhvg) && (nhvg%%1 == 0) && (nhvg <= nrow(object))), 
-              (is.numeric(p) && (p%%1 == 0) && (p <= nrow(object))))
-    
-    if (is.null(batch.label)) {
-        batch.label <- "batch"
-        object[[batch.label]] <- "single"
-    }
-    batch <- as.character(colData(object)[[batch.label]])
-    batch.names <- unique(batch)
-    names(batch.names) <- batch.names
-    sce.batch <- lapply(X = batch.names, FUN = function(b) {
-        object[,batch==b]
-    })
-    top.hvg <- lapply(X = sce.batch, FUN = function(b) {
-        getTopHVGs(b, n=nhvg)
-    })
-    pca.batch <- lapply(X = batch.names, FUN = function(b) {
-        prcomp_irlba(t(logcounts(sce.batch[[b]][top.hvg[[b]],])),
-                     scale.=TRUE, center=TRUE, n=p)
-    })
-    meta.data <- data.frame()
-    sce.batch.clusters <- list()
-    for (b in batch.names) {
-        reducedDim(x=sce.batch[[b]], type="PCA") <- pca.batch[[b]]$x
-        sce.batch[[b]] <- ClusterCells(object = sce.batch[[b]], ...)
-        clusters.mean <- AggregateClusterExpression(mtx = logcounts(sce.batch[[b]]),
-                                                    cluster=as.character(metadata(sce.batch[[b]])$clusters@cluster))
-        colnames(clusters.mean) <- paste(colnames(clusters.mean), b, sep="_")
-        sce.batch.clusters[[b]] <- SingleCellExperiment(assays=list(logcounts=clusters.mean), 
-                                                        colData=DataFrame(batch=rep(b, ncol(clusters.mean)), 
-                                                                          row.names = colnames(clusters.mean)))
-        tmp.meta.data <- data.frame("cluster" = metadata(sce.batch[[b]])$clusters@cluster, "batch" = b)
-        meta.data <- rbind(meta.data, tmp.meta.data)
-    }
-    sce <- do.call(cbind, sce.batch.clusters)
-    metadata(sce)$clusters <- meta.data[colnames(object),]
-    return(sce)
-}
-#' @rdname AggregateDataByBatch
-#' @aliases AggregateDataByBatch
-setMethod("AggregateDataByBatch", signature(object = "SingleCellExperiment"),
-          AggregateDataByBatch.SingleCellExperiment)
-
 #' @title PCA transformation of the joint probability matrix
 #'
-#' @description
-#' Perform the PCA transformation of the joint probability matrix,
-#' which reduces the dimensionality from k*L to p
+#' @description Perform the PCA transformation of the joint probability matrix,
+#' which reduces the dimensionality from k*L to p.
 #'
 #' @param object object of \code{SingleCellExperiment} class
 #' @param p a positive integer denoting the number of principal
 #' components to calculate and select. Default is \code{50}.
 #' @param scale a logical specifying whether the probabilities should be
-#' standardized to unit-variance before running PCA. Default is \code{FALSE}.
+#' standardized to unit-variance before running PCA. Default is \code{TRUE}.
 #' @param center a logical specifying whether the probabilities should be
 #' centered before running PCA. Default is \code{TRUE}.
 #' @param threshold a thresfold for filtering out ICP runs before PCA with
 #' the lower terminal projection accuracy below the threshold.
 #' Default is \code{0}.
-#' @param method A character specifying the PCA method. One of \code{"RSpectra"}
-#' (default), \code{"irlba"} or \code{"stats"}. 
+#' @param method A character specifying the PCA method. One of \code{"irlba"}
+#' (default), \code{"RSpectra"} or \code{"stats"}. 
 #' @param return.model A logical specifying if the PCA model should or not be 
 #' retrieved. By default \code{FALSE}. Only implemented for \code{method = "stats"}. 
 #' If \code{TRUE}, the \code{method} is coerced to \code{"stats"}. 
@@ -205,13 +129,18 @@ setMethod("AggregateDataByBatch", signature(object = "SingleCellExperiment"),
 #' @importFrom S4Vectors metadata metadata<-
 #'
 #' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#'
+#' # Import package
+#' library("SingleCellExperiment")
+#' 
+#' # Prepare SCE object for analysis
+#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+#' 
+#' # Run PCA 
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays)
 #'
 RunPCA.SingleCellExperiment <- function(object, p, scale, center, threshold,
                                         method, return.model, select.icp.tables) {
@@ -254,7 +183,7 @@ RunPCA.SingleCellExperiment <- function(object, p, scale, center, threshold,
         X <- scale(X, scale = scale, center = center)
         # X^T %*% X
         A = crossprod(X)
-        # Perform eigendecomposition
+        # Perform eigen decomposition
         eigs_sym_out <- RSpectra::eigs_sym(A, p, which = "LM")
         pca <- X %*% eigs_sym_out$vectors
         colnames(pca) <- paste0("PC", seq_len(ncol(pca))) 
@@ -275,35 +204,33 @@ RunPCA.SingleCellExperiment <- function(object, p, scale, center, threshold,
     reducedDim(object, type = "PCA") <- pca
     metadata(object)$coralysis$p <- p # saving due to compatibility issues
     metadata(object)$coralysis$pca.params <-  list("p" = p, "scale" = scale, 
-                                                "threshold" = threshold, 
-                                                "center" = center,
-                                                "method" = method, 
-                                                "return.model" = return.model, 
-                                                "select.icp.tables" = select.icp.tables)
+                                                   "threshold" = threshold, 
+                                                    "center" = center,
+                                                    "method" = method, 
+                                                    "return.model" = return.model, 
+                                                    "select.icp.tables" = select.icp.tables)
     
     return(object)
 }
-
 #' @rdname RunPCA
 #' @aliases RunPCA
 setMethod("RunPCA", signature(object = "SingleCellExperiment"),
           RunPCA.SingleCellExperiment)
 
 
-
 #' @title Elbow plot of the standard deviations of the principal components
 #'
-#' @description
-#' Draw an elbow plot of the standard deviations of the principal components
-#' to deduce an appropriate value for p.
+#' @description Draw an elbow plot of the standard deviations of the principal 
+#' components to deduce an appropriate value for \code{p}.
 #'
-#' @param object object of class 'coralysis'
-#' @param return.plot logical indicating if the ggplot2 object
-#' should be returned (default FALSE)
+#' @param object A \code{SingleCellExperiment} object obtained after running 
+#' \code{RunParallelDivisiveICP}.
+#' @param return.plot logical indicating if the ggplot2 object should be returned.
+#' By default \code{FALSE}.
 #'
 #' @name PCAElbowPlot
 #'
-#' @return ggplot2 object if return.plot=TRUE
+#' @return A ggplot2 object, if \code{return.plot=TRUE}.
 #'
 #' @keywords PCA elbow plot
 #'
@@ -314,21 +241,28 @@ setMethod("RunPCA", signature(object = "SingleCellExperiment"),
 #' @importFrom stats sd
 #'
 #' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' PCAElbowPlot(sce)
+#' # Import package
+#' library("SingleCellExperiment")
+#' 
+#' # Prepare SCE object for analysis
+#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+#' 
+#' # Run PCA 
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays)
+#' 
+#' # Plot Elbow
+#' PCAElbowPlot(pbmc_10Xassays)
 #'
 PCAElbowPlot.SingleCellExperiment <- function(object, return.plot) {
 
-  df <- matrix(apply(reducedDim(object,"PCA"),2,sd),
+  df <- matrix(apply(reducedDim(object,"PCA"), 2,sd),
                nrow = metadata(object)$coralysis$p,
                ncol = 1,
-               dimnames =
-                 list(seq_len(metadata(object)$coralysis$p),"SD"))
+               dimnames = list(seq_len(metadata(object)$coralysis$p),"SD"))
   df <- melt(df)
 
   p <- ggplot(df, aes_string(x = 'Var1', y = 'value')) +
@@ -344,7 +278,6 @@ PCAElbowPlot.SingleCellExperiment <- function(object, return.plot) {
     print(p)
   }
 }
-
 #' @rdname PCAElbowPlot
 #' @aliases PCAElbowPlot
 setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
@@ -353,8 +286,8 @@ setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
 
 #' @title Uniform Manifold Approximation and Projection (UMAP)
 #'
-#' @description
-#' Run nonlinear dimensionality reduction using UMAP with a dimensional reduction as input.
+#' @description Run nonlinear dimensionality reduction using UMAP with a dimensional 
+#' reduction as input.
 #'
 #' @param object An object of \code{SingleCellExperiment} class.
 #' @param dims Dimensions to select from \code{dimred.type}. By default \code{NULL}, 
@@ -374,20 +307,29 @@ setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
 #'
 #' @name RunUMAP
 #'
-#' @return Object of \code{SingleCellExperiment} class.
+#' @return A \code{SingleCellExperiment} object.
 #'
 #' @keywords Uniform Manifold Approximation and Projection UMAP
 #'
 #' @importFrom SingleCellExperiment reducedDim reducedDim<- reducedDimNames
 #'
 #' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- RunUMAP(sce)
+#' # Import package
+#' library("SingleCellExperiment")
+#' 
+#' # Prepare SCE object for analysis
+#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+#' 
+#' # Run PCA 
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays)
+#' 
+#' # Run UMAP
+#' set.seed(123)
+#' pbmc_10Xassays <- RunUMAP(pbmc_10Xassays, dimred.type = "PCA")
 #'
 RunUMAP.SingleCellExperiment <- function(object, dims, dimred.type, return.model, 
                                          umap.method, dimred.name, ...) {
@@ -442,11 +384,10 @@ setMethod("RunUMAP", signature(object = "SingleCellExperiment"),
           RunUMAP.SingleCellExperiment)
 
 
-#' @title Barnes-Hut implementation of t-Distributed Stochastic
-#' Neighbor Embedding (t-SNE)
+#' @title Barnes-Hut implementation of t-Distributed Stochastic Neighbor Embedding 
+#' (t-SNE)
 #'
-#' @description
-#' Run nonlinear dimensionality reduction using t-SNE with the
+#' @description Run nonlinear dimensionality reduction using t-SNE with the 
 #' PCA-transformed consensus matrix as input.
 #'
 #' @param object Object of \code{SingleCellExperiment} class.
@@ -463,7 +404,7 @@ setMethod("RunUMAP", signature(object = "SingleCellExperiment"),
 #'
 #' @name RunTSNE
 #'
-#' @return object of \code{SingleCellExperiment} class
+#' @return A \code{SingleCellExperiment} object. 
 #'
 #' @keywords Barnes-Hut implementation of t-Distributed
 #' Stochastic Neighbor Embedding t-SNE
@@ -471,13 +412,22 @@ setMethod("RunUMAP", signature(object = "SingleCellExperiment"),
 #' @importFrom SingleCellExperiment reducedDim reducedDim<- reducedDimNames
 #'
 #' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- RunTSNE(sce)
+#' # Import package
+#' library("SingleCellExperiment")
+#' 
+#' # Prepare SCE object for analysis
+#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+#' 
+#' # Run PCA 
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays)
+#' 
+#' # Run t-SNE
+#' set.seed(123)
+#' pbmc_10Xassays <- RunTSNE(pbmc_10Xassays, dimred.type = "PCA")
 #'
 RunTSNE.SingleCellExperiment <- function(object, dims, dimred.type, perplexity, dimred.name, ...) {
     
@@ -509,717 +459,13 @@ setMethod("RunTSNE", signature(object = "SingleCellExperiment"),
           RunTSNE.SingleCellExperiment)
 
 
-#' @title Hierarchical clustering using the Ward's method
-#'
-#' @description
-#' Perform Hierarchical clustering using the Ward's method.
-#'
-#' @param object of \code{SingleCellExperiment} class
-#'
-#' @name HierarchicalClustering
-#'
-#' @return object of \code{SingleCellExperiment} class
-#'
-#' @keywords ward hierarchical clustering
-#'
-#' @importFrom fastcluster hclust.vector
-#' @importFrom S4Vectors metadata<-
-#' @importFrom SingleCellExperiment reducedDim
-#'
-#' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- HierarchicalClustering(sce)
-#'
-HierarchicalClustering.SingleCellExperiment <- function(object) {
-
-  hc <- hclust.vector(reducedDim(object,"PCA"), method = "ward")
-
-  metadata(object)$coralysis$hc <- hc
-
-  return(object)
-}
-
-#' @rdname HierarchicalClustering
-#' @aliases HierarchicalClustering
-setMethod("HierarchicalClustering", signature(object = "SingleCellExperiment"),
-          HierarchicalClustering.SingleCellExperiment)
-
-
-#' @title Estimating optimal K using silhouette
-#'
-#' @description
-#' The function estimates the optimal number of clusters K from the dendrogram
-#' of the hierarhical clustering using the silhouette method.
-#'
-#' @param object of \code{SingleCellExperiment} class
-#' @param K.start a numeric for the smallest
-#' K value to be tested. Default is \code{2}.
-#' @param K.end a numeric for the largest
-#' K value to be tested. Default is \code{50}.
-#'
-#' @name CalcSilhInfo
-#'
-#' @return object of \code{SingleCellExperiment} class
-#'
-#' @keywords ward hierarchical clustering
-#'
-#' @importFrom S4Vectors metadata<- metadata
-#' @importFrom parallelDist parDist
-#' @importFrom cluster silhouette
-#' @importFrom dendextend cutree
-#' @importFrom stats as.dendrogram
-#'
-#' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- HierarchicalClustering(sce)
-#' sce <- CalcSilhInfo(sce)
-#'
-CalcSilhInfo.SingleCellExperiment <-
-  function(object, K.start, K.end) {
-
-    distance_matrix <- parDist(reducedDim(object,"PCA"),
-                               method = "euclidean", threads = 1)
-    distance_matrix <- as.matrix(distance_matrix)
-    sis <- c()
-    for (k in seq(K.start,K.end,1))
-    {
-      clustering <- cutree(metadata(object)$coralysis$hc,k=k)
-
-      si <- silhouette(clustering,dmatrix = distance_matrix)
-      avgsi <- summary(si)$avg.width
-      sis <- c(sis,avgsi)
-    }
-    # Select optimal K and cluster the data
-    k_optimal <- which.max(sis)+1
-
-    message(paste0("optimal K: ",
-                   k_optimal,
-                   ", average silhouette score: ",
-                   sis[which.max(sis)]))
-
-    clustering <- factor(cutree(as.dendrogram(metadata(object)$coralysis$hc),
-                                k = k_optimal))
-    names(clustering) <- colnames(object)
-
-    metadata(object)$coralysis$clustering.optimal <- clustering
-    metadata(object)$coralysis$K.optimal <- k_optimal
-
-    names(sis) <- seq(K.start,K.end,1)
-    metadata(object)$coralysis$silhouette.information <- sis
-
-    return(object)
-  }
-
-#' @rdname CalcSilhInfo
-#' @aliases CalcSilhInfo
-setMethod("CalcSilhInfo", signature(object = "SingleCellExperiment"),
-          CalcSilhInfo.SingleCellExperiment)
-
-#' @title Silhouette curve
-#'
-#' @description
-#' Draw the silhouette curve: the average silhouette value across
-#' the cells for a range of different K values.
-#'
-#' @param object of \code{SingleCellExperiment} class
-#' @param return.plot a logical denoting whether the ggplot2 object
-#' should be returned. Default is \code{FALSE}.
-#'
-#' @name SilhouetteCurve
-#'
-#' @return ggplot2 object if return.plot=TRUE
-#'
-#' @keywords ward hierarchical clustering
-#'
-#' @importFrom S4Vectors metadata
-#' @import ggplot2
-#' @importFrom DescTools AUC
-#'
-#' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- HierarchicalClustering(sce)
-#' sce <- CalcSilhInfo(sce)
-#' SilhouetteCurve(sce)
-#'
-SilhouetteCurve.SingleCellExperiment <- function(object, return.plot) {
-
-  sis <- metadata(object)$coralysis$silhouette.information
-  df <- data.frame(cbind(names(sis),sis),
-                   stringsAsFactors = FALSE)
-  colnames(df) <- c("K","AvgSilhouette")
-  df$AvgSilhouette <- as.numeric(df$AvgSilhouette)
-  df$K <- as.numeric(df$K)
-
-  auc <- round(AUC(df$K,df$AvgSilhouette),3)
-
-  p<-ggplot(df, aes_string(x='K', y='AvgSilhouette')) +
-    geom_line(color="red")+
-    geom_point(color="black")+
-    ylab("Average silhouette")+
-    theme_bw() +
-    ggtitle(paste0("AUSC=",auc))
-
-  if (return.plot)
-  {
-    return(p)
-  } else {
-    print(p)
-  }
-}
-
-#' @rdname SilhouetteCurve
-#' @aliases SilhouetteCurve
-setMethod("SilhouetteCurve", signature(object = "SingleCellExperiment"),
-          SilhouetteCurve.SingleCellExperiment)
-
-#' @title Selecting K clusters from hierarchical clustering
-#'
-#' @description
-#' Selects K clusters from the dendrogram.
-#'
-#' @param object of \code{SingleCellExperiment} class
-#' @param K a positive integer denoting how many clusters to select
-#'
-#' @name SelectKClusters
-#'
-#' @return object of \code{SingleCellExperiment} class
-#'
-#' @keywords select clusters
-#'
-#' @importFrom S4Vectors metadata metadata<-
-#' @importFrom dendextend cutree
-#'
-#' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- HierarchicalClustering(sce)
-#' sce <- SelectKClusters(sce,K=5)
-#'
-SelectKClusters.SingleCellExperiment <- function(object, K) {
-
-  clustering <- factor(cutree(as.dendrogram(metadata(object)$coralysis$hc),k=K))
-  names(clustering) <- colnames(object)
-
-  metadata(object)$coralysis$clustering.manual <- clustering
-  metadata(object)$coralysis$K.manual <- K
-
-  return(object)
-
-}
-
-#' @rdname SelectKClusters
-#' @aliases SelectKClusters
-setMethod("SelectKClusters", signature(object = "SingleCellExperiment"),
-          SelectKClusters.SingleCellExperiment)
-
-#' @title Merge clusters
-#'
-#' @description
-#' MergeClusters function enables merging clusters and naming the newly
-#' formed cluster.
-#'
-#' @param object of \code{SingleCellExperiment} class
-#' @param clusters.to.merge a character or numeric vector for the names of
-#' the clusters to merge
-#' @param new.name a character for the new name of the merged cluster.
-#' If left empty, the new cluster name is formed by separating
-#' the cluster names by "_".
-#'
-#' @name MergeClusters
-#'
-#' @return object of \code{SingleCellExperiment} class
-#'
-#' @keywords merge clusters
-#'
-#' @importFrom S4Vectors metadata metadata<-
-#'
-#' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- HierarchicalClustering(sce)
-#' sce <- SelectKClusters(sce,K=5)
-#' sce <- MergeClusters(sce,clusters.to.merge=c(1,2),new.name="merged1")
-#'
-MergeClusters.SingleCellExperiment <- function(object,
-                                               clusters.to.merge,
-                                               new.name) {
-
-  clusters.to.merge <- as.character(clusters.to.merge)
-
-  clustering_old <- metadata(object)$coralysis$clustering.manual
-  clusters_old <- levels(clustering_old)
-
-  if (sum(clusters.to.merge %in% clusters_old)!=length(clusters.to.merge))
-  {
-    stop("invalid `clusters.to.merge argument`")
-    return(object)
-  }
-
-  if (new.name=="")
-  {
-    new_cluster_name <- paste(clusters.to.merge,collapse = ",")
-  } else {
-    new_cluster_name <- new.name
-  }
-
-  clustering_new <- as.character(clustering_old)
-  clustering_new[clustering_new %in% clusters.to.merge] <- new_cluster_name
-
-  clustering_new <- factor(clustering_new)
-  names(clustering_new) <- names(clustering_old)
-
-  metadata(object)$coralysis$clustering.manual <- clustering_new
-  metadata(object)$coralysis$K.manual <- length(levels(clustering_new))
-
-  return(object)
-
-}
-
-#' @rdname MergeClusters
-#' @aliases MergeClusters
-setMethod("MergeClusters", signature(object = "SingleCellExperiment"),
-          MergeClusters.SingleCellExperiment)
-
-#' @title Renaming all clusters at once
-#'
-#' @description
-#' RenameAllClusters function enables renaming all cluster at once.
-#'
-#' @param object of \code{SingleCellExperiment} class
-#' @param new.cluster.names object of class 'coralysis'
-#'
-#' @name RenameAllClusters
-#'
-#' @return object of \code{SingleCellExperiment} class
-#'
-#' @keywords rename all clusters
-#'
-#' @importFrom S4Vectors metadata metadata<-
-#' @importFrom plyr mapvalues
-#'
-#' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- HierarchicalClustering(sce)
-#' sce <- SelectKClusters(sce,K=5)
-#' sce <- RenameAllClusters(sce,new.cluster.names=LETTERS[seq_len(5)])
-#'
-RenameAllClusters.SingleCellExperiment <- function(object, new.cluster.names) {
-
-  new.cluster.names <- as.character(new.cluster.names)
-
-  clustering_old <- metadata(object)$coralysis$clustering.manual
-  clusters_old <- levels(clustering_old)
-
-  if (length(clusters_old) != length(new.cluster.names))
-  {
-    stop(paste0("number of elements in clusters.to.merge is ",
-                "unqual to the current number of clusters"))
-    return(object)
-  }
-
-  clustering_new <- mapvalues(clustering_old,clusters_old,new.cluster.names)
-
-  metadata(object)$coralysis$clustering.manual <- clustering_new
-
-  return(object)
-
-}
-
-#' @rdname RenameAllClusters
-#' @aliases RenameAllClusters
-setMethod("RenameAllClusters", signature(object = "SingleCellExperiment"),
-          RenameAllClusters.SingleCellExperiment)
-
-#' @title Renaming one cluster
-#'
-#' @description
-#' RenameCluster function enables renaming
-#' a cluster in `clustering.manual` slot.
-#'
-#' @param object of \code{SingleCellExperiment} class
-#' @param old.cluster.name a character variable denoting  the
-#' old name of the cluster
-#' @param new.cluster.name a character variable the
-#' new name of the cluster
-#'
-#' @name RenameCluster
-#'
-#' @return object of \code{SingleCellExperiment} class
-#'
-#' @keywords rename one cluster
-#'
-#' @importFrom S4Vectors metadata metadata<-
-#'
-#' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- HierarchicalClustering(sce)
-#' sce <- SelectKClusters(sce,K=5)
-#' sce <- RenameCluster(sce,1,"cluster1")
-#'
-RenameCluster.SingleCellExperiment <- function(object,
-                                               old.cluster.name,
-                                               new.cluster.name) {
-
-  old.cluster.name <- as.character(old.cluster.name)
-  new.cluster.name <- as.character(new.cluster.name)
-
-  if (old.cluster.name=="" | new.cluster.name=="")
-  {
-    stop("'old.cluster.name' or 'new.cluster.name' empty\n")
-  }
-
-  clustering_old <- metadata(object)$coralysis$clustering.manual
-  clusters_old <- levels(clustering_old)
-  clustering_old <- as.character(clustering_old)
-  names(clustering_old) <- colnames(object)
-
-  if (!(old.cluster.name %in% clusters_old))
-  {
-    stop("'old.cluster.name' unvalid cluster name\n")
-  }
-
-  clustering_new <- clustering_old
-  clustering_new[clustering_new==old.cluster.name] <- new.cluster.name
-
-  clustering_new <- factor(clustering_new)
-  names(clustering_new) <- names(clustering_old)
-
-  metadata(object)$coralysis$clustering.manual <- clustering_new
-
-  return(object)
-
-}
-
-#' @rdname RenameCluster
-#' @aliases RenameCluster
-setMethod("RenameCluster", signature(object = "SingleCellExperiment"),
-          RenameCluster.SingleCellExperiment)
-
-#' @title Visualize gene expression over nonlinear dimensionality reduction
-#'
-#' @description
-#' GeneScatterPlot enables visualizing gene expression of a gene over
-#' nonlinear dimensionality reduction with t-SNE or UMAP.
-#'
-#' @param object of \code{SingleCellExperiment} class
-#' @param genes a character vector of the genes to be visualized
-#' @param return.plot whether to return the ggplot2 object or just
-#' draw it (default \code{FALSE})
-#' @param dim.reduction.type "tsne" or "umap" (default "tsne")
-#' @param point.size point size (default 0.7)
-#' @param title text to write above the plot
-#' @param plot.expressing.cells.last whether to plot the expressing genes
-#' last to make the points more visible
-#' @param nrow a positive integer that specifies the number of rows in
-#' the plot grid. Default is \code{NULL}.
-#' @param ncol a positive integer that specifies the number of columns
-#' in the plot grid. Default is \code{NULL}.
-#'
-#' @name GeneScatterPlot
-#'
-#' @return ggplot2 object if return.plot=TRUE
-#'
-#' @keywords gene scatter plot visualization
-#'
-#' @importFrom SingleCellExperiment reducedDim logcounts
-#' @importFrom S4Vectors metadata metadata<-
-#' @import ggplot2
-#' @importFrom scales muted
-#' @importFrom cowplot plot_grid
-#'
-#' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- RunTSNE(sce)
-#' GeneScatterPlot(sce,"CD14",dim.reduction.type="tsne")
-#' sce <- RunUMAP(sce)
-#' GeneScatterPlot(sce,"CD14",dim.reduction.type="umap")
-#'
-GeneScatterPlot.SingleCellExperiment <- function(object,
-                                                 genes,
-                                                 return.plot,
-                                                 dim.reduction.type,
-                                                 point.size,
-                                                 title,
-                                                 plot.expressing.cells.last,
-                                                 nrow,
-                                                 ncol) {
-
-  if (dim.reduction.type=="umap") {
-    two.dim.data <- reducedDim(object,"UMAP")
-    xlab <- "UMAP_1"
-    ylab <- "UMAP_2"
-  } else if (dim.reduction.type=="tsne"){
-    two.dim.data <- reducedDim(object,"TSNE")
-    xlab <- "tSNE_1"
-    ylab <- "tSNE_2"
-  } else {
-    stop("dim.reduction.type must be either 'tsne' or 'umap'")
-  }
-
-  if (length(genes)==1)
-  {
-
-    df <- as.data.frame(two.dim.data)
-
-    if (!(genes %in% rownames(object))) {
-      stop("invalid gene name")
-    }
-
-    color.by <- logcounts(object)[genes,]
-    df$group <- color.by
-    colnames(df) <- c("dim1","dim2","group")
-
-    # Plot
-    if (plot.expressing.cells.last) {
-        df <- df[order(df$group,decreasing = FALSE),]
-    }
-    p<-ggplot(df, aes_string(x='dim1', y='dim2')) +
-        geom_point(size=point.size,aes_string(color='group')) +
-        scale_colour_gradient2(low = muted("red"), mid = "lightgrey",
-                               high = "blue",name = genes) +
-        xlab(xlab) +
-        ylab(ylab) +
-        theme(panel.grid.major = element_blank(),
-              panel.grid.minor = element_blank(),
-              panel.background = element_blank(),
-              axis.line = element_line(colour = "black"))
-    
-    if (title != "") {
-        p <- p + ggtitle(title) +
-            theme(plot.title = element_text(hjust = 0.5))
-    }
-    if (return.plot) {
-      return(p)
-    } else {
-      print(p)
-    }
-  } else {
-
-    plot_list <- list()
-    for (gene in genes)
-    {
-      df <- as.data.frame(two.dim.data)
-
-      if (!(gene %in% rownames(object)))
-      {
-        stop(paste0("invalid gene name: ",gene))
-      }
-
-      color.by <- logcounts(object)[gene,]
-      df$group <- color.by
-      colnames(df) <- c("dim1","dim2","group")
-
-      # Plot 
-      if (plot.expressing.cells.last) {
-        df <- df[order(df$group,decreasing = FALSE),]
-      }
-      p<-ggplot(df, aes_string(x='dim1', y='dim2')) +
-          geom_point(size=point.size,aes_string(color='group')) +
-          scale_colour_gradient2(low = muted("red"), mid = "lightgrey",
-                                 high = "blue",name = gene) +
-          xlab(xlab) +
-          ylab(ylab) +
-          theme(panel.grid.major = element_blank(),
-                panel.grid.minor = element_blank(),
-                panel.background = element_blank(),
-                axis.line = element_line(colour = "black"))
-      if (title != "") {
-         p <- p + ggtitle(title) +
-              theme(plot.title = element_text(hjust = 0.5))
-      }
-      plot_list[[gene]] <- p
-    }
-
-    p <- plot_grid(plotlist = plot_list,align = "hv",nrow = nrow, ncol = ncol)
-
-    if (return.plot) {
-      return(p)
-    } else {
-      print(p)
-    }
-  }
-
-}
-
-#' @rdname GeneScatterPlot
-#' @aliases GeneScatterPlot
-setMethod("GeneScatterPlot", signature(object = "SingleCellExperiment"),
-          GeneScatterPlot.SingleCellExperiment)
-
-#' @title Visualize the clustering over nonliner dimensionality reduction
-#'
-#' @description
-#' ClusteringScatterPlot function enables visualizing the clustering over
-#' nonliner dimensionality reduction (t-SNE or UMAP).
-#'
-#' @param object of \code{SingleCellExperiment} class
-#' @param clustering.type "manual" or "optimal". "manual" refers to the
-#' clustering formed using the "SelectKClusters" function and "optimal" to
-#' the clustering formed using the "CalcSilhInfo" function.
-#' Default is "manual".
-#' @param return.plot a logical denoting whether to return the ggplot2 object.
-#' Default is \code{FALSE}.
-#' @param dim.reduction.type "tsne" or "umap". Default is "tsne".
-#' @param point.size point size. Default is Default is \code{0.7}.
-#' @param title text to write above the plot
-#' @param show.legend whether to show the legend on the right side of the plot.
-#' Default is \code{TRUE}.
-#'
-#' @name ClusteringScatterPlot
-#'
-#' @return ggplot2 object if return.plot=TRUE
-#'
-#' @keywords clustering scatter plot nonlinear dimensionality reduction
-#'
-#' @importFrom SingleCellExperiment reducedDim
-#' @importFrom S4Vectors metadata metadata<-
-#' @import ggplot2
-#' @importFrom stats median
-#'
-#' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- HierarchicalClustering(sce)
-#' sce <- SelectKClusters(sce,K=5)
-#' sce <- RunTSNE(sce)
-#' ClusteringScatterPlot(sce,"manual",dim.reduction.type="tsne")
-#' sce <- RunUMAP(sce)
-#' ClusteringScatterPlot(sce,"manual",dim.reduction.type="umap")
-#'
-ClusteringScatterPlot.SingleCellExperiment <- function(object,
-                                                       clustering.type,
-                                                       return.plot,
-                                                       dim.reduction.type,
-                                                       point.size,
-                                                       title,
-                                                       show.legend) {
-
-  if (dim.reduction.type=="umap")
-  {
-    two.dim.data <- reducedDim(object,"UMAP")
-    xlab <- "UMAP_1"
-    ylab <- "UMAP_2"
-  } else if (dim.reduction.type=="tsne"){
-    two.dim.data <- reducedDim(object,"TSNE")
-    xlab <- "tSNE_1"
-    ylab <- "tSNE_2"
-  } else {
-    stop("dim.reduction.type must be either 'tsne' or 'umap'")
-  }
-
-  if (clustering.type=="manual")
-  {
-    color.by <- metadata(object)$coralysis$clustering.manual
-  } else if (clustering.type=="optimal")
-  {
-    color.by <- metadata(object)$coralysis$clustering.optimal
-  } else {
-    clustering <- metadata(object)$coralysis$clustering.manual
-    message("clustering.type='manual'")
-  }
-
-  df <- as.data.frame(two.dim.data)
-
-  df$cluster <- color.by
-  colnames(df) <- c("dim1","dim2","cluster")
-
-  two.dim.data_ <- two.dim.data
-  rownames(two.dim.data_) <- names(color.by)
-  cluster_centers <- lapply(levels(color.by),function(x) apply(two.dim.data_[names(color.by)[color.by==x],,drop=FALSE],2,median))
-  cluster_centers <- do.call(rbind,cluster_centers)
-
-  if (title == "")
-  {
-    p<-ggplot(df, aes_string(x='dim1', y='dim2')) +
-      geom_point(size=point.size,aes_string(color='cluster')) +
-      xlab(xlab) +
-      ylab(ylab) +
-      theme_classic() +
-      annotate("text", x = cluster_centers[,1], y = cluster_centers[,2],
-               label = levels(color.by))
-
-  } else {
-
-    p<-ggplot(df, aes_string(x='dim1', y='dim2')) +
-      geom_point(size=point.size,aes_string(color='cluster')) +
-      xlab(xlab) +
-      ylab(ylab) +
-      theme_classic() +
-      annotate("text", x = cluster_centers[,1], y = cluster_centers[,2],
-               label = levels(color.by)) +
-      ggtitle(title) +
-      theme(plot.title = element_text(hjust = 0.5))
-
-  }
-
-  if (!show.legend)
-  {
-    p <- p + theme(legend.position = "none")
-  }
-
-  if (return.plot) {
-    return(p)
-  } else {
-    print(p)
-  }
-
-}
-
-#' @rdname ClusteringScatterPlot
-#' @aliases ClusteringScatterPlot
-setMethod("ClusteringScatterPlot", signature(object = "SingleCellExperiment"),
-          ClusteringScatterPlot.SingleCellExperiment)
-
-#' @title identification of gene markers for all clusters
-#'
-#' @description
-#' FindAllGeneMarkers enables identifying gene markers for all clusters at once.
-#' This is done by differential expresission analysis where cells from one
-#' cluster are compared against the cells from the rest of the clusters.
-#' Gene and cell filters can be applied to accelerate
-#' the analysis, but this might lead to missing weak signals.
+#' @title Identification of gene markers for all clusters
+#'
+#' @description FindAllGeneMarkers enables identifying gene markers for all 
+#' clusters at once. This is done by differential expresission analysis where 
+#' cells from one cluster are compared against the cells from the rest of the 
+#' clusters. Gene and cell filters can be applied to accelerate the analysis, 
+#' but this might lead to missing weak signals.
 #'
 #' @param object of \code{SingleCellExperiment} class
 #' @param clustering.type "manual" or "optimal". "manual" refers to the
@@ -1430,11 +676,11 @@ FindAllGeneMarkers.SingleCellExperiment <- function(object,
   return(results_df)
 
 }
-
 #' @rdname FindAllGeneMarkers
 #' @aliases FindAllGeneMarkers
 setMethod("FindAllGeneMarkers", signature(object = "SingleCellExperiment"),
           FindAllGeneMarkers.SingleCellExperiment)
+
 
 #' @title Identification of gene markers for a cluster or two arbitrary
 #' combinations of clusters
@@ -1688,295 +934,10 @@ FindGeneMarkers.SingleCellExperiment <- function(object,
   return(results_df)
 
 }
-
 #' @rdname FindGeneMarkers
 #' @aliases FindGeneMarkers
 setMethod("FindGeneMarkers", signature(object = "SingleCellExperiment"),
           FindGeneMarkers.SingleCellExperiment)
-
-#' @title Gene expression visualization using violin plots
-#'
-#' @description
-#' The VlnPlot function enables visualizing expression levels of a gene,
-#' or multiple genes, across clusters using Violin plots.
-#'
-#' @param object of \code{SingleCellExperiment} class
-#' @param clustering.type "manual" or "optimal". "manual"
-#' refers to the clustering formed using the "SelectKClusters" function
-#' and "optimal" to the clustering formed using the
-#' "CalcSilhInfo" function. Default is "manual".
-#' @param genes a character vector denoting the gene names that are visualized
-#' @param return.plot return.plot whether to return the ggplot2 object
-#' @param rotate.x.axis.labels a logical denoting whether the x-axis
-#' labels should be rotated 90 degrees.
-#' or just draw it. Default is \code{FALSE}.
-#'
-#' @name VlnPlot
-#'
-#' @return ggplot2 object if return.plot=TRUE
-#'
-#' @keywords violin plot
-#'
-#' @importFrom S4Vectors metadata
-#' @import ggplot2
-#' @importFrom cowplot plot_grid
-#' @importFrom SingleCellExperiment logcounts
-#'
-#' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- HierarchicalClustering(sce)
-#' sce <- SelectKClusters(sce,K=5)
-#' VlnPlot(sce,genes=c("CD3D","CD79A","CST3"))
-#'
-VlnPlot.SingleCellExperiment <- function(object,
-                                         clustering.type,
-                                         genes,
-                                         return.plot,
-                                         rotate.x.axis.labels) {
-
-
-  if (clustering.type=="manual")
-  {
-    clustering <- metadata(object)$coralysis$clustering.manual
-  } else if (clustering.type=="optimal")
-  {
-    clustering <- metadata(object)$coralysis$clustering.optimal
-  } else {
-    clustering <- metadata(object)$coralysis$clustering.manual
-    message("clustering.type='manual'")
-  }
-
-  data <- logcounts(object)
-
-  df <- as.numeric(t(data[genes,]))
-  df <- data.frame(matrix(df,ncol = 1,dimnames = list(seq_len(length(df)),"Expression")))
-  df$gene  <- unlist(lapply(genes,function(x) rep(x,ncol(data))))
-  df$gene <- factor(df$gene)
-  df$Cluster <- rep(as.character(clustering),length(genes))
-  df$Cluster <- factor(df$Cluster)
-
-
-  if (rotate.x.axis.labels)
-  {
-    plotlist <- lapply(genes,function(x) ggplot(df[df$gene==x,], aes_string(x='Cluster', y='Expression', fill='Cluster'))+geom_violin(trim=TRUE)+geom_jitter(height = 0, width = 0.1)+theme_classic()+ggtitle(x)+theme(plot.title = element_text(hjust = 0.5),legend.position = "none",axis.text.x = element_text(angle = 90, hjust = 1)))
-  } else {
-    plotlist <- lapply(genes,function(x) ggplot(df[df$gene==x,], aes_string(x='Cluster', y='Expression', fill='Cluster'))+geom_violin(trim=TRUE)+geom_jitter(height = 0, width = 0.1)+theme_classic()+ggtitle(x)+theme(plot.title = element_text(hjust = 0.5),legend.position = "none"))
-
-  }
-
-
-  p <- plot_grid(plotlist = plotlist)
-
-  if (return.plot)
-  {
-    return(p)
-  } else {
-    print(p)
-  }
-
-}
-
-#' @rdname VlnPlot
-#' @aliases VlnPlot
-setMethod("VlnPlot", signature(object = "SingleCellExperiment"),
-          VlnPlot.SingleCellExperiment)
-
-#' @title Heatmap visualization of the gene markers identified by FindAllGeneMarkers
-#'
-#' @description
-#' The GeneHeatmap function enables drawing a heatmap of the gene markers
-#' identified by FindAllGeneMarkers, where the cell are grouped
-#' by the clustering.
-#'
-#' @param object of \code{SingleCellExperiment} class
-#' @param clustering.type "manual" or "optimal". "manual" refers to the
-#' clustering formed using the "SelectKClusters" function and "optimal"
-#' to the clustering using the "CalcSilhInfo" function.
-#' Default is "manual".
-#' @param gene.markers a data frame of the gene markers generated
-#' by FindAllGeneMarkers function. To accelerate the drawing, filtering
-#' the dataframe by selecting e.g. top 10 genes is recommended.
-#'
-#' @name GeneHeatmap
-#'
-#' @return nothing
-#'
-#' @keywords gene heatmap grouped
-#'
-#' @importFrom S4Vectors metadata
-#' @import pheatmap
-#' @importFrom SingleCellExperiment logcounts
-#' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,r=1,k=5) # Use L=200
-#' sce <- RunPCA(sce,p=5)
-#' sce <- HierarchicalClustering(sce)
-#' sce <- SelectKClusters(sce,K=5)
-#' gene_markers <- FindAllGeneMarkers(sce,log2fc.threshold = 0.5,min.pct = 0.5)
-#' top10_log2FC <- SelectTopGenes(gene_markers,top.N=10,
-#' criterion.type="log2FC",inverse=FALSE)
-#' GeneHeatmap(sce,clustering.type = "manual",
-#'  gene.markers = top10_log2FC)
-#'
-GeneHeatmap.SingleCellExperiment <- function(object,
-                                             clustering.type,
-                                             gene.markers) {
-
-
-  if (clustering.type=="manual")
-  {
-    clustering <- metadata(object)$coralysis$clustering.manual
-  } else if (clustering.type=="optimal")
-  {
-    clustering <- metadata(object)$coralysis$clustering.optimal
-  } else {
-    clustering <- metadata(object)$coralysis$clustering.manual
-    cat("clustering.type='manual'")
-  }
-
-  data <- logcounts(object)
-  data <- data[unique(gene.markers$gene),]
-  # data <- scale(data,center = TRUE,scale = TRUE)
-  data <- data[,order(clustering)]
-
-
-  # Generate column annotations
-  annotation = data.frame(cluster=sort(clustering))
-
-  pheatmap(data,show_colnames = FALSE,
-           gaps_col = cumsum(table(clustering[order(clustering)])),
-           gaps_row = cumsum(table(gene.markers[!duplicated(gene.markers$gene),"cluster"])),
-           cluster_rows = FALSE,
-           cluster_cols = FALSE,
-           annotation_col = annotation)
-
-}
-
-#' @rdname GeneHeatmap
-#' @aliases GeneHeatmap
-setMethod("GeneHeatmap", signature(object = "SingleCellExperiment"),
-          GeneHeatmap.SingleCellExperiment)
-
-#' @title Visualiation of a custom annotation over nonlinear
-#' dimensionality reduction
-#'
-#' @description
-#' The AnnotationScatterPlot enables visualizing arbitrary class labels
-#' over the nonliner dimensionality reduction, e.g. t-SNE or UMAP.
-#'
-#' @param object of \code{SingleCellExperiment} class
-#' @param annotation a character vector, factor or numeric for the class labels.
-#' @param return.plot return.plot whether to return the ggplot2 object or
-#' just draw it. Default is \code{FALSE}.
-#' @param dim.reduction.type "tsne" or "umap". Default is \code{tsne}.
-#' @param point.size point size. Default is \code{0.7}.
-#' @param show.legend a logical denoting whether to show the legend on the right
-#' side of the plot. Default is \code{TRUE}.
-#'
-#' @name AnnotationScatterPlot
-#'
-#' @return ggplot2 object if return.plot=TRUE
-#'
-#' @keywords annotation custom visualization t-sne umap nonlinear
-#' dimensionality reduction
-#'
-#' @importFrom S4Vectors metadata
-#' @import ggplot2
-#' @importFrom SingleCellExperiment reducedDim
-#' @importFrom stats median
-#'
-#' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- RunTSNE(sce)
-#' sce <- HierarchicalClustering(sce)
-#' sce <- SelectKClusters(sce,K=5)
-#' ## Change the names to the first five alphabets and Visualize the annotation.
-#' custom_annotation <- plyr::mapvalues(metadata(sce)$coralysis$clustering.manual,
-#'                                      c(1,2,3,4,5),
-#'                                      LETTERS[1:5])
-#' AnnotationScatterPlot(sce,
-#'                       annotation = custom_annotation,
-#'                       return.plot = FALSE,
-#'                       dim.reduction.type = "tsne",
-#'                       show.legend = FALSE)
-#'
-#'
-AnnotationScatterPlot.SingleCellExperiment <- function(object,
-                                                       annotation,
-                                                       return.plot,
-                                                       dim.reduction.type,
-                                                       point.size,
-                                                       show.legend) {
-
-
-  if (dim.reduction.type == "umap")
-  {
-    two.dim.data <- reducedDim(object,"UMAP")
-    xlab <- "UMAP_1"
-    ylab <- "UMAP_2"
-  } else if (dim.reduction.type == "tsne"){
-    two.dim.data <- reducedDim(object,"TSNE")
-    xlab <- "tSNE_1"
-    ylab <- "tSNE_2"
-  } else {
-    stop("dim.reduction.type must be either 'tsne' or 'umap'")
-  }
-
-  annotation <- factor(as.character(annotation))
-  names(annotation) <- colnames(object)
-
-  df <- as.data.frame(two.dim.data)
-  df$group <- annotation
-  colnames(df) <- c("dim1","dim2","group")
-
-  two.dim.data_ <- two.dim.data
-  rownames(two.dim.data_) <- names(annotation)
-  cluster_centers <- lapply(levels(annotation),function(x) apply(two.dim.data_[names(annotation)[annotation==x],,drop=FALSE],2, median))
-  cluster_centers <- do.call(rbind,cluster_centers)
-
-
-  p<-ggplot(df, aes_string(x='dim1', y='dim2')) +
-    geom_point(size=point.size,aes_string(color='group')) +
-    xlab(xlab) +
-    ylab(ylab) +
-    theme_classic() +
-    annotate("text",
-             x = cluster_centers[,1],
-             y = cluster_centers[,2],
-             label = levels(annotation)) +
-    guides(colour = guide_legend(override.aes = list(size=2)))
-
-
-  if (!show.legend)
-  {
-    p <- p + theme(legend.position = "none")
-  }
-
-  if (return.plot)
-  {
-    return(p)
-  } else {
-    print(p)
-  }
-
-}
-#' @rdname AnnotationScatterPlot
-#' @aliases AnnotationScatterPlot
-setMethod("AnnotationScatterPlot", signature(object = "SingleCellExperiment"),
-          AnnotationScatterPlot.SingleCellExperiment)
 
 
 #' @title Get ICP cell cluster probability
@@ -2152,6 +1113,7 @@ SummariseCellClusterProbability.SingleCellExperiment <- function(object, icp.run
 setMethod("SummariseCellClusterProbability", signature(object = "SingleCellExperiment"),
           SummariseCellClusterProbability.SingleCellExperiment)
 
+
 #' @title Get feature coefficients
 #' 
 #' @description Get feature coefficients from ICP models. 
@@ -2227,6 +1189,7 @@ GetFeatureCoefficients.SingleCellExperiment <- function(object, icp.run = NULL, 
 #' @aliases GetFeatureCoefficients
 setMethod("GetFeatureCoefficients", signature(object = "SingleCellExperiment"),
           GetFeatureCoefficients.SingleCellExperiment)
+
 
 #' @title Majority voting features by label
 #' 

@@ -20,10 +20,10 @@ RunPCA.SingleCellExperiment(
 \S4method{RunPCA}{SingleCellExperiment}(
   object,
   p = 50,
-  scale = FALSE,
+  scale = TRUE,
   center = TRUE,
   threshold = 0,
-  method = "RSpectra",
+  method = "irlba",
   return.model = FALSE,
   select.icp.tables = NULL
 )
@@ -35,7 +35,7 @@ RunPCA.SingleCellExperiment(
 components to calculate and select. Default is \code{50}.}
 
 \item{scale}{a logical specifying whether the probabilities should be
-standardized to unit-variance before running PCA. Default is \code{FALSE}.}
+standardized to unit-variance before running PCA. Default is \code{TRUE}.}
 
 \item{center}{a logical specifying whether the probabilities should be
 centered before running PCA. Default is \code{TRUE}.}
@@ -44,8 +44,8 @@ centered before running PCA. Default is \code{TRUE}.}
 the lower terminal projection accuracy below the threshold.
 Default is \code{0}.}
 
-\item{method}{A character specifying the PCA method. One of \code{"RSpectra"}
-(default), \code{"irlba"} or \code{"stats"}.}
+\item{method}{A character specifying the PCA method. One of \code{"irlba"}
+(default), \code{"RSpectra"} or \code{"stats"}.}
 
 \item{return.model}{A logical specifying if the PCA model should or not be 
 retrieved. By default \code{FALSE}. Only implemented for \code{method = "stats"}. 
@@ -62,16 +62,21 @@ object of \code{SingleCellExperiment} class
 }
 \description{
 Perform the PCA transformation of the joint probability matrix,
-which reduces the dimensionality from k*L to p
+which reduces the dimensionality from k*L to p.
 }
 \examples{
-library(SingleCellExperiment)
-sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-sce <- PrepareData(sce)
-## These settings are just to accelerate the example, use the defaults.
-sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-sce <- RunPCA(sce,p=5)
+# Import package
+library("SingleCellExperiment")
 
+# Prepare SCE object for analysis
+pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+
+# Run PCA 
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays)
 
 }
 \keyword{PCA}

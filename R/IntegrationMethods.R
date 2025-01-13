@@ -116,7 +116,6 @@
 #' @examples
 #' # Packages
 #' library("SingleCellExperiment")
-#' library("Coralysis")
 #' 
 #' # Prepare data
 #' pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
@@ -450,267 +449,83 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
 setMethod("RunParallelDivisiveICP", signature(object = "SingleCellExperiment"),
           RunParallelDivisiveICP.SingleCellExperiment)
 
-#' @title Divisive Iterative Clustering Projection (ICP) clustering
+
+#' @title Aggregates gene expression by cell clusters, per batch if provided.
 #'
-#' @description
-#' The function implements divisive Iterative Clustering Projection (ICP) clustering: 
-#' a supervised learning-based clustering, which maximizes clustering similarity
-#' between the clustering and its projection by logistic regression, doing it in 
-#' a divisive clustering manner.
+#' @description The function aggregates gene expression by cell clusters, per batch if provided.
 #'
-#' @param normalized.data A sparse matrix (dgCMatrix) containing
-#' normalized gene expression data with cells in rows and genes in columns.
-#' Default is \code{NULL}.
-#' @param batch.label A character vector with batch labels corresponding to the cells
-#' given in \code{normalized.data}. The character batch labels need to be named
-#' with the cells names given in the rows of \code{normalized.data}. 
+#' @param object An object of \code{SingleCellExperiment} class.
+#' @param batch.label A variable name (of class \code{character}) available 
+#' in the cell metadata \code{colData(object)} with the batch labels (\code{character} 
+#' or \code{factor}) to use. The variable provided must not contain \code{NAs}.
 #' By default \code{NULL}, i.e., cells are sampled evenly regardless their batch. 
-#' @param k A positive integer power of two, i.e., \code{2**n}, where \code{n>0},
-#' specifying the number of clusters in the last Iterative Clustering Projection (ICP)
-#' round. Decreasing \code{k} leads to smaller cell populations diversity and vice versa. 
-#' Default is \code{16}, i.e., the divisive clustering 2 -> 4 -> 8 -> 16 is performed. 
-#' @param d A numeric that defines how many cells per cluster should be
-#' down- and oversampled (d in ceiling(N/k*d)), when stratified.downsampling=FALSE,
-#' or what fraction should be downsampled in the stratified approach
-#' ,stratified.downsampling=TRUE. Default is \code{0.3}.
-#' @param r A positive integer that denotes the number of reiterations
-#' performed until the algorithm stops. Default is \code{5}.
-#' @param C Cost of constraints violation (\code{C}) for L1-regulatization.
-#' Default is \code{0.3}.
-#' @param reg.type "L1" for LASSO and "L2" for Ridge. Default is "L1".
-#' @param max.iter A positive integer that denotes the maximum number of
-#' iterations performed until the algorithm ends. Default is \code{200}.
-#' @param icp.batch.size A positive integer that specifies how many cells 
-#' to randomly select for each ICP run from the complete data set. 
-#' This is a new feature intended to speed up the process
-#' with larger data sets. Default is \code{Inf}, which means using all cells.
-#' @param train.with.bnn Train data with batch nearest neighbors. Default is 
-#' \code{TRUE}. Only used if \code{batch.label} is given.   
-#' @param train.k.nn Train data with batch nearest neighbors using \code{k} 
-#' nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
-#' is \code{TRUE}.  
-#' @param train.k.nn.prop A numeric (higher than 0 and lower than 1) corresponding 
-#' to the fraction of cells per cluster to use as \code{train.k.nn} nearest 
-#' neighbors. Default is \code{NULL} meaning that the number of \code{train.k.nn} 
-#' nearest neighbors is equal to \code{train.k.nn}. If given, \code{train.k.nn} 
-#' parameter is ignored and \code{train.k.nn} is calculated based on 
-#' \code{train.k.nn.prop}. A vector with different proportions for the different
-#' divisive clustering rounds can be given, otherwise the same value is given for 
-#' all.   
-#' @param cluster.seed A cluster seed to start and guide the clustering to more 
-#' reproducible clusterings across runs (factor). Default is \code{NULL}. Otherwise, 
-#' a random clustering takes place to start divisive clustering with ICP. 
-#' @param divisive.method Divisive method (character). One of \code{"random"} 
-#' (randomly sample two clusters out of every cluster previously found),
-#' \code{"cluster"} or \code{"cluster.batch"} (sample two clusters out of every 
-#' cluster previously found based on the cluster probability distribution across
-#' batches or per batch). By default \code{"random"}. 
-#' @param allow.free.k Allow free \code{k} (logical). Allow ICP algorithm to 
-#' decrease the \code{k} given in case it does not find \code{k} target clusters. 
-#' By default \code{FALSE}. 
-#' @param ari.cutoff Include ICP models and probability tables with an Adjusted 
-#' Rand Index higher than \code{ari.cutoff} (numeric). By default \code{0.5}. A
-#' value that can range between 0 (include all) and lower than 1.   
+#' @param batch.label Cluster identities vector corresponding to the cells in 
+#' \code{mtx}.
+#' @param nhvg Integer of the number of highly variable genes to select. By default 
+#' \code{2000}. 
+#' @param p Integer. By default \code{30}. 
+#' @param ... Parameters to be passed to \code{ClusterCells()} function. 
+#'
+#' @name AggregateDataByBatch
 #' 
-#' @return A list that includes the probability matrix and the clustering
-#' similarity measures: ARI, NMI, etc.
+#' @return A SingleCellExperiment object with gene expression aggregated by clusters.
 #'
-#' @keywords iterative clustering projection ICP clustering
+#' @keywords aggregated gene expression batches
 #'
-#' @import Matrix
-#' @importFrom aricode clustComp
-#' @import LiblineaR
-#' @import SparseM
-#'
-RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL, 
-                           k = 16, d = 0.3, r = 5, C = 5,
-                           reg.type = "L1", max.iter = 200, 
-                           icp.batch.size=Inf, train.with.bnn = TRUE, 
-                           train.k.nn = 10, train.k.nn.prop = NULL, 
-                           cluster.seed = NULL, divisive.method = "random", 
-                           allow.free.k = FALSE, ari.cutoff = 0.5) {
+#' @importFrom SingleCellExperiment logcounts cbind
+#' @importFrom S4Vectors DataFrame metadata
+#' @importFrom scran getTopHVGs
+#' @importFrom irlba prcomp_irlba
+#' 
+AggregateDataByBatch.SingleCellExperiment <- function(object, batch.label, 
+                                                      nhvg, p, ...) {
     
-    metrics <- NULL
-    idents <- list()
-    iterations <- 1
+    # Check input params
+    stopifnot(is(object, "SingleCellExperiment"), 
+              (is.null(batch.label) || (is.character(batch.label) && (batch.label %in% colnames(colData(object))))), 
+              (is.numeric(nhvg) && (nhvg%%1 == 0) && (nhvg <= nrow(object))), 
+              (is.numeric(p) && (p%%1 == 0) && (p <= nrow(object))))
     
-    if ((!is.infinite(icp.batch.size)) & icp.batch.size > 2) {
-        if (nrow(normalized.data) < icp.batch.size) {
-            message(cat("WARNING: the number of cells in current batch is", 
-                        nrow(normalized.data), "lower than the 'icp.batch.size' -", 
-                        icp.batch.size, "\nUsing all the available cells instead:", 
-                        nrow(normalized.data)))
-            icp.batch.size <- nrow(normalized.data)
-        }
-        normalized_data_whole <- normalized.data
-        randinds_batch <- sample(seq_len(nrow(normalized.data)),
-                                 size = icp.batch.size,replace = FALSE)
-        normalized.data <- normalized.data[randinds_batch,]
+    if (is.null(batch.label)) {
+        batch.label <- "batch"
+        object[[batch.label]] <- "single"
     }
-    
-    probs <- res_model <- res_metrics <- preds <- list()
-    i <- 0
-    Ks <- 2^seq(from=1, to=log2(k), by=1)
-    if (length(train.k.nn.prop)==1) {
-        train.k.nn.prop <- rep(train.k.nn.prop, length(Ks))
+    batch <- as.character(colData(object)[[batch.label]])
+    batch.names <- unique(batch)
+    names(batch.names) <- batch.names
+    sce.batch <- lapply(X = batch.names, FUN = function(b) {
+        object[,batch==b]
+    })
+    top.hvg <- lapply(X = sce.batch, FUN = function(b) {
+        getTopHVGs(b, n=nhvg)
+    })
+    pca.batch <- lapply(X = batch.names, FUN = function(b) {
+        prcomp_irlba(t(logcounts(sce.batch[[b]][top.hvg[[b]],])),
+                     scale.=TRUE, center=TRUE, n=p)
+    })
+    meta.data <- data.frame()
+    sce.batch.clusters <- list()
+    for (b in batch.names) {
+        reducedDim(x=sce.batch[[b]], type="PCA") <- pca.batch[[b]]$x
+        sce.batch[[b]] <- ClusterCells(object = sce.batch[[b]], ...)
+        clusters.mean <- AggregateClusterExpression(mtx = logcounts(sce.batch[[b]]),
+                                                    cluster=as.character(metadata(sce.batch[[b]])$clusters@cluster))
+        colnames(clusters.mean) <- paste(colnames(clusters.mean), b, sep="_")
+        sce.batch.clusters[[b]] <- SingleCellExperiment(assays=list(logcounts=clusters.mean), 
+                                                        colData=DataFrame(batch=rep(b, ncol(clusters.mean)), 
+                                                                          row.names = colnames(clusters.mean)))
+        tmp.meta.data <- data.frame("cluster" = metadata(sce.batch[[b]])$clusters@cluster, "batch" = b)
+        meta.data <- rbind(meta.data, tmp.meta.data)
     }
-    for (k in Ks) {
-        first_round <- TRUE
-        i <- i + 1
-        while (TRUE) {
-            
-            # Step 1: initialize clustering (ident_1) randomly, ARI=0 and r=0
-            if (first_round) {
-                if (k == 2) {
-                    if (!is.null(cluster.seed) & is.factor(cluster.seed)) {
-                        ident_1 <- cluster.seed
-                    } else {
-                        ident_1 <- factor(sample(seq_len(k), nrow(normalized.data), replace = TRUE))
-                    }
-                } else {
-                    if (divisive.method=="random") {
-                        ident_1 <- RandomlyDivisiveClustering(cluster=preds[[i-1]], k=2)
-                    } 
-                    if (divisive.method=="cluster") {
-                        ident_1 <- SampleClusterProbs(cluster = preds[[i-1]], probs = probs[[i-1]], q.split = 0.5)
-                    }
-                    if (divisive.method=="cluster.batch") {
-                        ident_1 <- SampleClusterBatchProbs(cluster = preds[[i-1]], probs = probs[[i-1]], 
-                                                           batch = batch.label, q.split = 0.5)
-                    }
-                }
-                names(ident_1) <- row.names(normalized.data)
-                idents[[1]] <- ident_1
-                ari <- 0
-                reiterations <- 0
-            }
-            
-            # Step 2: train logistic regression model
-            if (!is.null(batch.label) & train.with.bnn & !first_round) {
-                training_ident_subset <- unlist(
-                    FindClusterBatchKNN(preds = res_prediction$predictions, 
-                                        probs = res_prediction$probabilities,
-                                        batch = batch.label, 
-                                        k = train.k.nn, 
-                                        k.prop = train.k.nn.prop[i])
-                )
-            } else {
-                training_ident_subset <- NULL
-            }
-            res <- LogisticRegression(training.sparse.matrix = normalized.data,
-                                      training.ident = ident_1, C = C,
-                                      reg.type=reg.type,
-                                      test.sparse.matrix = normalized.data, d=d, 
-                                      batch.label = batch.label, 
-                                      training_ident_subset = training_ident_subset)
-            
-            res_prediction <- res$prediction
-            
-            names(res_prediction$predictions) <- row.names(normalized.data)
-            rownames(res_prediction$probabilities) <- row.names(normalized.data)
-            
-            message(paste0("probability matrix dimensions = ",paste(dim(res_prediction$probabilities), collapse = " ")))
-            
-            # Projected clusters
-            ident_2 <- res_prediction$predictions
-            
-            # Safety procedure: If k drops to 1, start from the beginning.
-            # However, k should NOT decrease during the iteration when
-            # the down- and oversampling approach is used for the balancing training data.
-            if (nlevels(factor(as.character(ident_2))) < k) {
-                if (allow.free.k & (nlevels(factor(as.character(ident_2)))>3)) {
-                    message(paste("k", k, "decreased to", nlevels(factor(as.character(ident_2)))))
-                    k <- nlevels(factor(as.character(ident_2)))
-                } else {
-                    message(paste0("k decreased, starting from the beginning... ",
-                                   "consider increasing d to 0.5 and C to 1 ",
-                                   "or increasing the ICP batch size ",
-                                   "and check the input data ",
-                                   "(scaled dense data might cause problems)"))
-                    first_round <- TRUE
-                    metrics <- NULL
-                    idents <- list()
-                    iterations <- 1
-                    next
-                }
-            }
-            
-            # Step 3: compare clustering similarity between clustering and projection
-            message(paste0("EPOCH: ",iterations))
-            message(paste0("current clustering = ",paste(table(ident_1),collapse = " ")))
-            message(paste0("projected clustering = ",paste(table(ident_2),collapse = " ")))
-            
-            comp_clust <- clustComp(c1 = ident_1, c2 = ident_2)
-            
-            if(first_round & comp_clust$ARI <= 0) {
-                next
-            }
-            
-            # Step 3.1: If ARI did not increase, reiterate
-            if (comp_clust$ARI <= ari & !(first_round)) {
-                reiterations <- reiterations + 1
-            } else { # Step 3.2: If ARI increased, proceed to next iteration round
-                # Update clustering to the predicted clusters
-                message(paste0("ARI=",as.character(comp_clust$ARI)))
-                ident_1 <- ident_2
-                first_round <- FALSE
-                metrics <- cbind(metrics, comp_clust)
-                iterations = iterations + 1
-                idents[[iterations]] <- ident_2
-                ari <- comp_clust$ARI
-                reiterations <- 0
-                # save model & cluster probs
-                res_model[[i]] <- res$model
-                probs[[i]] <- res_prediction$probabilities
-                preds[[i]] <- ident_2
-            }
-            # Step 4: If the maximum number of reiterations or iterations was
-            # reached, break the while loop
-            if (reiterations == r | iterations == max.iter){
-                if (ari>ari.cutoff) {
-                    break
-                } else {
-                    first_round <- TRUE
-                    metrics <- NULL
-                    idents <- list()
-                    iterations <- 1
-                    next
-                }
-            } 
-        }
-        res_metrics[[i]] <- metrics
-        iterations <- 1
-    }
-    
-    message("ICP converged at EPOCH ", iterations, ".\nMaximum ARI reached: ", as.character(ari),".")
-    if (is.infinite(icp.batch.size)) {
-        # Step 5: Return result
-        return(list(probabilities=probs, metrics=res_metrics,model=res_model))
-    } else {
-        cat("projecting the whole data set...")
-        res <- LogisticRegression(training.sparse.matrix = normalized.data,
-                                  training.ident = ident_1, C = C,
-                                  reg.type=reg.type,
-                                  test.sparse.matrix = normalized_data_whole, d=d, 
-                                  batch.label = batch.label, 
-                                  training_ident_subset = training_ident_subset)
-        
-        res_prediction <- res$prediction
-        res_model <- res$model
-        
-        names(res_prediction$predictions) <- row.names(normalized_data_whole)
-        rownames(res_prediction$probabilities) <- row.names(normalized_data_whole)
-        
-        # Projected cluster probabilities
-        probs <- res_prediction$probabilities
-        
-        message(" success!")
-        
-        message(paste(dim(probs),collapse = " "))
-        
-        return(list(probabilities=probs, metrics=metrics,model=res_model))
-    }
+    sce <- do.call(cbind, sce.batch.clusters)
+    metadata(sce)$clusters <- meta.data[colnames(object),]
+    return(sce)
 }
+#' @rdname AggregateDataByBatch
+#' @aliases AggregateDataByBatch
+setMethod("AggregateDataByBatch", signature(object = "SingleCellExperiment"),
+          AggregateDataByBatch.SingleCellExperiment)
+
 
 #' @title Split randomly every cluster into k clusters
 #'

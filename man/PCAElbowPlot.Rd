@@ -11,26 +11,35 @@ PCAElbowPlot.SingleCellExperiment(object, return.plot)
 \S4method{PCAElbowPlot}{SingleCellExperiment}(object, return.plot = FALSE)
 }
 \arguments{
-\item{object}{object of class 'coralysis'}
+\item{object}{A \code{SingleCellExperiment} object obtained after running 
+\code{RunParallelDivisiveICP}.}
 
-\item{return.plot}{logical indicating if the ggplot2 object
-should be returned (default FALSE)}
+\item{return.plot}{logical indicating if the ggplot2 object should be returned.
+By default \code{FALSE}.}
 }
 \value{
-ggplot2 object if return.plot=TRUE
+A ggplot2 object, if \code{return.plot=TRUE}.
 }
 \description{
-Draw an elbow plot of the standard deviations of the principal components
-to deduce an appropriate value for p.
+Draw an elbow plot of the standard deviations of the principal 
+components to deduce an appropriate value for \code{p}.
 }
 \examples{
-library(SingleCellExperiment)
-sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-sce <- PrepareData(sce)
-## These settings are just to accelerate the example, use the defaults.
-sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-sce <- RunPCA(sce,p=5)
-PCAElbowPlot(sce)
+# Import package
+library("SingleCellExperiment")
+
+# Prepare SCE object for analysis
+pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+
+# Run PCA 
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays)
+
+# Plot Elbow
+PCAElbowPlot(pbmc_10Xassays)
 
 }
 \keyword{PCA}

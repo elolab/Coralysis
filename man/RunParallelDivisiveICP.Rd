@@ -179,7 +179,6 @@ Run divisive ICP clustering in parallel in order to perform multi-level integrat
 \examples{
 # Packages
 library("SingleCellExperiment")
-library("Coralysis")
 
 # Prepare data
 pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)

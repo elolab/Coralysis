@@ -1,3 +1,329 @@
+#' @title Heatmap visualization of the gene markers identified by FindAllGeneMarkers
+#'
+#' @description
+#' The GeneHeatmap function enables drawing a heatmap of the gene markers
+#' identified by FindAllGeneMarkers, where the cell are grouped
+#' by the clustering.
+#'
+#' @param object of \code{SingleCellExperiment} class
+#' @param clustering.type "manual" or "optimal". "manual" refers to the
+#' clustering formed using the "SelectKClusters" function and "optimal"
+#' to the clustering using the "CalcSilhInfo" function.
+#' Default is "manual".
+#' @param gene.markers a data frame of the gene markers generated
+#' by FindAllGeneMarkers function. To accelerate the drawing, filtering
+#' the dataframe by selecting e.g. top 10 genes is recommended.
+#'
+#' @name GeneHeatmap
+#'
+#' @return nothing
+#'
+#' @keywords gene heatmap grouped
+#'
+#' @importFrom S4Vectors metadata
+#' @import pheatmap
+#' @importFrom SingleCellExperiment logcounts
+#' @examples
+#' library(SingleCellExperiment)
+#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
+#' sce <- PrepareData(sce)
+#' ## These settings are just to accelerate the example, use the defaults.
+#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,r=1,k=5) # Use L=200
+#' sce <- RunPCA(sce,p=5)
+#' sce <- HierarchicalClustering(sce)
+#' sce <- SelectKClusters(sce,K=5)
+#' gene_markers <- FindAllGeneMarkers(sce,log2fc.threshold = 0.5,min.pct = 0.5)
+#' top10_log2FC <- SelectTopGenes(gene_markers,top.N=10,
+#' criterion.type="log2FC",inverse=FALSE)
+#' GeneHeatmap(sce,clustering.type = "manual",
+#'  gene.markers = top10_log2FC)
+#'
+GeneHeatmap.SingleCellExperiment <- function(object,
+                                             clustering.type,
+                                             gene.markers) {
+    
+    
+    if (clustering.type=="manual")
+    {
+        clustering <- metadata(object)$coralysis$clustering.manual
+    } else if (clustering.type=="optimal")
+    {
+        clustering <- metadata(object)$coralysis$clustering.optimal
+    } else {
+        clustering <- metadata(object)$coralysis$clustering.manual
+        cat("clustering.type='manual'")
+    }
+    
+    data <- logcounts(object)
+    data <- data[unique(gene.markers$gene),]
+    # data <- scale(data,center = TRUE,scale = TRUE)
+    data <- data[,order(clustering)]
+    
+    
+    # Generate column annotations
+    annotation = data.frame(cluster=sort(clustering))
+    
+    pheatmap(data,show_colnames = FALSE,
+             gaps_col = cumsum(table(clustering[order(clustering)])),
+             gaps_row = cumsum(table(gene.markers[!duplicated(gene.markers$gene),"cluster"])),
+             cluster_rows = FALSE,
+             cluster_cols = FALSE,
+             annotation_col = annotation)
+    
+}
+#' @rdname GeneHeatmap
+#' @aliases GeneHeatmap
+setMethod("GeneHeatmap", signature(object = "SingleCellExperiment"),
+          GeneHeatmap.SingleCellExperiment)
+
+
+#' @title Gene expression visualization using violin plots
+#'
+#' @description
+#' The VlnPlot function enables visualizing expression levels of a gene,
+#' or multiple genes, across clusters using Violin plots.
+#'
+#' @param object of \code{SingleCellExperiment} class
+#' @param clustering.type "manual" or "optimal". "manual"
+#' refers to the clustering formed using the "SelectKClusters" function
+#' and "optimal" to the clustering formed using the
+#' "CalcSilhInfo" function. Default is "manual".
+#' @param genes a character vector denoting the gene names that are visualized
+#' @param return.plot return.plot whether to return the ggplot2 object
+#' @param rotate.x.axis.labels a logical denoting whether the x-axis
+#' labels should be rotated 90 degrees.
+#' or just draw it. Default is \code{FALSE}.
+#'
+#' @name VlnPlot
+#'
+#' @return ggplot2 object if return.plot=TRUE
+#'
+#' @keywords violin plot
+#'
+#' @importFrom S4Vectors metadata
+#' @import ggplot2
+#' @importFrom cowplot plot_grid
+#' @importFrom SingleCellExperiment logcounts
+#'
+#' @examples
+#' library(SingleCellExperiment)
+#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
+#' sce <- PrepareData(sce)
+#' ## These settings are just to accelerate the example, use the defaults.
+#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
+#' sce <- RunPCA(sce,p=5)
+#' sce <- HierarchicalClustering(sce)
+#' sce <- SelectKClusters(sce,K=5)
+#' VlnPlot(sce,genes=c("CD3D","CD79A","CST3"))
+#'
+VlnPlot.SingleCellExperiment <- function(object,
+                                         clustering.type,
+                                         genes,
+                                         return.plot,
+                                         rotate.x.axis.labels) {
+    
+    
+    if (clustering.type=="manual")
+    {
+        clustering <- metadata(object)$coralysis$clustering.manual
+    } else if (clustering.type=="optimal")
+    {
+        clustering <- metadata(object)$coralysis$clustering.optimal
+    } else {
+        clustering <- metadata(object)$coralysis$clustering.manual
+        message("clustering.type='manual'")
+    }
+    
+    data <- logcounts(object)
+    
+    df <- as.numeric(t(data[genes,]))
+    df <- data.frame(matrix(df,ncol = 1,dimnames = list(seq_len(length(df)),"Expression")))
+    df$gene  <- unlist(lapply(genes,function(x) rep(x,ncol(data))))
+    df$gene <- factor(df$gene)
+    df$Cluster <- rep(as.character(clustering),length(genes))
+    df$Cluster <- factor(df$Cluster)
+    
+    
+    if (rotate.x.axis.labels)
+    {
+        plotlist <- lapply(genes,function(x) ggplot(df[df$gene==x,], aes_string(x='Cluster', y='Expression', fill='Cluster'))+geom_violin(trim=TRUE)+geom_jitter(height = 0, width = 0.1)+theme_classic()+ggtitle(x)+theme(plot.title = element_text(hjust = 0.5),legend.position = "none",axis.text.x = element_text(angle = 90, hjust = 1)))
+    } else {
+        plotlist <- lapply(genes,function(x) ggplot(df[df$gene==x,], aes_string(x='Cluster', y='Expression', fill='Cluster'))+geom_violin(trim=TRUE)+geom_jitter(height = 0, width = 0.1)+theme_classic()+ggtitle(x)+theme(plot.title = element_text(hjust = 0.5),legend.position = "none"))
+        
+    }
+    
+    
+    p <- plot_grid(plotlist = plotlist)
+    
+    if (return.plot)
+    {
+        return(p)
+    } else {
+        print(p)
+    }
+    
+}
+#' @rdname VlnPlot
+#' @aliases VlnPlot
+setMethod("VlnPlot", signature(object = "SingleCellExperiment"),
+          VlnPlot.SingleCellExperiment)
+
+#' @title Visualize gene expression over nonlinear dimensionality reduction
+#'
+#' @description
+#' GeneScatterPlot enables visualizing gene expression of a gene over
+#' nonlinear dimensionality reduction with t-SNE or UMAP.
+#'
+#' @param object of \code{SingleCellExperiment} class
+#' @param genes a character vector of the genes to be visualized
+#' @param return.plot whether to return the ggplot2 object or just
+#' draw it (default \code{FALSE})
+#' @param dim.reduction.type "tsne" or "umap" (default "tsne")
+#' @param point.size point size (default 0.7)
+#' @param title text to write above the plot
+#' @param plot.expressing.cells.last whether to plot the expressing genes
+#' last to make the points more visible
+#' @param nrow a positive integer that specifies the number of rows in
+#' the plot grid. Default is \code{NULL}.
+#' @param ncol a positive integer that specifies the number of columns
+#' in the plot grid. Default is \code{NULL}.
+#'
+#' @name GeneScatterPlot
+#'
+#' @return ggplot2 object if return.plot=TRUE
+#'
+#' @keywords gene scatter plot visualization
+#'
+#' @importFrom SingleCellExperiment reducedDim logcounts
+#' @importFrom S4Vectors metadata metadata<-
+#' @import ggplot2
+#' @importFrom scales muted
+#' @importFrom cowplot plot_grid
+#'
+#' @examples
+#' library(SingleCellExperiment)
+#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
+#' sce <- PrepareData(sce)
+#' ## These settings are just to accelerate the example, use the defaults.
+#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
+#' sce <- RunPCA(sce,p=5)
+#' sce <- RunTSNE(sce)
+#' GeneScatterPlot(sce,"CD14",dim.reduction.type="tsne")
+#' sce <- RunUMAP(sce)
+#' GeneScatterPlot(sce,"CD14",dim.reduction.type="umap")
+#'
+GeneScatterPlot.SingleCellExperiment <- function(object,
+                                                 genes,
+                                                 return.plot,
+                                                 dim.reduction.type,
+                                                 point.size,
+                                                 title,
+                                                 plot.expressing.cells.last,
+                                                 nrow,
+                                                 ncol) {
+    
+    if (dim.reduction.type=="umap") {
+        two.dim.data <- reducedDim(object,"UMAP")
+        xlab <- "UMAP_1"
+        ylab <- "UMAP_2"
+    } else if (dim.reduction.type=="tsne"){
+        two.dim.data <- reducedDim(object,"TSNE")
+        xlab <- "tSNE_1"
+        ylab <- "tSNE_2"
+    } else {
+        stop("dim.reduction.type must be either 'tsne' or 'umap'")
+    }
+    
+    if (length(genes)==1)
+    {
+        
+        df <- as.data.frame(two.dim.data)
+        
+        if (!(genes %in% rownames(object))) {
+            stop("invalid gene name")
+        }
+        
+        color.by <- logcounts(object)[genes,]
+        df$group <- color.by
+        colnames(df) <- c("dim1","dim2","group")
+        
+        # Plot
+        if (plot.expressing.cells.last) {
+            df <- df[order(df$group,decreasing = FALSE),]
+        }
+        p<-ggplot(df, aes_string(x='dim1', y='dim2')) +
+            geom_point(size=point.size,aes_string(color='group')) +
+            scale_colour_gradient2(low = muted("red"), mid = "lightgrey",
+                                   high = "blue",name = genes) +
+            xlab(xlab) +
+            ylab(ylab) +
+            theme(panel.grid.major = element_blank(),
+                  panel.grid.minor = element_blank(),
+                  panel.background = element_blank(),
+                  axis.line = element_line(colour = "black"))
+        
+        if (title != "") {
+            p <- p + ggtitle(title) +
+                theme(plot.title = element_text(hjust = 0.5))
+        }
+        if (return.plot) {
+            return(p)
+        } else {
+            print(p)
+        }
+    } else {
+        
+        plot_list <- list()
+        for (gene in genes)
+        {
+            df <- as.data.frame(two.dim.data)
+            
+            if (!(gene %in% rownames(object)))
+            {
+                stop(paste0("invalid gene name: ",gene))
+            }
+            
+            color.by <- logcounts(object)[gene,]
+            df$group <- color.by
+            colnames(df) <- c("dim1","dim2","group")
+            
+            # Plot 
+            if (plot.expressing.cells.last) {
+                df <- df[order(df$group,decreasing = FALSE),]
+            }
+            p<-ggplot(df, aes_string(x='dim1', y='dim2')) +
+                geom_point(size=point.size,aes_string(color='group')) +
+                scale_colour_gradient2(low = muted("red"), mid = "lightgrey",
+                                       high = "blue",name = gene) +
+                xlab(xlab) +
+                ylab(ylab) +
+                theme(panel.grid.major = element_blank(),
+                      panel.grid.minor = element_blank(),
+                      panel.background = element_blank(),
+                      axis.line = element_line(colour = "black"))
+            if (title != "") {
+                p <- p + ggtitle(title) +
+                    theme(plot.title = element_text(hjust = 0.5))
+            }
+            plot_list[[gene]] <- p
+        }
+        
+        p <- plot_grid(plotlist = plot_list,align = "hv",nrow = nrow, ncol = ncol)
+        
+        if (return.plot) {
+            return(p)
+        } else {
+            print(p)
+        }
+    }
+    
+}
+#' @rdname GeneScatterPlot
+#' @aliases GeneScatterPlot
+setMethod("GeneScatterPlot", signature(object = "SingleCellExperiment"),
+          GeneScatterPlot.SingleCellExperiment)
+
+
 #' @title Plot dimensional reduction categorical variables
 #' 
 #' @description Plot categorical variables in dimensional reduction. 
