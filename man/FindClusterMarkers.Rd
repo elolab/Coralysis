@@ -4,11 +4,13 @@
 \alias{FindClusterMarkers}
 \alias{FindClusterMarkers.SingleCellExperiment}
 \alias{FindClusterMarkers,SingleCellExperiment-method}
-\title{Identification of feature markers for all clusters}
+\title{Differential expression between cell clusters}
 \usage{
 FindClusterMarkers.SingleCellExperiment(
   object,
   clustering.label,
+  clusters.1,
+  clusters.2,
   test,
   log2fc.threshold,
   min.pct,
@@ -22,6 +24,8 @@ FindClusterMarkers.SingleCellExperiment(
 \S4method{FindClusterMarkers}{SingleCellExperiment}(
   object,
   clustering.label,
+  clusters.1 = NULL,
+  clusters.2 = NULL,
   test = "wilcox",
   log2fc.threshold = 0.25,
   min.pct = 0.1,
@@ -33,21 +37,27 @@ FindClusterMarkers.SingleCellExperiment(
 )
 }
 \arguments{
-\item{object}{of \code{SingleCellExperiment} class}
-
-\item{clustering.label}{A variable name (of class \code{character}) available 
+\item{object}{A \code{SingleCellExperiment} object.
+#' @param clustering.label A variable name (of class \code{character}) available 
 in the cell metadata \code{colData(object)} with the clustering labels 
 (\code{character} or \code{factor}) to use.}
 
-\item{test}{Which test to use. Only "wilcox" (the Wilcoxon rank-sum test,
+\item{clusters.1}{a character or numeric vector denoting which clusters
+to use in the first group (named group.1 in the results)}
+
+\item{clusters.2}{a character or numeric vector denoting which clusters
+to use in the second group (named group.2 in the results)}
+
+\item{test}{Which test to use. Only "wilcoxon" (the Wilcoxon rank-sum test,
 AKA Mann-Whitney U test) is supported at the moment.}
 
 \item{log2fc.threshold}{Filters out features that have log2 fold-change of the
-averaged feature expression values below this threshold. Default is \code{0.25}.}
+averaged feature expression values below this threshold.
+Default is \code{0.25}.}
 
 \item{min.pct}{Filters out features that have dropout rate (fraction of cells
-expressing a feature) below this threshold in both comparison groups. Default is 
-\code{0.1}.}
+expressing a feature) below this threshold in both comparison groups
+Default is \code{0.1}.}
 
 \item{min.diff.pct}{Filters out features that do not have this minimum
 difference in the dropout rates (fraction of cells expressing a feature)
@@ -55,29 +65,29 @@ between the two comparison groups. Default is \code{NULL}.}
 
 \item{min.cells.group}{The minimum number of cells in the two comparison
 groups to perform the DE analysis. If the number of cells is below the
-threshold, then the DE analysis of this cluster is skipped. Default is \code{3}.}
+threshold, then the DE analysis is not performed.
+Default is \code{3}.}
 
-\item{max.cells.per.cluster}{The maximum number of cells per cluster if
-downsampling is performed to speed up the DE analysis. Default is \code{NULL}, 
-i.e., no downsampling.}
+\item{max.cells.per.cluster}{The maximun number of cells per cluster
+if downsampling is performed to speed up the DE analysis.
+Default is \code{NULL}, i.e. no downsampling.}
 
-\item{return.thresh}{If \code{only.pos=TRUE}, then return only features that have the
-adjusted p-value (adjusted by the Bonferroni method) below or equal to this
-threshold. Default is \code{0.01}.}
+\item{return.thresh}{If only.pos=TRUE, then return only features that
+have the adjusted p-value (adjusted by the Bonferroni method) below or
+equal to this threshold.  Default is \code{0.01}.}
 
-\item{only.pos}{Whether to return only features that have an adjusted p-value
-(adjusted by the Bonferroni method) below or equal to the threshold. Default 
-is \code{FALSE}.}
+\item{only.pos}{Whether to return only features that have an adjusted
+p-value (adjusted by the Bonferroni method) below or equal to the
+threshold. Default is \code{FALSE}.}
 }
 \value{
-A data frame of the results if positive results were found, else \code{NULL}.
+a data frame of the results if positive results were found, else NULL
 }
 \description{
-FindClusterMarkers enables identifying feature markers for all 
-clusters at once. This is done by differential expresission analysis where 
-cells from one cluster are compared against the cells from the rest of the 
-clusters. Feature and cell filters can be applied to accelerate the analysis, 
-but this might lead to missing weak signals.
+\code{FindClusterMarkers} enables identifying feature markers for one 
+cluster or two arbitrary combinations of clusters, e.g. 1_2 vs. 3_4_5. Feature 
+and cell filters can be applied to accelerate the analysis, but this might 
+lead to missing weak signals.
 }
 \examples{
 # Import package
@@ -93,8 +103,17 @@ pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = 
 # Run PCA 
 pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 
-# Cluster/cell type markers
-markers <- FindClusterMarkers(pbmc_10Xassays, clustering.label = "cell_type")
+# Perform differential expression on a given clustering or cell type annotations
+## Clustering
+# Perform clustering on the integrated PCA with your favorite algorithm, e.g., graph-based clustering with 'scran'
+#set .seed(123)
+#pbmc_10Xassays$cluster <- scran::clusterCells(pbmc_10Xassays, use.dimred="PCA", BLUSPARAM = bluster::SNNGraphParam(k = 15, cluster.fun = "louvain"))
+#cluster_markers_1 <- FindClusterMarkers(pbmc_10Xassays, clustering.label = "cluster", clusters.1 = "1") 
+#cluster_markers_1_vs_2 <- FindClusterMarkers(pbmc_10Xassays, clustering.label = "cluster", clusters.1 = "1", clusters.1 = "2") 
+
+## Cell type annotations or other pre-existing annotations  
+gene_markers_Bmem <- FindClusterMarkers(pbmc_10Xassays, clustering.label = "cell_type", clusters.1 = "B mem")
+gene_markers_Bmem_vs_Bnaive <- FindClusterMarkers(pbmc_10Xassays, clustering.label = "cell_type", clusters.1 = "B mem", clusters.2 = "B naive") 
 
 }
 \keyword{DE}

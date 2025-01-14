@@ -70,7 +70,7 @@ setGeneric("GeneScatterPlot", signature = "object",
            })
 
 #' @export
-setGeneric("FindClusterMarkers", signature = "object",
+setGeneric("FindAllClusterMarkers", signature = "object",
            function(object,
                     clustering.label,
                     test = "wilcox",
@@ -81,24 +81,24 @@ setGeneric("FindClusterMarkers", signature = "object",
                     max.cells.per.cluster = NULL,
                     return.thresh = 0.01,
                     only.pos = FALSE) {
-             standardGeneric("FindClusterMarkers")
+             standardGeneric("FindAllClusterMarkers")
            })
 
 #' @export
-setGeneric("FindGeneMarkers", signature = "object",
+setGeneric("FindClusterMarkers", signature = "object",
            function(object,
+                    clustering.label,
                     clusters.1 = NULL,
                     clusters.2 = NULL,
-                    clustering.type = "",
                     test = "wilcox",
-                    logfc.threshold = 0.25,
+                    log2fc.threshold = 0.25,
                     min.pct = 0.1,
                     min.diff.pct = NULL,
                     min.cells.group = 3,
                     max.cells.per.cluster = NULL,
                     return.thresh = 0.01,
                     only.pos = FALSE) {
-             standardGeneric("FindGeneMarkers")
+             standardGeneric("FindClusterMarkers")
            })
 
 #' @export
