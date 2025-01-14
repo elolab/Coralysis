@@ -459,12 +459,12 @@ setMethod("RunTSNE", signature(object = "SingleCellExperiment"),
           RunTSNE.SingleCellExperiment)
 
 
-#' @title Identification of gene markers for all clusters
+#' @title Identification of feature markers for all clusters
 #'
-#' @description FindAllGeneMarkers enables identifying gene markers for all 
+#' @description FindClusterMarkers enables identifying feature markers for all 
 #' clusters at once. This is done by differential expresission analysis where 
 #' cells from one cluster are compared against the cells from the rest of the 
-#' clusters. Gene and cell filters can be applied to accelerate the analysis, 
+#' clusters. Feature and cell filters can be applied to accelerate the analysis, 
 #' but this might lead to missing weak signals.
 #'
 #' @param object of \code{SingleCellExperiment} class
@@ -473,13 +473,13 @@ setMethod("RunTSNE", signature(object = "SingleCellExperiment"),
 #' (\code{character} or \code{factor}) to use.
 #' @param test Which test to use. Only "wilcox" (the Wilcoxon rank-sum test,
 #' AKA Mann-Whitney U test) is supported at the moment.
-#' @param log2fc.threshold Filters out genes that have log2 fold-change of the
-#' averaged gene expression values below this threshold. Default is \code{0.25}.
-#' @param min.pct Filters out genes that have dropout rate (fraction of cells
-#' expressing a gene) below this threshold in both comparison groups. Default is 
+#' @param log2fc.threshold Filters out features that have log2 fold-change of the
+#' averaged feature expression values below this threshold. Default is \code{0.25}.
+#' @param min.pct Filters out features that have dropout rate (fraction of cells
+#' expressing a feature) below this threshold in both comparison groups. Default is 
 #' \code{0.1}.
-#' @param min.diff.pct Filters out genes that do not have this minimum
-#' difference in the dropout rates (fraction of cells expressing a gene)
+#' @param min.diff.pct Filters out features that do not have this minimum
+#' difference in the dropout rates (fraction of cells expressing a feature)
 #' between the two comparison groups. Default is \code{NULL}.
 #' @param min.cells.group The minimum number of cells in the two comparison
 #' groups to perform the DE analysis. If the number of cells is below the
@@ -487,35 +487,41 @@ setMethod("RunTSNE", signature(object = "SingleCellExperiment"),
 #' @param max.cells.per.cluster The maximum number of cells per cluster if
 #' downsampling is performed to speed up the DE analysis. Default is \code{NULL}, 
 #' i.e., no downsampling.
-#' @param return.thresh If \code{only.pos=TRUE}, then return only genes that have the
+#' @param return.thresh If \code{only.pos=TRUE}, then return only features that have the
 #' adjusted p-value (adjusted by the Bonferroni method) below or equal to this
 #' threshold. Default is \code{0.01}.
-#' @param only.pos Whether to return only genes that have an adjusted p-value
+#' @param only.pos Whether to return only features that have an adjusted p-value
 #' (adjusted by the Bonferroni method) below or equal to the threshold. Default 
 #' is \code{FALSE}.
 #'
-#' @name FindAllGeneMarkers
+#' @name FindClusterMarkers
 #'
 #' @return A data frame of the results if positive results were found, else \code{NULL}.
 #'
-#' @keywords differential expression DE analysis gene markers
+#' @keywords differential expression DE analysis feature markers
 #'
 #' @importFrom S4Vectors metadata
 #' @importFrom SingleCellExperiment logcounts
 #' @importFrom stats wilcox.test p.adjust
 #'
 #' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- HierarchicalClustering(sce)
-#' sce <- SelectKClusters(sce,K=5)
-#' gene_markers <- FindAllGeneMarkers(sce)
+#' # Import package
+#' library("SingleCellExperiment")
+#' 
+#' # Prepare SCE object for analysis
+#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+#' 
+#' # Run PCA 
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #'
-FindAllGeneMarkers.SingleCellExperiment <- function(object,
+#' # Cluster/cell type markers
+#' markers <- FindClusterMarkers(pbmc_10Xassays, clustering.label = "cell_type")
+#'
+FindClusterMarkers.SingleCellExperiment <- function(object,
                                                     clustering.label,
                                                     test,
                                                     log2fc.threshold,
@@ -525,7 +531,7 @@ FindAllGeneMarkers.SingleCellExperiment <- function(object,
                                                     max.cells.per.cluster,
                                                     return.thresh,
                                                     only.pos) {
-
+    
     # Check input params
     stopifnot(is(object, "SingleCellExperiment"), 
               all(is.character(clustering.label), length(clustering.label)==1, clustering.label %in% colnames(colData(object)), (is.character(object[[clustering.label]]) || is.factor(object[[clustering.label]]))), 
@@ -538,8 +544,8 @@ FindAllGeneMarkers.SingleCellExperiment <- function(object,
               (is.numeric(return.thresh) && (length(return.thresh)==1) && (return.thresh > 0)), 
               is.logical(only.pos) && (length(only.pos)==1))
     
-    # Retrieve data & no. of genes
-    number.of.expressed.genes <- nrow(object)
+    # Retrieve data & no. of features
+    number.of.expressed.features <- nrow(object)
     data <- logcounts(object)
     
     # Retrieve clustering as factor
@@ -559,7 +565,7 @@ FindAllGeneMarkers.SingleCellExperiment <- function(object,
                 inds <- sample(seq_len(cells_in_cluster), size = max.cells.per.cluster, replace = FALSE)
                 names_cluster <- names(clustering[clustering==cluster])
                 cells_downsampled <- c(cells_downsampled,names_cluster[inds])
-          }
+            }
         }
         data <- data[,cells_downsampled]
         clustering <- clustering[cells_downsampled]
@@ -582,45 +588,45 @@ FindAllGeneMarkers.SingleCellExperiment <- function(object,
             next
         }
         # min.pct filter
-        genes.pct_cluster <- apply(data_cluster,1,function(x) sum(x!=0))/ncol(data_cluster)
-        genes.pct_other <- apply(data_other,1,function(x) sum(x!=0))/ncol(data_other)
-        genes_to_include <- rownames(data_cluster)[genes.pct_cluster>=min.pct | genes.pct_other >= min.pct]
-        data_cluster <- data_cluster[genes_to_include,,drop=FALSE]
-        data_other <- data_other[genes_to_include,,drop=FALSE]
-        cat(paste0(nrow(data_cluster)," genes left after min.pct filtering\n"))
+        features.pct_cluster <- apply(data_cluster,1,function(x) sum(x!=0))/ncol(data_cluster)
+        features.pct_other <- apply(data_other,1,function(x) sum(x!=0))/ncol(data_other)
+        features_to_include <- rownames(data_cluster)[features.pct_cluster>=min.pct | features.pct_other >= min.pct]
+        data_cluster <- data_cluster[features_to_include,,drop=FALSE]
+        data_other <- data_other[features_to_include,,drop=FALSE]
+        cat(paste0(nrow(data_cluster)," features left after min.pct filtering\n"))
         if (nrow(data_cluster)==0) {
             cat("-----------------------------------\n")
             next
         }
-    
+        
         # min.diff.pct filter
         if (!is.null(min.diff.pct)) {
-            genes.pct_cluster <- genes.pct_cluster[genes_to_include]
-            genes.pct_other <- genes.pct_other[genes_to_include]
-            genes_to_include <- rownames(data_cluster)[abs(genes.pct_cluster-genes.pct_other) >= min.diff.pct]
-            data_cluster <- data_cluster[genes_to_include,,drop=FALSE]
-            data_other <- data_other[genes_to_include,,drop=FALSE]
+            features.pct_cluster <- features.pct_cluster[features_to_include]
+            features.pct_other <- features.pct_other[features_to_include]
+            features_to_include <- rownames(data_cluster)[abs(features.pct_cluster-features.pct_other) >= min.diff.pct]
+            data_cluster <- data_cluster[features_to_include,,drop=FALSE]
+            data_other <- data_other[features_to_include,,drop=FALSE]
         }
-        cat(paste0(nrow(data_cluster)," genes left after min.diff.pct filtering\n"))
+        cat(paste0(nrow(data_cluster)," features left after min.diff.pct filtering\n"))
         if (nrow(data_cluster)==0) {
             cat("-----------------------------------\n")
             next
         }
-    
+        
         # logfc.threshold filter
         # Calculate log2 fold changes
         cluster_aves <- apply(data_cluster,1,mean)
         other_aves <- apply(data_other,1,mean)
         log2FC <- cluster_aves - other_aves
-        genes_to_include <- rownames(data_cluster)[log2FC >= log2fc.threshold | log2FC <= -log2fc.threshold]
-        data_cluster <- data_cluster[genes_to_include,,drop=FALSE]
-        data_other <- data_other[genes_to_include,,drop=FALSE]
-        cat(paste0(nrow(data_cluster)," genes left after log2fc.threshold filtering\n"))
+        features_to_include <- rownames(data_cluster)[log2FC >= log2fc.threshold | log2FC <= -log2fc.threshold]
+        data_cluster <- data_cluster[features_to_include,,drop=FALSE]
+        data_other <- data_other[features_to_include,,drop=FALSE]
+        cat(paste0(nrow(data_cluster)," features left after log2fc.threshold filtering\n"))
         if (nrow(data_cluster)==0) {
             cat("-----------------------------------\n")
             next
         }
-    
+        
         # Run DE test
         if (test=="wilcox") {
             wilcox.res <- lapply(rownames(data_cluster),function(x) wilcox.test(x=data_cluster[x,], y=data_other[x,]))
@@ -628,13 +634,13 @@ FindAllGeneMarkers.SingleCellExperiment <- function(object,
             names(p_values) <- rownames(data_cluster)
             
             # Adjust p-values
-            adj_p_values <- p.adjust(p_values, method = "bonferroni", n = number.of.expressed.genes)
+            adj_p_values <- p.adjust(p_values, method = "bonferroni", n = number.of.expressed.features)
             
-            res <- cbind(p_values,adj_p_values,log2FC[names(p_values)],genes.pct_cluster[names(p_values)],genes.pct_other[names(p_values)],abs(genes.pct_cluster-genes.pct_other)[names(p_values)])
+            res <- cbind(p_values,adj_p_values,log2FC[names(p_values)],features.pct_cluster[names(p_values)],features.pct_other[names(p_values)],abs(features.pct_cluster-features.pct_other)[names(p_values)])
             colnames(res) <- c("p.value","adj.p.value","log2FC","pct.1","pct.2","diff.pct")
             res <- as.data.frame(res)
             res$cluster <- cluster
-            res$gene <- names(p_values)
+            res$marker <- names(p_values)
         }
         results_list[[cluster]] <- res
         cat("-----------------------------------\n")
@@ -650,10 +656,10 @@ FindAllGeneMarkers.SingleCellExperiment <- function(object,
     
     return(results_df)
 }
-#' @rdname FindAllGeneMarkers
-#' @aliases FindAllGeneMarkers
-setMethod("FindAllGeneMarkers", signature(object = "SingleCellExperiment"),
-          FindAllGeneMarkers.SingleCellExperiment)
+#' @rdname FindClusterMarkers
+#' @aliases FindClusterMarkers
+setMethod("FindClusterMarkers", signature(object = "SingleCellExperiment"),
+          FindClusterMarkers.SingleCellExperiment)
 
 
 #' @title Identification of gene markers for a cluster or two arbitrary
