@@ -121,7 +121,7 @@ setMethod("HeatmapFeatures", signature(object = "SingleCellExperiment"),
 #' 
 #' # Plot features by cell type (give a clustering instead)
 #' genes <- c("CD8A", "CCR7", "GZMA", "MS4A1", "CD27")
-#' VlnPlot(pbmc_10Xassays, clustering.label = "cell_type", features = genes)
+#' VlnPlot(pbmc_10Xassays, clustering.label = "cell_type", features = genes, rotate.x.axis.labels = TRUE)
 #' 
 VlnPlot.SingleCellExperiment <- function(object, clustering.label, features, return.plot, rotate.x.axis.labels) {
     

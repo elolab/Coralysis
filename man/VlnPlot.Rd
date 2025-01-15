@@ -61,7 +61,7 @@ pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 
 # Plot features by cell type (give a clustering instead)
 genes <- c("CD8A", "CCR7", "GZMA", "MS4A1", "CD27")
-VlnPlot(pbmc_10Xassays, clustering.label = "cell_type", features = genes)
+VlnPlot(pbmc_10Xassays, clustering.label = "cell_type", features = genes, rotate.x.axis.labels = TRUE)
 
 }
 \keyword{plot}
