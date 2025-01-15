@@ -56,20 +56,6 @@ setGeneric("RunTSNE", signature = "object",
            })
 
 #' @export
-setGeneric("GeneScatterPlot", signature = "object",
-           function(object,
-                    genes = "",
-                    return.plot = FALSE,
-                    dim.reduction.type = "tsne",
-                    point.size = 0.7,
-                    title = "",
-                    plot.expressing.cells.last = FALSE,
-                    nrow = NULL,
-                    ncol = NULL) {
-             standardGeneric("GeneScatterPlot")
-           })
-
-#' @export
 setGeneric("FindAllClusterMarkers", signature = "object",
            function(object,
                     clustering.label,
