@@ -4,20 +4,20 @@
 \alias{VlnPlot}
 \alias{VlnPlot.SingleCellExperiment}
 \alias{VlnPlot,SingleCellExperiment-method}
-\title{Gene expression visualization using violin plots}
+\title{Visualization of feature expression using violin plots}
 \usage{
 VlnPlot.SingleCellExperiment(
   object,
-  clustering.type,
-  genes,
+  clustering.label,
+  features,
   return.plot,
   rotate.x.axis.labels
 )
 
 \S4method{VlnPlot}{SingleCellExperiment}(
   object,
-  clustering.type = "manual",
-  genes = NULL,
+  clustering.label,
+  features,
   return.plot = FALSE,
   rotate.x.axis.labels = FALSE
 )
@@ -25,36 +25,43 @@ VlnPlot.SingleCellExperiment(
 \arguments{
 \item{object}{of \code{SingleCellExperiment} class}
 
-\item{clustering.type}{"manual" or "optimal". "manual"
-refers to the clustering formed using the "SelectKClusters" function
-and "optimal" to the clustering formed using the
-"CalcSilhInfo" function. Default is "manual".}
+\item{clustering.label}{A variable name (of class \code{character}) available 
+in the cell metadata \code{colData(object)} with the clustering labels 
+(\code{character} or \code{factor}) to use.}
 
-\item{genes}{a character vector denoting the gene names that are visualized}
+\item{features}{Feature names to plot by cluster (\code{character}) matching 
+\code{row.names(object)}.}
 
-\item{return.plot}{return.plot whether to return the ggplot2 object}
+\item{return.plot}{return.plot whether to return the \code{ggplot2} object. 
+Default is \code{FALSE}.}
 
-\item{rotate.x.axis.labels}{a logical denoting whether the x-axis
-labels should be rotated 90 degrees.
-or just draw it. Default is \code{FALSE}.}
+\item{rotate.x.axis.labels}{a logical denoting whether the x-axis labels should 
+be rotated 90 degrees or just draw it. Default is \code{FALSE}.}
 }
 \value{
-ggplot2 object if return.plot=TRUE
+A \code{ggplot2} object if \code{return.plot=TRUE}.
 }
 \description{
-The VlnPlot function enables visualizing expression levels of a gene,
-or multiple genes, across clusters using Violin plots.
+The \code{VlnPlot} function enables visualizing expression levels 
+of feature(s), across clusters using violin plots.
 }
 \examples{
-library(SingleCellExperiment)
-sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-sce <- PrepareData(sce)
-## These settings are just to accelerate the example, use the defaults.
-sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-sce <- RunPCA(sce,p=5)
-sce <- HierarchicalClustering(sce)
-sce <- SelectKClusters(sce,K=5)
-VlnPlot(sce,genes=c("CD3D","CD79A","CST3"))
+# Import package
+library("SingleCellExperiment")
+
+# Prepare SCE object for analysis
+pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+
+# Run PCA 
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+
+# Plot features by cell type (give a clustering instead)
+genes <- c("CD8A", "CCR7", "GZMA", "MS4A1", "CD27")
+VlnPlot(pbmc_10Xassays, clustering.label = "cell_type", features = genes)
 
 }
 \keyword{plot}

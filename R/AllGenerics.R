@@ -104,10 +104,10 @@ setGeneric("FindClusterMarkers", signature = "object",
 #' @export
 setGeneric("VlnPlot", signature = "object",
            function(object,
-                    clustering.type = "manual",
-                    genes = NULL,
+                    clustering.label,
+                    features,
                     return.plot = FALSE,
-                    rotate.x.axis.labels=FALSE) {
+                    rotate.x.axis.labels = FALSE) {
              standardGeneric("VlnPlot")
            })
 

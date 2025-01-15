@@ -78,26 +78,25 @@ setMethod("HeatmapFeatures", signature(object = "SingleCellExperiment"),
           HeatmapFeatures.SingleCellExperiment)
 
 
-#' @title Gene expression visualization using violin plots
+#' @title Visualization of feature expression using violin plots
 #'
-#' @description
-#' The VlnPlot function enables visualizing expression levels of a gene,
-#' or multiple genes, across clusters using Violin plots.
+#' @description The \code{VlnPlot} function enables visualizing expression levels 
+#' of feature(s), across clusters using violin plots.
 #'
 #' @param object of \code{SingleCellExperiment} class
-#' @param clustering.type "manual" or "optimal". "manual"
-#' refers to the clustering formed using the "SelectKClusters" function
-#' and "optimal" to the clustering formed using the
-#' "CalcSilhInfo" function. Default is "manual".
-#' @param genes a character vector denoting the gene names that are visualized
-#' @param return.plot return.plot whether to return the ggplot2 object
-#' @param rotate.x.axis.labels a logical denoting whether the x-axis
-#' labels should be rotated 90 degrees.
-#' or just draw it. Default is \code{FALSE}.
+#' @param clustering.label A variable name (of class \code{character}) available 
+#' in the cell metadata \code{colData(object)} with the clustering labels 
+#' (\code{character} or \code{factor}) to use.
+#' @param features Feature names to plot by cluster (\code{character}) matching 
+#' \code{row.names(object)}.
+#' @param return.plot return.plot whether to return the \code{ggplot2} object. 
+#' Default is \code{FALSE}.
+#' @param rotate.x.axis.labels a logical denoting whether the x-axis labels should 
+#' be rotated 90 degrees or just draw it. Default is \code{FALSE}.
 #'
 #' @name VlnPlot
 #'
-#' @return ggplot2 object if return.plot=TRUE
+#' @return A \code{ggplot2} object if \code{return.plot=TRUE}.
 #'
 #' @keywords violin plot
 #'
@@ -107,67 +106,78 @@ setMethod("HeatmapFeatures", signature(object = "SingleCellExperiment"),
 #' @importFrom SingleCellExperiment logcounts
 #'
 #' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,k=5,r=1)
-#' sce <- RunPCA(sce,p=5)
-#' sce <- HierarchicalClustering(sce)
-#' sce <- SelectKClusters(sce,K=5)
-#' VlnPlot(sce,genes=c("CD3D","CD79A","CST3"))
-#'
-VlnPlot.SingleCellExperiment <- function(object,
-                                         clustering.type,
-                                         genes,
-                                         return.plot,
-                                         rotate.x.axis.labels) {
+#' # Import package
+#' library("SingleCellExperiment")
+#' 
+#' # Prepare SCE object for analysis
+#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+#' 
+#' # Run PCA 
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+#' 
+#' # Plot features by cell type (give a clustering instead)
+#' genes <- c("CD8A", "CCR7", "GZMA", "MS4A1", "CD27")
+#' VlnPlot(pbmc_10Xassays, clustering.label = "cell_type", features = genes)
+#' 
+VlnPlot.SingleCellExperiment <- function(object, clustering.label, features, return.plot, rotate.x.axis.labels) {
     
+    # Check input params
+    stopifnot(is(object, "SingleCellExperiment"), 
+              all(is.character(clustering.label), length(clustering.label)==1, clustering.label %in% colnames(colData(object)), (is.character(object[[clustering.label]]) || is.factor(object[[clustering.label]]))), 
+              all(is.character(features), all(features %in% row.names(object))), 
+              is.logical(return.plot), 
+              is.logical(rotate.x.axis.labels))
     
-    if (clustering.type=="manual")
-    {
-        clustering <- metadata(object)$coralysis$clustering.manual
-    } else if (clustering.type=="optimal")
-    {
-        clustering <- metadata(object)$coralysis$clustering.optimal
-    } else {
-        clustering <- metadata(object)$coralysis$clustering.manual
-        message("clustering.type='manual'")
+    # Retrieve clustering as factor
+    clustering <- object[[clustering.label]]
+    if (is.character(clustering)) { # if character, coerce to factor
+        clustering <- as.factor(clustering)
     }
+    names(clustering) <- colnames(object)
+    clusters <- levels(clustering)
     
+    # Retrieve data
     data <- logcounts(object)
-    
-    df <- as.numeric(t(data[genes,]))
-    df <- data.frame(matrix(df,ncol = 1,dimnames = list(seq_len(length(df)),"Expression")))
-    df$gene  <- unlist(lapply(genes,function(x) rep(x,ncol(data))))
-    df$gene <- factor(df$gene)
-    df$Cluster <- rep(as.character(clustering),length(genes))
+    df <- as.numeric(t(data[features,]))
+    df <- data.frame(matrix(df, ncol = 1, dimnames = list(seq_len(length(df)), "Expression")))
+    df$feature  <- unlist(lapply(features,function(x) rep(x, ncol(data))))
+    df$feature <- factor(df$feature)
+    df$Cluster <- rep(as.character(clustering), length(features))
     df$Cluster <- factor(df$Cluster)
     
-    
-    if (rotate.x.axis.labels)
-    {
-        plotlist <- lapply(genes,function(x) ggplot(df[df$gene==x,], aes_string(x='Cluster', y='Expression', fill='Cluster'))+geom_violin(trim=TRUE)+geom_jitter(height = 0, width = 0.1)+theme_classic()+ggtitle(x)+theme(plot.title = element_text(hjust = 0.5),legend.position = "none",axis.text.x = element_text(angle = 90, hjust = 1)))
+    # Plot violin plot(s)
+    if (rotate.x.axis.labels) {
+        plotlist <- lapply(features,function(x) ggplot(df[df$feature==x,], aes_string(x='Cluster', y='Expression', fill='Cluster')) + 
+                               geom_violin(trim=TRUE) + 
+                               geom_jitter(height = 0, width = 0.1) + 
+                               theme_classic() + 
+                               ggtitle(x) + 
+                               theme(plot.title = element_text(hjust = 0.5), legend.position = "none", axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)))
     } else {
-        plotlist <- lapply(genes,function(x) ggplot(df[df$gene==x,], aes_string(x='Cluster', y='Expression', fill='Cluster'))+geom_violin(trim=TRUE)+geom_jitter(height = 0, width = 0.1)+theme_classic()+ggtitle(x)+theme(plot.title = element_text(hjust = 0.5),legend.position = "none"))
-        
+        plotlist <- lapply(features,function(x) ggplot(df[df$feature==x,], aes_string(x='Cluster', y='Expression', fill='Cluster')) + 
+                               geom_violin(trim = TRUE) + 
+                               geom_jitter(height = 0, width = 0.1) + 
+                               theme_classic() + 
+                               ggtitle(x) + 
+                               theme(plot.title = element_text(hjust = 0.5), legend.position = "none"))
     }
-    
-    
     p <- plot_grid(plotlist = plotlist)
     
-    if (return.plot)
-    {
+    if (return.plot) {
         return(p)
     } else {
         print(p)
     }
-    
 }
 #' @rdname VlnPlot
 #' @aliases VlnPlot
 setMethod("VlnPlot", signature(object = "SingleCellExperiment"),
           VlnPlot.SingleCellExperiment)
+
 
 #' @title Visualize gene expression over nonlinear dimensionality reduction
 #'
