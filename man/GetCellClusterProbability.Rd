@@ -23,17 +23,14 @@ GetCellClusterProbability.SingleCellExperiment(
 \arguments{
 \item{object}{An object of \code{SingleCellExperiment} class with ICP cell 
 cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
-After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}.}
+After running \code{RunParallelDivisiveICP}.}
 
 \item{icp.run}{ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
 retrieve a specific set of tables.}
 
 \item{icp.round}{ICP round(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
-By default \code{NULL}, i.e., all are retrieved. Only relevant if probabilities
-were obtained with the function \code{RunParallelDivisiveICP}, i.e., divisive ICP
-was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1}, 
-i.e., only one round.}
+By default \code{NULL}, i.e., all are retrieved.}
 
 \item{concatenate}{Concatenate list of ICP cell cluster probability tables retrieved. 
 By default \code{TRUE}, i.e., the list of ICP cell cluster probability tables is
@@ -45,6 +42,24 @@ concatenated tables.
 }
 \description{
 Get ICP cell cluster probability table(s)
+}
+\examples{
+#' # Import package
+library("SingleCellExperiment")
+
+# Prepare SCE object for analysis
+pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+
+# Run PCA 
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+
+# Get cluster probability for all ICP runs for the last 4th round 
+probs <- GetCellClusterProbability(object = pbmc_10Xassays, icp.round = 4, concatenate = TRUE) # matrix 2,000 cells x 56 cell clusters
+
 }
 \keyword{Cell}
 \keyword{cluster}

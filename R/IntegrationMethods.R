@@ -122,7 +122,7 @@
 #' 
 #' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #'
 RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label, 
                                                         k, d, L, r, C,

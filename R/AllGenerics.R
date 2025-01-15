@@ -112,11 +112,12 @@ setGeneric("VlnPlot", signature = "object",
            })
 
 #' @export
-setGeneric("GeneHeatmap", signature = "object",
+setGeneric("HeatmapFeatures", signature = "object",
            function(object,
-                    clustering.type = "manual",
-                    gene.markers = NULL) {
-             standardGeneric("GeneHeatmap")
+                    clustering.label,
+                    features, 
+                    ...) {
+             standardGeneric("HeatmapFeatures")
            })
 
 #' @export

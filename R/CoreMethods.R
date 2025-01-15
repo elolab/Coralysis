@@ -137,7 +137,7 @@ setMethod("PrepareData", signature(object = "SingleCellExperiment"),
 #' 
 #' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
@@ -249,7 +249,7 @@ setMethod("RunPCA", signature(object = "SingleCellExperiment"),
 #' 
 #' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
@@ -322,7 +322,7 @@ setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
 #' 
 #' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
@@ -420,7 +420,7 @@ setMethod("RunUMAP", signature(object = "SingleCellExperiment"),
 #' 
 #' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
@@ -461,7 +461,7 @@ setMethod("RunTSNE", signature(object = "SingleCellExperiment"),
 
 #' @title Identification of feature markers for all clusters
 #'
-#' @description FindAllClusterMarkers enables identifying feature markers for all 
+#' @description \code{FindAllClusterMarkers} enables identifying feature markers for all 
 #' clusters at once. This is done by differential expresission analysis where 
 #' cells from one cluster are compared against the cells from the rest of the 
 #' clusters. Feature and cell filters can be applied to accelerate the analysis, 
@@ -513,7 +513,7 @@ setMethod("RunTSNE", signature(object = "SingleCellExperiment"),
 #' 
 #' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
@@ -728,7 +728,7 @@ setMethod("FindAllClusterMarkers", signature(object = "SingleCellExperiment"),
 #' 
 #' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4) 
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
@@ -920,15 +920,12 @@ setMethod("FindClusterMarkers", signature(object = "SingleCellExperiment"),
 #' 
 #' @param object An object of \code{SingleCellExperiment} class with ICP cell 
 #' cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
-#' After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}. 
+#' After running \code{RunParallelDivisiveICP}. 
 #' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 #' By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
 #' retrieve a specific set of tables. 
 #' @param icp.round ICP round(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
-#' By default \code{NULL}, i.e., all are retrieved. Only relevant if probabilities
-#' were obtained with the function \code{RunParallelDivisiveICP}, i.e., divisive ICP
-#' was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1}, 
-#' i.e., only one round. 
+#' By default \code{NULL}, i.e., all are retrieved. 
 #' @param concatenate Concatenate list of ICP cell cluster probability tables retrieved. 
 #' By default \code{TRUE}, i.e., the list of ICP cell cluster probability tables is
 #' concatenated. 
@@ -941,6 +938,23 @@ setMethod("FindClusterMarkers", signature(object = "SingleCellExperiment"),
 #' @keywords Cell cluster probability
 #'  
 #' @importFrom S4Vectors metadata metadata<-
+#' 
+#' @examples 
+#' #' # Import package
+#' library("SingleCellExperiment")
+#' 
+#' # Prepare SCE object for analysis
+#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+#' 
+#' # Run PCA 
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+#' 
+#' # Get cluster probability for all ICP runs for the last 4th round 
+#' probs <- GetCellClusterProbability(object = pbmc_10Xassays, icp.round = 4, concatenate = TRUE) # matrix 2,000 cells x 56 cell clusters
 #' 
 GetCellClusterProbability.SingleCellExperiment <- function(object, icp.run, icp.round, concatenate) {
     
@@ -991,15 +1005,12 @@ setMethod("GetCellClusterProbability", signature(object = "SingleCellExperiment"
 #' 
 #' @param object An object of \code{SingleCellExperiment} class with ICP cell 
 #' cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
-#' After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}. 
+#' After running \code{RunParallelDivisiveICP}. 
 #' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 #' By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
 #' retrieve a specific set of tables. 
 #' @param icp.round ICP round(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
-#' By default \code{NULL}, i.e., all are retrieved. Only relevant if probabilities
-#' were obtained with the function \code{RunParallelDivisiveICP}, i.e., divisive ICP
-#' was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1}, 
-#' i.e., only one round. 
+#' By default \code{NULL}, i.e., all are retrieved. 
 #' @param funs Functions to summarise ICP cell cluster probability: \code{"mean"} 
 #' and/or \code{"median"}. By default \code{c("mean", "median")}, i.e, both mean
 #' and median are calculated. Set to \code{NULL} to not estimate any. 
@@ -1020,6 +1031,29 @@ setMethod("GetCellClusterProbability", signature(object = "SingleCellExperiment"
 #' @importFrom S4Vectors metadata metadata<-
 #' @importFrom SummarizedExperiment colData colData<-
 #'  
+#' @examples 
+#' # Import package
+#' library("SingleCellExperiment")
+#' 
+#' # Prepare SCE object for analysis
+#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+#' 
+#' # Run PCA 
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+#' 
+#' # Summarise cluster probability
+#' pbmc_10Xassays <- SummariseCellClusterProbability(object = pbmc_10Xassays, icp.round = 4, save.in.sce = TRUE) # save result in 'colData'
+#' 
+#' # Plot the clustering result for ICP run no. 3 
+#' PlotDimRed(object = pbmc_10Xassays, color.by = "icp_run_round_3_4_clusters")
+#' 
+#' # Plot Coralysis mean cell cluster probabilities 
+#' PlotExpression(object = pbmc_10Xassays, color.by = "mean_probs", color.scale = "viridis")
+#' 
 SummariseCellClusterProbability.SingleCellExperiment <- function(object, icp.run, icp.round, funs, scale.funs, save.in.sce) {
     
     # Check params that will not be checked in the function below
@@ -1094,15 +1128,12 @@ setMethod("SummariseCellClusterProbability", signature(object = "SingleCellExper
 #' 
 #' @param object An object of \code{SingleCellExperiment} class with ICP cell 
 #' cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
-#' After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}. 
+#' After running \code{RunParallelDivisiveICP}. 
 #' @param icp.run ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 #' By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
 #' retrieve a specific set of tables. 
 #' @param icp.round ICP round(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
-#' By default \code{NULL}, i.e., all are retrieved. Only relevant if probabilities
-#' were obtained with the function \code{RunParallelDivisiveICP}, i.e., divisive ICP
-#' was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1}, 
-#' i.e., only one round. 
+#' By default \code{NULL}, i.e., all are retrieved. 
 #' 
 #' @name GetFeatureCoefficients
 #' 
@@ -1112,6 +1143,24 @@ setMethod("SummariseCellClusterProbability", signature(object = "SingleCellExper
 #'  
 #' @importFrom S4Vectors metadata metadata<-
 #' @importFrom dplyr %>%
+#' 
+#' @examples 
+#' # Import package
+#' library("SingleCellExperiment")
+#' 
+#' # Prepare SCE object for analysis
+#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+#' 
+#' # Run PCA 
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+#' 
+#' # GetFeatureCoefficients
+#' gene_coefficients_icp_2_4 <- GetFeatureCoefficients(object = pbmc_10Xassays, icp.run = 2, icp.round = 4)
+#' head(gene_coefficients_icp_2_4$icp_8)
 #' 
 GetFeatureCoefficients.SingleCellExperiment <- function(object, icp.run = NULL, icp.round = NULL) {
     
@@ -1171,7 +1220,7 @@ setMethod("GetFeatureCoefficients", signature(object = "SingleCellExperiment"),
 #' 
 #' @param object An object of \code{SingleCellExperiment} class with ICP cell 
 #' cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
-#' After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}. 
+#' After running \code{RunParallelDivisiveICP}. 
 #' @param label Label of interest available in \code{colData(object)}. 
 #' 
 #' @name MajorityVotingFeatures
@@ -1182,6 +1231,26 @@ setMethod("GetFeatureCoefficients", signature(object = "SingleCellExperiment"),
 #' 
 #' @importFrom SummarizedExperiment colData colData<-
 #' @importFrom dplyr %>% select filter all_of
+#' 
+#' @examples 
+#' # Import package
+#' library("SingleCellExperiment")
+#' 
+#' # Prepare SCE object for analysis
+#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+#' 
+#' # Run PCA 
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+#' 
+#' # Get gene coefficients by majority voting for a given clustering or cell type annotations
+#' gene_coeff <- MajorityVotingFeatures(object = pbmc_10Xassays, label = "cell_type")
+#' gene_coeff$summary
+#' head(gene_coeff$feature_coeff$Monocyte[order(gene_coeff$feature_coeff$Monocyte$coeff_clt4, decreasing = TRUE), ], n = 15)
+#' PlotExpression(object = pbmc_10Xassays, color.by = "LGALS2")
 #' 
 MajorityVotingFeatures.SingleCellExperiment <- function(object, label) {
     

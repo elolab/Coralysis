@@ -27,17 +27,14 @@ SummariseCellClusterProbability.SingleCellExperiment(
 \arguments{
 \item{object}{An object of \code{SingleCellExperiment} class with ICP cell 
 cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
-After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}.}
+After running \code{RunParallelDivisiveICP}.}
 
 \item{icp.run}{ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
 retrieve a specific set of tables.}
 
 \item{icp.round}{ICP round(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
-By default \code{NULL}, i.e., all are retrieved. Only relevant if probabilities
-were obtained with the function \code{RunParallelDivisiveICP}, i.e., divisive ICP
-was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1}, 
-i.e., only one round.}
+By default \code{NULL}, i.e., all are retrieved.}
 
 \item{funs}{Functions to summarise ICP cell cluster probability: \code{"mean"} 
 and/or \code{"median"}. By default \code{c("mean", "median")}, i.e, both mean
@@ -57,6 +54,30 @@ A data frame or a SingleCellExperiment object with ICP cell cluster probability 
 }
 \description{
 Summarise ICP cell cluster probability table(s)
+}
+\examples{
+# Import package
+library("SingleCellExperiment")
+
+# Prepare SCE object for analysis
+pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+
+# Run PCA 
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+
+# Summarise cluster probability
+pbmc_10Xassays <- SummariseCellClusterProbability(object = pbmc_10Xassays, icp.round = 4, save.in.sce = TRUE) # save result in 'colData'
+
+# Plot the clustering result for ICP run no. 3 
+PlotDimRed(object = pbmc_10Xassays, color.by = "icp_run_round_3_4_clusters")
+
+# Plot Coralysis mean cell cluster probabilities 
+PlotExpression(object = pbmc_10Xassays, color.by = "mean_probs", color.scale = "viridis")
+
 }
 \keyword{Summarise}
 \keyword{cell}

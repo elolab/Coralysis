@@ -13,7 +13,7 @@ MajorityVotingFeatures.SingleCellExperiment(object, label)
 \arguments{
 \item{object}{An object of \code{SingleCellExperiment} class with ICP cell 
 cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
-After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}.}
+After running \code{RunParallelDivisiveICP}.}
 
 \item{label}{Label of interest available in \code{colData(object)}.}
 }
@@ -22,6 +22,27 @@ A list of with a list of data frames with feature weights per label and a data f
 }
 \description{
 Get ICP feature coefficients for a label of interest by majority voting label across ICP clusters.
+}
+\examples{
+# Import package
+library("SingleCellExperiment")
+
+# Prepare SCE object for analysis
+pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+
+# Run PCA 
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+
+# Get gene coefficients by majority voting for a given clustering or cell type annotations
+gene_coeff <- MajorityVotingFeatures(object = pbmc_10Xassays, label = "cell_type")
+gene_coeff$summary
+head(gene_coeff$feature_coeff$Monocyte[order(gene_coeff$feature_coeff$Monocyte$coeff_clt4, decreasing = TRUE), ], n = 15)
+PlotExpression(object = pbmc_10Xassays, color.by = "LGALS2")
+
 }
 \keyword{Majority}
 \keyword{coefficients}

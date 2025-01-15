@@ -1,80 +1,81 @@
-#' @title Heatmap visualization of the gene markers identified by FindAllGeneMarkers
+#' @title Heatmap visualization of the expression of features by clusters
 #'
-#' @description
-#' The GeneHeatmap function enables drawing a heatmap of the gene markers
-#' identified by FindAllGeneMarkers, where the cell are grouped
-#' by the clustering.
+#' @description The \code{HeatmapFeatures} function draws a heatmap of features 
+#' by cluster identity.  
 #'
 #' @param object of \code{SingleCellExperiment} class
-#' @param clustering.type "manual" or "optimal". "manual" refers to the
-#' clustering formed using the "SelectKClusters" function and "optimal"
-#' to the clustering using the "CalcSilhInfo" function.
-#' Default is "manual".
-#' @param gene.markers a data frame of the gene markers generated
-#' by FindAllGeneMarkers function. To accelerate the drawing, filtering
-#' the dataframe by selecting e.g. top 10 genes is recommended.
+#' @param clustering.label A variable name (of class \code{character}) available 
+#' in the cell metadata \code{colData(object)} with the clustering labels 
+#' (\code{character} or \code{factor}) to use.
+#' @param features Feature names to plot by cluster (\code{character}) matching 
+#' \code{row.names(object)}.
+#' @param ... Parameters to pass to \code{pheatmap::pheatmap} function.
 #'
-#' @name GeneHeatmap
+#' @name HeatmapFeatures
 #'
 #' @return nothing
 #'
-#' @keywords gene heatmap grouped
+#' @keywords feature heatmap grouped
 #'
 #' @importFrom S4Vectors metadata
 #' @import pheatmap
 #' @importFrom SingleCellExperiment logcounts
 #' @examples
-#' library(SingleCellExperiment)
-#' sce <- SingleCellExperiment(assays = list(logcounts = pbmc3k_500))
-#' sce <- PrepareData(sce)
-#' ## These settings are just to accelerate the example, use the defaults.
-#' sce <- RunParallelICP(sce,L=2,threads=1,C=0.1,r=1,k=5) # Use L=200
-#' sce <- RunPCA(sce,p=5)
-#' sce <- HierarchicalClustering(sce)
-#' sce <- SelectKClusters(sce,K=5)
-#' gene_markers <- FindAllGeneMarkers(sce,log2fc.threshold = 0.5,min.pct = 0.5)
-#' top10_log2FC <- SelectTopGenes(gene_markers,top.N=10,
-#' criterion.type="log2FC",inverse=FALSE)
-#' GeneHeatmap(sce,clustering.type = "manual",
-#'  gene.markers = top10_log2FC)
-#'
-GeneHeatmap.SingleCellExperiment <- function(object,
-                                             clustering.type,
-                                             gene.markers) {
+#' # Import package
+#' library("SingleCellExperiment")
+#' 
+#' # Prepare SCE object for analysis
+#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+#' 
+#' # Run PCA 
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+#' 
+#' # Plot features by cell type (give a clustering instead)
+#' genes <- c("CD8A", "CCR7", "GZMA", "MS4A1", "CD27")
+#' HeatmapFeatures(object = pbmc_10Xassays, clustering.label = "cell_type", features = genes) # log-normalized
+#' HeatmapFeatures(object = pbmc_10Xassays, clustering.label = "cell_type", features = genes, scale = "row") # scale genes
+#' 
+HeatmapFeatures.SingleCellExperiment <- function(object, clustering.label, features, ...) {
     
+    # Check input params
+    stopifnot(is(object, "SingleCellExperiment"), 
+              all(is.character(clustering.label), length(clustering.label)==1, clustering.label %in% colnames(colData(object)), (is.character(object[[clustering.label]]) || is.factor(object[[clustering.label]]))), 
+              all(is.character(features), all(features %in% row.names(object))))
     
-    if (clustering.type=="manual")
-    {
-        clustering <- metadata(object)$coralysis$clustering.manual
-    } else if (clustering.type=="optimal")
-    {
-        clustering <- metadata(object)$coralysis$clustering.optimal
-    } else {
-        clustering <- metadata(object)$coralysis$clustering.manual
-        cat("clustering.type='manual'")
+    # Retrieve clustering as factor
+    clustering <- object[[clustering.label]]
+    if (is.character(clustering)) { # if character, coerce to factor
+        clustering <- as.factor(clustering)
     }
+    names(clustering) <- colnames(object)
+    clusters <- levels(clustering)
     
+    # Retrieve data
     data <- logcounts(object)
-    data <- data[unique(gene.markers$gene),]
-    # data <- scale(data,center = TRUE,scale = TRUE)
+    data <- data[unique(features),]
     data <- data[,order(clustering)]
-    
     
     # Generate column annotations
     annotation = data.frame(cluster=sort(clustering))
     
-    pheatmap(data,show_colnames = FALSE,
-             gaps_col = cumsum(table(clustering[order(clustering)])),
-             gaps_row = cumsum(table(gene.markers[!duplicated(gene.markers$gene),"cluster"])),
-             cluster_rows = FALSE,
-             cluster_cols = FALSE,
-             annotation_col = annotation)
-    
+    # Plot heatmap
+    extra.params <- list(...)
+    extra.params$show_colnames <- ifelse(is.null(extra.params$show_colnames), FALSE, extra.params$show_colnames)
+    extra.params$cluster_rows <- ifelse(is.null(extra.params$cluster_rows), FALSE, extra.params$cluster_rows)
+    extra.params$cluster_cols <- ifelse(is.null(extra.params$cluster_cols), FALSE, extra.params$cluster_cols)
+    if (is.null(extra.params$gaps_col)) extra.params$gaps_col <- cumsum(table(clustering[order(clustering)]))
+    if (is.null(extra.params$annotation_col)) extra.params$annotation_col <- annotation
+    params <- c(list(mat = data), extra.params)
+    do.call(pheatmap, params)
 }
-#' @rdname GeneHeatmap
-#' @aliases GeneHeatmap
-setMethod("GeneHeatmap", signature(object = "SingleCellExperiment"),
-          GeneHeatmap.SingleCellExperiment)
+#' @rdname HeatmapFeatures
+#' @aliases HeatmapFeatures
+setMethod("HeatmapFeatures", signature(object = "SingleCellExperiment"),
+          HeatmapFeatures.SingleCellExperiment)
 
 
 #' @title Gene expression visualization using violin plots

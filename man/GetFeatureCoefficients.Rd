@@ -17,23 +17,39 @@ GetFeatureCoefficients.SingleCellExperiment(
 \arguments{
 \item{object}{An object of \code{SingleCellExperiment} class with ICP cell 
 cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
-After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}.}
+After running \code{RunParallelDivisiveICP}.}
 
 \item{icp.run}{ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
 By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
 retrieve a specific set of tables.}
 
 \item{icp.round}{ICP round(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
-By default \code{NULL}, i.e., all are retrieved. Only relevant if probabilities
-were obtained with the function \code{RunParallelDivisiveICP}, i.e., divisive ICP
-was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1}, 
-i.e., only one round.}
+By default \code{NULL}, i.e., all are retrieved.}
 }
 \value{
 A list of feature coefficient weights per cluster per ICP run/round.
 }
 \description{
 Get feature coefficients from ICP models.
+}
+\examples{
+# Import package
+library("SingleCellExperiment")
+
+# Prepare SCE object for analysis
+pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+
+# Run PCA 
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+
+# GetFeatureCoefficients
+gene_coefficients_icp_2_4 <- GetFeatureCoefficients(object = pbmc_10Xassays, icp.run = 2, icp.round = 4)
+head(gene_coefficients_icp_2_4$icp_8)
+
 }
 \keyword{Feature}
 \keyword{coefficients}
