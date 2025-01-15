@@ -54,6 +54,27 @@ A plot of class \code{ggplot} or a list with a plot of class \code{ggplot} and a
 \description{
 Plot cluster tree by or cluster probability or categorical variable.
 }
+\examples{
+# Import package
+library("SingleCellExperiment")
+
+# Prepare SCE object for analysis
+pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+
+# Plot probability
+PlotClusterTree(object = pbmc_10Xassays, icp.run = 2)
+
+# Plot batch label distribution
+PlotClusterTree(object = pbmc_10Xassays, icp.run = 2, color.by = "batch")
+
+# Plot cell type label distribution
+PlotClusterTree(object = pbmc_10Xassays, icp.run = 2, color.by = "cell_type")
+
+}
 \keyword{Dimensional}
 \keyword{reduction}
 \keyword{visualization}

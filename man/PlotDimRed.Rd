@@ -89,6 +89,31 @@ A plot of class \code{ggplot}.
 \description{
 Plot categorical variables in dimensional reduction.
 }
+\examples{
+# Import package
+library("SingleCellExperiment")
+
+# Prepare SCE object for analysis
+pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+
+# Run PCA 
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+
+# Run UMAP
+set.seed(123)
+pbmc_10Xassays <- RunUMAP(pbmc_10Xassays, dimred.type = "PCA")
+
+# Plot batch 
+PlotDimRed(object = pbmc_10Xassays, color.by = "batch", dimred = "UMAP")
+
+# Plot cell type annotations
+PlotDimRed(object = pbmc_10Xassays, color.by = "cell_type", legend.nrow = 3, dimred = "UMAP", label = TRUE)
+
+}
 \keyword{Dimensional}
 \keyword{reduction}
 \keyword{visualization}

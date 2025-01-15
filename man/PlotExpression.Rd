@@ -57,6 +57,41 @@ A plot of class \code{ggplot}.
 \description{
 Plot feature expression in dimensional reduction.
 }
+\examples{
+# Import package
+library("SingleCellExperiment")
+
+# Prepare SCE object for analysis
+pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+
+# Run PCA 
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+
+# Run UMAP
+set.seed(123)
+pbmc_10Xassays <- RunUMAP(pbmc_10Xassays, dimred.type = "PCA")
+
+# Plot cell cluster probabilities - mean
+# possible options: "mean_probs", "median_probs", "scaled_median_probs" 
+pbmc_10Xassays <- SummariseCellClusterProbability(object = pbmc_10Xassays, icp.round = 4, scale.funs = TRUE, save.in.sce = TRUE) # save result in 'colData'
+PlotExpression(object = pbmc_10Xassays, color.by = "scaled_mean_probs", dimred = "UMAP", color.scale = "viridis", legend.title = "Scaled mean prob.\n(min-max)") 
+
+# Plot expression level of one or more features
+## one 
+PlotExpression(object = pbmc_10Xassays, color.by = "LGALS2", dimred = "UMAP")
+
+## more than one
+genes <- c("CD8A", "CCR7", "GZMA", "MS4A1", "CD27")
+exp.plots <- lapply(X = genes, FUN = function(x) {
+    PlotExpression(object = pbmc_10Xassays, color.by = x, dimred = "UMAP", scale.values = TRUE, point.size = 0.25, point.stroke = 0.25)
+})
+cowplot::plot_grid(plotlist = exp.plots, ncol = 5, align = "vh")
+
+}
 \keyword{Dimensional}
 \keyword{reduction}
 \keyword{visualization}
