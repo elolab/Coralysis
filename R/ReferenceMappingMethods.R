@@ -57,7 +57,7 @@
 #' map <- ReferenceMapping(ref = ref, query = query, ref.label = "cell_type", scale.query.by = NULL, project.umap = TRUE)
 #' 
 #' # Calculate accuracy
-#' preds_x_truth <- table(map$ilo_labels, map$cell_type)
+#' preds_x_truth <- table(map$coral_labels, map$cell_type)
 #' preds_x_truth
 #' sum(diag(preds_x_truth)) / sum(preds_x_truth) # 0.806 : 81%
 #' 
@@ -131,8 +131,8 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
     metadata(query)$coralysis <- list()
     metadata(query)$coralysis$joint.probability <- query.probs   
     reducedDim(x = query, type = paste0(dimred.name.prefix, "PCA")) <- query.pca
-    query[["ilo_labels"]] <- preds.labels
-    query[["ilo_labels_prob"]] <- attr(preds.labels, "prob")
+    query[["coral_labels"]] <- preds.labels
+    query[["coral_probability"]] <- attr(preds.labels, "prob")
     
     # Project data onto ref UMAP
     if (project.umap) {

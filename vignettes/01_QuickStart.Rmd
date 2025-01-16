@@ -1,0 +1,235 @@
+---
+title: "Integration and reference-mapping of single-cell data"
+output: html_document
+date: "2024-08-27"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Integration
+
+<br>
+
+```{r packages, message=FALSE, warning=FALSE}
+# Packages
+library("SingleCellExperiment")
+library("Coralysis")
+library("scater")
+library("ggplot2")
+#library("scran") 
+#library("cowplot")
+```
+
+```{r data}
+# Import data distributed with Coralysis
+data("pbmc_10Xassays") # it imports object as sce
+pbmc_10Xassays
+```
+
+Check how the data looks before integrating. 
+
+```{r unintegrated, fig.width=7, fig.height=4.5}
+# Compute PCA & TSNE
+set.seed(123)
+pbmc_10Xassays <- RunPCA(object = pbmc_10Xassays, assay.name = "logcounts", p = 30, dimred.name = "unintPCA")
+set.seed(123)
+pbmc_10Xassays <- RunTSNE(pbmc_10Xassays, dimred.type = "unintPCA", dimred.name = "unintTSNE")
+
+# Plot TSNE highlighting the batch & cell type
+unint.batch.plot <- PlotDimRed(object = pbmc_10Xassays, color.by = "batch", 
+                               dimred = "unintTSNE", point.size = 0.01, 
+                               legend.nrow = 1, seed.color = 1024)
+unint.cell.plot <- PlotDimRed(object = pbmc_10Xassays, color.by = "cell_type", 
+                               dimred = "unintTSNE", point.size = 0.01, 
+                               legend.nrow = 4, seed.color = 7)
+cowplot::plot_grid(unint.batch.plot, unint.cell.plot, ncol = 2, align = "vh")
+```
+
+Run integration with `Coralysis`. Provide the batch label column name in `colData(pbmc_10Xassays)` to the parameter `batch.label`.  
+
+```{r integration, fig.width=7, fig.height=4.5}
+# Perform integration with Coralysis
+set.seed(1024)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", threads = 4)
+
+# Compute PCA with joint cluster probabilities & TSNE
+set.seed(123)
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays, assay.name = "joint.probability", dimred.name = "intPCA")
+set.seed(123)
+pbmc_10Xassays <- RunTSNE(pbmc_10Xassays, dimred.type = "intPCA", dimred.name = "intTSNE")
+
+# Plot TSNE highlighting the batch & cell type
+int.batch.plot <- PlotDimRed(object = pbmc_10Xassays, color.by = "batch", 
+                             dimred = "intTSNE", point.size = 0.01, 
+                             legend.nrow = 1, seed.color = 1024)
+int.cell.plot <- PlotDimRed(object = pbmc_10Xassays, color.by = "cell_type", 
+                            dimred = "intTSNE", point.size = 0.01, 
+                            legend.nrow = 4, seed.color = 7)
+cowplot::plot_grid(int.batch.plot, int.cell.plot, ncol = 2, align = "vh")
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Graph-based clustering on the integrated PCA
+
+<br>
+
+```{r clustering, fig.width=11, fig.height=4.5}
+# Graph-based clustering on the integrated PCA w/ 'scran' package
+set.seed(123)
+pbmc_10Xassays$cluster <- scran::clusterCells(pbmc_10Xassays, use.dimred = "intPCA", 
+                                              BLUSPARAM = bluster::SNNGraphParam(k = 15, cluster.fun = "louvain"))
+
+# Plot clustering
+clt.plot <- PlotDimRed(object = pbmc_10Xassays, color.by = "cluster", dimred = "intTSNE", 
+                       point.size = 0.01, legend.nrow = 3, seed.color = 65)
+cowplot::plot_grid(int.batch.plot, int.cell.plot, clt.plot, ncol = 3, align = "h")
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Cluster markers
+
+<br>
+
+```{r cluster markers, fig.width=5, fig.height=5}
+# Cluster markers 
+cluster.markers <- FindAllClusterMarkers(object = pbmc_10Xassays, clustering.label = "cluster")
+
+# Select the top 3 positive markers per cluster 
+top3.markers <- lapply(X = split(x = cluster.markers, f = cluster.markers$cluster), FUN = function(x) {
+    head(x[order(x$log2FC, decreasing = TRUE),], n = 3)
+})
+top3.markers <- do.call(rbind, top3.markers)
+top3.markers <- top3.markers[order(as.numeric(top3.markers$cluster)),]
+
+# Heatmap of the top 3 positive markers per cluster
+HeatmapFeatures(object = pbmc_10Xassays, clustering.label = "cluster", 
+                features = top3.markers$marker)
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## DGE
+
+<br>
+
+`Coralysis` was able to separate the CD8 effector T cells into two clusters: 7 and 10. From the differential expression analysis below, it is clear that cluster 10 is more cytotoxic and similar to NK cells than cluster 7. 
+
+```{r dge, fig.width=18, fig.height=2.5}
+# DGE analysis: cluster 7 vs 10
+dge.clt7vs10 <- FindClusterMarkers(pbmc_10Xassays, clustering.label = "cluster", 
+                                   clusters.1 = "7", clusters.2 = "10")
+head(dge.clt7vs10[order(abs(dge.clt7vs10$log2FC), decreasing = TRUE),])
+top6.degs <- head(dge.clt7vs10[order(abs(dge.clt7vs10$log2FC), decreasing = TRUE),"marker"])
+exp.plots <- lapply(X = top6.degs, FUN = function(x) {
+    PlotExpression(object = pbmc_10Xassays, color.by = x, scale.values = TRUE, point.size = 0.5, point.stroke = 0.5)
+})
+cowplot::plot_grid(plotlist = exp.plots, align = "vh", ncol = 6)
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Reference-mapping
+
+<br>
+
+Perform reference-mapping with `Coralysis`, 
+
+```{r reference-mapping, fig.width=12, fig.height=3.25}
+## Reference-mapping
+# Split the SCE object by 'batch'
+reducedDims(pbmc_10Xassays) <- list() # remove dimensional reductions 
+ref <- pbmc_10Xassays[,pbmc_10Xassays$batch=="V2"] # let V2 assay batch be the reference data set
+query <- pbmc_10Xassays[,pbmc_10Xassays$batch=="V1"] # let V1 be the query (unknown annotations)
+
+# 1) Train the reference 
+set.seed(123)
+ref <- RunParallelDivisiveICP(object = ref, divisive.method = "cluster", 
+                              threads = 4) # runs without 'batch.label' as it represents 1 sample only
+
+# 2) Compute reference PCA & UMAP
+ref <- RunPCA(ref, return.model = TRUE, pca.method = "stats")
+set.seed(123)
+ref <- RunUMAP(ref, return.model = TRUE)
+
+# 3) Project & predict query cell labels 
+set.seed(1024)
+map <- ReferenceMapping(ref = ref, query = query, ref.label = "cell_type", 
+                        project.umap = TRUE, dimred.name.prefix = "ref")
+
+# Calculate accuracy
+preds_x_truth <- table(map$coral_labels, map$cell_type)
+preds_x_truth
+sum(diag(preds_x_truth)) / sum(preds_x_truth) # 0.845 : 85%
+
+# Plot query and reference UMAP side-by-side with ground-truth & predicted cell labels
+use.color <- c("aDC" = "#E6F5C9", "B mem" = "#CCEBC5", "B naive" = "#FB8072", 
+               "CD4 mem" = "#A6761D", "CD4 naive" = "#666666", "CD8 eff" = "#80B1D3",
+               "CD8 T" = "#CBD5E8", "HSC" = "#E31A1C", "Megakaryocyte" = "#377EB8", 
+               "Monocyte" = "#FCCDE5", "CD16+ monocyte" = "#A6D854", "NK" = "#6A3D9A",
+               "pDC" = "#E7298A", "Treg" = "#FFFF33")
+ref.celltype.plot <- PlotDimRed(object = ref, color.by = "cell_type", dimred = "UMAP", point.size = 0.01, 
+                                legend.nrow = 6, seed.color = 7) + ggtitle("reference (ground-truth)")
+query.ground_truth.plot <- PlotDimRed(object = map, color.by = "cell_type", dimred = "refUMAP", point.size = 0.01, 
+                                      legend.nrow = 6, seed.color = 7) + ggtitle("query (ground-truth)")
+query.predicted.plot <-PlotDimRed(object = map, color.by = "coral_labels", dimred = "refUMAP", point.size = 0.01, 
+                                  legend.nrow = 6, use.color = use.color) + ggtitle("query (predicted)")
+query.confidence.plot <- PlotExpression(object = map, color.by = "coral_probability", dimred = "refUMAP", point.size = 0.01, 
+                                    color.scale = "viridis") + ggtitle("query (confidence)")
+cowplot::plot_grid(ref.celltype.plot, query.ground_truth.plot, query.predicted.plot, query.confidence.plot, 
+                   ncol = 4, align = "vh")
+```
+
+<br>
+
+<br>
+
+```{r rsession}
+# R session
+sessionInfo()
+```

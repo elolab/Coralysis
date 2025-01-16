@@ -87,7 +87,7 @@ set.seed(1024)
 map <- ReferenceMapping(ref = ref, query = query, ref.label = "cell_type", scale.query.by = NULL, project.umap = TRUE)
 
 # Calculate accuracy
-preds_x_truth <- table(map$ilo_labels, map$cell_type)
+preds_x_truth <- table(map$coral_labels, map$cell_type)
 preds_x_truth
 sum(diag(preds_x_truth)) / sum(preds_x_truth) # 0.806 : 81\%
 
