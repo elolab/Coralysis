@@ -24,12 +24,8 @@ Imports:
     cowplot, 
     RSpectra, 
     umap, 
+    uwot,
     Rtsne, 
-    fastcluster, 
-    parallelDist, 
-    cluster, 
-    dendextend, 
-    DescTools, 
     plyr, 
     scales, 
     pheatmap, 
@@ -48,7 +44,6 @@ Imports:
     irlba, 
     flexclust, 
     scran, 
-    MASS,
     class
 Depends: R (>= 4.0.0)
 Encoding: UTF-8
