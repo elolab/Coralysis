@@ -1,7 +1,5 @@
 # Coralysis
 
----
-
 <br>
 
 #### Coralysis is an R package featuring a multi-level integration algorithm for sensitive integration, reference-mapping, and cell state identification in single-cell data.
