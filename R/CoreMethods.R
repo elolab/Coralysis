@@ -95,26 +95,37 @@ setMethod("PrepareData", signature(object = "SingleCellExperiment"),
 #' @description Perform the PCA transformation of the joint probability matrix,
 #' which reduces the dimensionality from k*L to p.
 #'
-#' @param object object of \code{SingleCellExperiment} class
-#' @param p a positive integer denoting the number of principal
-#' components to calculate and select. Default is \code{50}.
-#' @param scale a logical specifying whether the probabilities should be
+#' @param object A \code{SingleCellExperiment} object.
+#' @param assay.name Name of the assay to compute PCA. One of \code{assayNames(object)}
+#' or \code{joint.probability}. By default \code{joint.probability} is used. Use 
+#' \code{joint.probability} to obtain an integrated embedding after running 
+#' \code{RunParallelDivisiveICP}. One of the assays in \code{assayNames(object)}
+#' can be provided before performing integration to assess if data requires 
+#' integration.  
+#' @param p A positive integer denoting the number of principal components to 
+#' calculate and select. Default is \code{50}.
+#' @param scale A logical specifying whether the probabilities should be
 #' standardized to unit-variance before running PCA. Default is \code{TRUE}.
-#' @param center a logical specifying whether the probabilities should be
+#' @param center A logical specifying whether the probabilities should be
 #' centered before running PCA. Default is \code{TRUE}.
-#' @param threshold a thresfold for filtering out ICP runs before PCA with
-#' the lower terminal projection accuracy below the threshold.
-#' Default is \code{0}.
-#' @param method A character specifying the PCA method. One of \code{"irlba"}
-#' (default), \code{"RSpectra"} or \code{"stats"}. 
+#' @param threshold A threshold for filtering out ICP runs before PCA with the 
+#' lower terminal projection accuracy below the threshold. Default is \code{0}.
+#' @param pca.method A character specifying the PCA method. One of \code{"irlba"}
+#' (default), \code{"RSpectra"} or \code{"stats"}. Set seed before, if the method 
+#' is \code{"irlba"} to ensure reproducibility. 
 #' @param return.model A logical specifying if the PCA model should or not be 
-#' retrieved. By default \code{FALSE}. Only implemented for \code{method = "stats"}. 
-#' If \code{TRUE}, the \code{method} is coerced to \code{"stats"}. 
+#' retrieved. By default \code{FALSE}. Only implemented for \code{pca.method = "stats"}. 
+#' If \code{TRUE}, the \code{pca.method} is coerced to \code{"stats"}. 
 #' @param select.icp.tables Select the ICP cluster probability tables to perform 
 #' PCA. By default \code{NULL}, i.e., all are used, except if the ICP tables were
 #' obtained with the function \code{RunParallelDivisiveICP}, in which the ICP 
 #' tables correspond to the last round of divisive clustering for every epoch.  
 #' A vector of \code{integers} should be given otherwise.   
+#' @param features A character of feature names matching \code{row.names(object)} 
+#' to select from before computing PCA. Only used if \code{assay.name} is one of
+#' the assays in \code{assayNames(object)}, otherwise it is ignored. 
+#' @param dimred.name Dimensional reduction name given to the returned PCA. By 
+#' default \code{"PCA"}. 
 #'
 #' @name RunPCA
 #'
@@ -127,6 +138,7 @@ setMethod("PrepareData", signature(object = "SingleCellExperiment"),
 #' @importFrom stats prcomp
 #' @importFrom SingleCellExperiment reducedDim<-
 #' @importFrom S4Vectors metadata metadata<-
+#' @importFrom SummarizedExperiment assay assayNames
 #'
 #' @examples
 #' # Import package
@@ -140,46 +152,68 @@ setMethod("PrepareData", signature(object = "SingleCellExperiment"),
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
+#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, assay.name = "joint.probability", p = 10, dimred.name = "PCA")
 #'
-RunPCA.SingleCellExperiment <- function(object, p, scale, center, threshold,
-                                        method, return.model, select.icp.tables) {
+RunPCA.SingleCellExperiment <- function(object, assay.name, p, scale, center, threshold,
+                                        pca.method, return.model, select.icp.tables, 
+                                        features, dimred.name) {
     
-    # Check conditions
-    if (p > metadata(object)$coralysis$L*metadata(object)$coralysis$k) {
-        stop(paste0("p larger than number of joint probabilities. Decrease p"))
+    # Check arguments
+    stopifnot(is(object, "SingleCellExperiment"), 
+             (is.character(assay.name) && (length(assay.name)==1) && ( ((assay.name == "joint.probability") && ("joint.probability" %in% names(metadata(object)$coralysis))) || (assay.name %in% assayNames(object)))),
+             (is.numeric(p) && (length(p)==1) && (p%%1==0)), 
+             is.logical(scale), is.logical(center), 
+             ((threshold >= 0) && (threshold < 1)),
+             (is.character(pca.method) && (length(pca.method)==1) && (pca.method %in% c("irlba", "RSpectra", "stats"))), 
+             is.logical(return.model), 
+             (is.null(select.icp.tables) || (is.numeric(select.icp.tables) && all(select.icp.tables %% 1 == 0))), 
+             (is.null(features) || (is.character(features) && all(features %in% row.names(object)))), 
+             (is.character(dimred.name) && (length(dimred.name)==1)))
+    
+    # Retrieve cell matrix
+    if (assay.name == "joint.probability") { # select probability from 'metadata(object)$coralysis$joint.probability'
+        # Get ICP tables
+        n.icps <- length(metadata(object)$coralysis$joint.probability)
+        if (is.null(select.icp.tables)) {
+            select.icp.tables <- 1:n.icps
+            divisive.icp <- metadata(object)$coralysis$divisive.icp
+            if (!is.null(divisive.icp)) {
+                L <- metadata(object)$coralysis$L
+                k <- metadata(object)$coralysis$k  
+                Ks <- log2(k) # divisive K rounds (if k=16: 2 --> 4 --> 8 --> 16, i.e., Ks = 4 rounds)
+                select.icp.tables <- seq(Ks, Ks * L, Ks) # select a ICP table every Ks round
+                message(paste0("Divisive ICP: selecting ICP tables multiple of ", Ks))
+            }
+        }
+        if (threshold == 0) {
+            X <- do.call(cbind, metadata(object)$coralysis$joint.probability[select.icp.tables])
+        } else {
+            icp_runs_logical <- unlist(lapply(metadata(object)$coralysis$metrics, function(x) x["ARI",])) >= threshold
+            icp_runs_logical <- (icp_runs_logical & ((1:n.icps) %in% select.icp.tables))
+            X <- do.call(cbind, metadata(object)$coralysis$joint.probability[icp_runs_logical])
+        }
+    } else { # select assay from 'assayNames(object)'
+        if (is.null(features)) {
+            features <- row.names(object)
+        } 
+        X <- t(assay(object[features,], assay.name))
+    }
+    
+    # Check if assumptions are met
+    if (p > ncol(X)) {
+        stop(paste0("p larger than number of features. Decrease p"))
     }
     if (return.model) {
-        if (method != "stats") {
-            message(paste0("Setting 'method' to 'stats' as 'return.model' is TRUE.", 
-                           "\nSet 'return.model' to FALSE to use 'method' '", method, "'."))
-            method <- "stats"
+        if (pca.method != "stats") {
+            message(paste0("Setting 'pca.method' to 'stats' as 'return.model' is TRUE.", 
+                           "\nSet 'return.model' to FALSE to use 'method' '", pca.method, "'."))
+            pca.method <- "stats"
         }
     }
-    
-    # Get ICP tables
-    n.icps <- length(metadata(object)$coralysis$joint.probability)
-    if (is.null(select.icp.tables)) {
-        select.icp.tables <- 1:n.icps
-        divisive.icp <- metadata(object)$coralysis$divisive.icp
-        if (!is.null(divisive.icp)) {
-            L <- metadata(object)$coralysis$L
-            k <- metadata(object)$coralysis$k  
-            Ks <- log2(k) # divisive K rounds (if k=16: 2 --> 4 --> 8 --> 16, i.e., Ks = 4 rounds)
-            select.icp.tables <- seq(Ks, Ks * L, Ks) # select a ICP table every Ks round
-            message(paste0("Divisive ICP: selecting ICP tables multiple of ", Ks))
-        }
-    }
-    if (threshold == 0) {
-        X <- do.call(cbind, metadata(object)$coralysis$joint.probability[select.icp.tables])
-    } else {
-        icp_runs_logical <- unlist(lapply(metadata(object)$coralysis$metrics, function(x) x["ARI",])) >= threshold
-        icp_runs_logical <- (icp_runs_logical & ((1:n.icps) %in% select.icp.tables))
-        X <- do.call(cbind, metadata(object)$coralysis$joint.probability[icp_runs_logical])
-    }
-    
+
     # Calculate PCA
-    if (method=="RSpectra") {
+    if (pca.method=="RSpectra") {
         X <- scale(X, scale = scale, center = center)
         # X^T %*% X
         A = crossprod(X)
@@ -188,11 +222,11 @@ RunPCA.SingleCellExperiment <- function(object, p, scale, center, threshold,
         pca <- X %*% eigs_sym_out$vectors
         colnames(pca) <- paste0("PC", seq_len(ncol(pca))) 
     } 
-    if (method == "irlba") {
+    if (pca.method == "irlba") {
         pca <- irlba::prcomp_irlba(x = X, n = p, scale. = scale, center = center)
         pca <- pca$x
     }
-    if (method == "stats") {
+    if (pca.method == "stats") {
         pca <- stats::prcomp(x = X, scale. = scale, center = center, rank = p)
         if (return.model) {
             metadata(object)$coralysis$pca.model <- pca
@@ -201,14 +235,17 @@ RunPCA.SingleCellExperiment <- function(object, p, scale, center, threshold,
     }
     
     # Saving PCA into SCE object (& params)
-    reducedDim(object, type = "PCA") <- pca
+    reducedDim(object, type = dimred.name) <- pca
     metadata(object)$coralysis$p <- p # saving due to compatibility issues
-    metadata(object)$coralysis$pca.params <-  list("p" = p, "scale" = scale, 
+    metadata(object)$coralysis$pca.params <-  list("p" = p, 
+                                                   "assay.name" = assay.name,
+                                                   "scale" = scale, 
                                                    "threshold" = threshold, 
-                                                    "center" = center,
-                                                    "method" = method, 
-                                                    "return.model" = return.model, 
-                                                    "select.icp.tables" = select.icp.tables)
+                                                   "center" = center,
+                                                   "pca.method" = pca.method, 
+                                                   "return.model" = return.model, 
+                                                   "select.icp.tables" = select.icp.tables, 
+                                                   "dimred.name" = dimred.name)
     
     return(object)
 }
@@ -225,6 +262,8 @@ setMethod("RunPCA", signature(object = "SingleCellExperiment"),
 #'
 #' @param object A \code{SingleCellExperiment} object obtained after running 
 #' \code{RunParallelDivisiveICP}.
+#' @param dimred.name Dimensional reduction name of the PCA to select from 
+#' \code{reducedDimNames(object)}. By default \code{"PCA"}. 
 #' @param return.plot logical indicating if the ggplot2 object should be returned.
 #' By default \code{FALSE}.
 #'
@@ -252,17 +291,18 @@ setMethod("RunPCA", signature(object = "SingleCellExperiment"),
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # Plot Elbow
 #' PCAElbowPlot(pbmc_10Xassays)
 #'
-PCAElbowPlot.SingleCellExperiment <- function(object, return.plot) {
+PCAElbowPlot.SingleCellExperiment <- function(object, dimred.name, return.plot) {
 
-  df <- matrix(apply(reducedDim(object,"PCA"), 2,sd),
+  df <- matrix(apply(reducedDim(object, dimred.name), 2, sd),
                nrow = metadata(object)$coralysis$p,
                ncol = 1,
-               dimnames = list(seq_len(metadata(object)$coralysis$p),"SD"))
+               dimnames = list(seq_len(metadata(object)$coralysis$p), "SD"))
   df <- melt(df)
 
   p <- ggplot(df, aes_string(x = 'Var1', y = 'value')) +
@@ -325,6 +365,7 @@ setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # Run UMAP
@@ -423,6 +464,7 @@ setMethod("RunUMAP", signature(object = "SingleCellExperiment"),
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # Run t-SNE
@@ -516,6 +558,7 @@ setMethod("RunTSNE", signature(object = "SingleCellExperiment"),
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # Perform differential expression on a given clustering or cell type annotations
@@ -731,6 +774,7 @@ setMethod("FindAllClusterMarkers", signature(object = "SingleCellExperiment"),
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # Perform differential expression on a given clustering or cell type annotations
@@ -951,6 +995,7 @@ setMethod("FindClusterMarkers", signature(object = "SingleCellExperiment"),
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # Get cluster probability for all ICP runs for the last 4th round 
@@ -1043,6 +1088,7 @@ setMethod("GetCellClusterProbability", signature(object = "SingleCellExperiment"
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # Summarise cluster probability
@@ -1156,6 +1202,7 @@ setMethod("SummariseCellClusterProbability", signature(object = "SingleCellExper
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # GetFeatureCoefficients
@@ -1244,6 +1291,7 @@ setMethod("GetFeatureCoefficients", signature(object = "SingleCellExperiment"),
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # Get gene coefficients by majority voting for a given clustering or cell type annotations

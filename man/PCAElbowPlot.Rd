@@ -6,13 +6,16 @@
 \alias{PCAElbowPlot,SingleCellExperiment-method}
 \title{Elbow plot of the standard deviations of the principal components}
 \usage{
-PCAElbowPlot.SingleCellExperiment(object, return.plot)
+PCAElbowPlot.SingleCellExperiment(object, dimred.name, return.plot)
 
-\S4method{PCAElbowPlot}{SingleCellExperiment}(object, return.plot = FALSE)
+\S4method{PCAElbowPlot}{SingleCellExperiment}(object, dimred.name = "PCA", return.plot = FALSE)
 }
 \arguments{
 \item{object}{A \code{SingleCellExperiment} object obtained after running 
 \code{RunParallelDivisiveICP}.}
+
+\item{dimred.name}{Dimensional reduction name of the PCA to select from 
+\code{reducedDimNames(object)}. By default \code{"PCA"}.}
 
 \item{return.plot}{logical indicating if the ggplot2 object should be returned.
 By default \code{FALSE}.}
@@ -36,6 +39,7 @@ set.seed(123)
 pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 
 # Run PCA 
+set.seed(125) # to ensure reproducibility for the default 'irlba' method
 pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 
 # Plot Elbow

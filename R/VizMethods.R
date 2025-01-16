@@ -32,6 +32,7 @@
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # Plot features by cell type (give a clustering instead)
@@ -117,6 +118,7 @@ setMethod("HeatmapFeatures", signature(object = "SingleCellExperiment"),
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # Plot features by cell type (give a clustering instead)
@@ -229,6 +231,7 @@ setMethod("VlnPlot", signature(object = "SingleCellExperiment"),
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # Run UMAP
@@ -338,6 +341,7 @@ setMethod("PlotDimRed", signature(object = "SingleCellExperiment"),
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 #' 
 #' # Run PCA 
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
 #' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 #' 
 #' # Run UMAP

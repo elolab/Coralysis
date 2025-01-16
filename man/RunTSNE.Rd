@@ -62,6 +62,7 @@ set.seed(123)
 pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 
 # Run PCA 
+set.seed(125) # to ensure reproducibility for the default 'irlba' method
 pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
 
 # Run t-SNE

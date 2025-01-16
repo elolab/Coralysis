@@ -15,20 +15,24 @@ setGeneric("AggregateDataByBatch", signature = "object",
 #' @export
 setGeneric("RunPCA", signature = "object",
            function(object,
+                    assay.name = "joint.probability",
                     p = 50,
                     scale = TRUE,
                     center = TRUE,
                     threshold = 0,
-                    method = "irlba", 
+                    pca.method = "irlba", 
                     return.model = FALSE, 
-                    select.icp.tables = NULL) {
+                    select.icp.tables = NULL, 
+                    features = NULL,
+                    dimred.name = "PCA") {
              standardGeneric("RunPCA")
            })
 
 #' @export
 setGeneric("PCAElbowPlot", signature = "object",
            function(object,
-                    return.plot=FALSE) {
+                    dimred.name = "PCA",
+                    return.plot = FALSE) {
              standardGeneric("PCAElbowPlot")
            })
 

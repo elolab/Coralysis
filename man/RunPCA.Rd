@@ -8,54 +8,74 @@
 \usage{
 RunPCA.SingleCellExperiment(
   object,
+  assay.name,
   p,
   scale,
   center,
   threshold,
-  method,
+  pca.method,
   return.model,
-  select.icp.tables
+  select.icp.tables,
+  features,
+  dimred.name
 )
 
 \S4method{RunPCA}{SingleCellExperiment}(
   object,
+  assay.name = "joint.probability",
   p = 50,
   scale = TRUE,
   center = TRUE,
   threshold = 0,
-  method = "irlba",
+  pca.method = "irlba",
   return.model = FALSE,
-  select.icp.tables = NULL
+  select.icp.tables = NULL,
+  features = NULL,
+  dimred.name = "PCA"
 )
 }
 \arguments{
-\item{object}{object of \code{SingleCellExperiment} class}
+\item{object}{A \code{SingleCellExperiment} object.}
 
-\item{p}{a positive integer denoting the number of principal
-components to calculate and select. Default is \code{50}.}
+\item{assay.name}{Name of the assay to compute PCA. One of \code{assayNames(object)}
+or \code{joint.probability}. By default \code{joint.probability} is used. Use 
+\code{joint.probability} to obtain an integrated embedding after running 
+\code{RunParallelDivisiveICP}. One of the assays in \code{assayNames(object)}
+can be provided before performing integration to assess if data requires 
+integration.}
 
-\item{scale}{a logical specifying whether the probabilities should be
+\item{p}{A positive integer denoting the number of principal components to 
+calculate and select. Default is \code{50}.}
+
+\item{scale}{A logical specifying whether the probabilities should be
 standardized to unit-variance before running PCA. Default is \code{TRUE}.}
 
-\item{center}{a logical specifying whether the probabilities should be
+\item{center}{A logical specifying whether the probabilities should be
 centered before running PCA. Default is \code{TRUE}.}
 
-\item{threshold}{a thresfold for filtering out ICP runs before PCA with
-the lower terminal projection accuracy below the threshold.
-Default is \code{0}.}
+\item{threshold}{A threshold for filtering out ICP runs before PCA with the 
+lower terminal projection accuracy below the threshold. Default is \code{0}.}
 
-\item{method}{A character specifying the PCA method. One of \code{"irlba"}
-(default), \code{"RSpectra"} or \code{"stats"}.}
+\item{pca.method}{A character specifying the PCA method. One of \code{"irlba"}
+(default), \code{"RSpectra"} or \code{"stats"}. Set seed before, if the method 
+is \code{"irlba"} to ensure reproducibility.}
 
 \item{return.model}{A logical specifying if the PCA model should or not be 
-retrieved. By default \code{FALSE}. Only implemented for \code{method = "stats"}. 
-If \code{TRUE}, the \code{method} is coerced to \code{"stats"}.}
+retrieved. By default \code{FALSE}. Only implemented for \code{pca.method = "stats"}. 
+If \code{TRUE}, the \code{pca.method} is coerced to \code{"stats"}.}
 
 \item{select.icp.tables}{Select the ICP cluster probability tables to perform 
 PCA. By default \code{NULL}, i.e., all are used, except if the ICP tables were
 obtained with the function \code{RunParallelDivisiveICP}, in which the ICP 
 tables correspond to the last round of divisive clustering for every epoch.  
 A vector of \code{integers} should be given otherwise.}
+
+\item{features}{A character of feature names matching \code{row.names(object)} 
+to select from before computing PCA. Only used if \code{assay.name} is one of
+the assays in \code{assayNames(object)}, otherwise it is ignored.}
+
+\item{dimred.name}{Dimensional reduction name given to the returned PCA. By 
+default \code{"PCA"}.}
 }
 \value{
 object of \code{SingleCellExperiment} class
@@ -76,7 +96,8 @@ set.seed(123)
 pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
 
 # Run PCA 
-pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+set.seed(125) # to ensure reproducibility for the default 'irlba' method
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays, assay.name = "joint.probability", p = 10, dimred.name = "PCA")
 
 }
 \keyword{PCA}
