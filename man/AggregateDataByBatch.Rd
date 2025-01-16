@@ -4,7 +4,7 @@
 \alias{AggregateDataByBatch}
 \alias{AggregateDataByBatch.SingleCellExperiment}
 \alias{AggregateDataByBatch,SingleCellExperiment-method}
-\title{Aggregates gene expression by cell clusters, per batch if provided.}
+\title{Aggregates feature expression by cell clusters, per batch if provided.}
 \usage{
 AggregateDataByBatch.SingleCellExperiment(object, batch.label, nhvg, p, ...)
 
@@ -16,7 +16,7 @@ AggregateDataByBatch.SingleCellExperiment(object, batch.label, nhvg, p, ...)
 \item{batch.label}{Cluster identities vector corresponding to the cells in 
 \code{mtx}.}
 
-\item{nhvg}{Integer of the number of highly variable genes to select. By default 
+\item{nhvg}{Integer of the number of highly variable features to select. By default 
 \code{2000}.}
 
 \item{p}{Integer. By default \code{30}.}
@@ -24,12 +24,27 @@ AggregateDataByBatch.SingleCellExperiment(object, batch.label, nhvg, p, ...)
 \item{...}{Parameters to be passed to \code{ClusterCells()} function.}
 }
 \value{
-A SingleCellExperiment object with gene expression aggregated by clusters.
+A SingleCellExperiment object with feature expression aggregated by clusters.
 }
 \description{
-The function aggregates gene expression by cell clusters, per batch if provided.
+The function aggregates feature expression by cell clusters, per 
+batch if provided.
+}
+\examples{
+# Run with a batch
+set.seed(1204)
+sce <- AggregateDataByBatch(object = pbmc_10Xassays, batch.label = "batch")
+logcounts(sce)[1:10,1:10]
+head(metadata(sce)$clusters)
+
+# Run without a batch
+set.seed(1204)
+sce <- AggregateDataByBatch(object = pbmc_10Xassays, batch.label = NULL)
+logcounts(sce)[1:10,1:10]
+head(metadata(sce)$clusters)
+
 }
 \keyword{aggregated}
 \keyword{batches}
 \keyword{expression}
-\keyword{gene}
+\keyword{feature}

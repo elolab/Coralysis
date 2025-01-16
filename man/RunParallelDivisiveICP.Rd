@@ -88,7 +88,7 @@ Increasing recommended with a significantly larger sample size
 
 \item{C}{A positive real number denoting the cost of constraints violation in
 the L1-regularized logistic regression model from the LIBLINEAR library.
-Decreasing leads to more stringent feature selection, i.e. less genes are
+Decreasing leads to more stringent feature selection, i.e. less features are
 selected that are used to build the projection classifier. Decreasing to a
 very low value (~ \code{0.01}) can lead to failure to identify central cell
 populations. Default \code{0.3}.}
@@ -141,7 +141,7 @@ from the data or the whole data should be used for training. By default
 \code{AggregateDataByBatch()}. Only provided if \code{build.train.set} is \code{TRUE}.}
 
 \item{scale.by}{A character specifying if the data should be scaled by \code{cell}
-or by \code{gene} before training. Default is \code{NULL}, i.e., the data is 
+or by \code{feature} before training. Default is \code{NULL}, i.e., the data is 
 not scaled before training.}
 
 \item{use.cluster.seed}{Should the same starting clustering result be provided
@@ -186,6 +186,10 @@ pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
 # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
 set.seed(123)
 pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+
+# Integrated PCA
+set.seed(125)
+pbmc_10Xassays <- RunPCA(object = pbmc_10Xassays, p = 10)
 
 }
 \keyword{ICP}

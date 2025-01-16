@@ -27,7 +27,7 @@
 #' (tens of thousands of cells). Default is \code{5}.
 #' @param C A positive real number denoting the cost of constraints violation in
 #' the L1-regularized logistic regression model from the LIBLINEAR library.
-#' Decreasing leads to more stringent feature selection, i.e. less genes are
+#' Decreasing leads to more stringent feature selection, i.e. less features are
 #' selected that are used to build the projection classifier. Decreasing to a
 #' very low value (~ \code{0.01}) can lead to failure to identify central cell
 #' populations. Default \code{0.3}.
@@ -70,7 +70,7 @@
 #' @param build.train.params A list of parameters to be passed to the function
 #' \code{AggregateDataByBatch()}. Only provided if \code{build.train.set} is \code{TRUE}. 
 #' @param scale.by A character specifying if the data should be scaled by \code{cell}
-#' or by \code{gene} before training. Default is \code{NULL}, i.e., the data is 
+#' or by \code{feature} before training. Default is \code{NULL}, i.e., the data is 
 #' not scaled before training.
 #' @param use.cluster.seed Should the same starting clustering result be provided
 #' to ensure more reproducible results (logical). If \code{FALSE}, each ICP run 
@@ -123,6 +123,10 @@
 #' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
 #' set.seed(123)
 #' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+#'
+#' # Integrated PCA
+#' set.seed(125)
+#' pbmc_10Xassays <- RunPCA(object = pbmc_10Xassays, p = 10)
 #'
 RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label, 
                                                         k, d, L, r, C,
@@ -223,8 +227,8 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
         }
     }
     
-    if(!(is.null(scale.by) || ((length(scale.by)==1) && (scale.by %in% c("cell", "gene"))))) {
-        stop("'scale.by' must be NULL or one of 'cell'/'gene'")
+    if(!(is.null(scale.by) || ((length(scale.by)==1) && (scale.by %in% c("cell", "feature"))))) {
+        stop("'scale.by' must be NULL or one of 'cell'/'feature'")
     } else {
         metadata(object)$coralysis$scale.by <- scale.by
     }
@@ -338,7 +342,7 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
         if (scale.by=="cell") {
             dataset <- Scale(x = as(dataset, "sparseMatrix"), scale.by="row")
         }
-        if (scale.by=="gene") {
+        if (scale.by=="feature") {
             dataset <- ScaleByBatch(x = dataset, batch = batch.label)
         }
     }
@@ -425,7 +429,7 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
             if (scale.by=="cell") {
                 test.data <- Scale(x = as(test.data, "sparseMatrix"), scale.by="row")
             }
-            if (scale.by=="gene") {
+            if (scale.by=="feature") {
                 batch.label <- as.character(object[[batch.name]]) 
                 names(batch.label) <- colnames(object)
                 test.data <- ScaleByBatch(x = test.data, batch = batch.label)
@@ -450,9 +454,10 @@ setMethod("RunParallelDivisiveICP", signature(object = "SingleCellExperiment"),
           RunParallelDivisiveICP.SingleCellExperiment)
 
 
-#' @title Aggregates gene expression by cell clusters, per batch if provided.
+#' @title Aggregates feature expression by cell clusters, per batch if provided.
 #'
-#' @description The function aggregates gene expression by cell clusters, per batch if provided.
+#' @description The function aggregates feature expression by cell clusters, per 
+#' batch if provided.
 #'
 #' @param object An object of \code{SingleCellExperiment} class.
 #' @param batch.label A variable name (of class \code{character}) available 
@@ -461,21 +466,34 @@ setMethod("RunParallelDivisiveICP", signature(object = "SingleCellExperiment"),
 #' By default \code{NULL}, i.e., cells are sampled evenly regardless their batch. 
 #' @param batch.label Cluster identities vector corresponding to the cells in 
 #' \code{mtx}.
-#' @param nhvg Integer of the number of highly variable genes to select. By default 
+#' @param nhvg Integer of the number of highly variable features to select. By default 
 #' \code{2000}. 
 #' @param p Integer. By default \code{30}. 
 #' @param ... Parameters to be passed to \code{ClusterCells()} function. 
 #'
 #' @name AggregateDataByBatch
 #' 
-#' @return A SingleCellExperiment object with gene expression aggregated by clusters.
+#' @return A SingleCellExperiment object with feature expression aggregated by clusters.
 #'
-#' @keywords aggregated gene expression batches
+#' @keywords aggregated feature expression batches
 #'
 #' @importFrom SingleCellExperiment logcounts cbind
 #' @importFrom S4Vectors DataFrame metadata
 #' @importFrom scran getTopHVGs
 #' @importFrom irlba prcomp_irlba
+#' 
+#' @examples 
+#' # Run with a batch
+#' set.seed(1204)
+#' sce <- AggregateDataByBatch(object = pbmc_10Xassays, batch.label = "batch")
+#' logcounts(sce)[1:10,1:10]
+#' head(metadata(sce)$clusters)
+#' 
+#' # Run without a batch
+#' set.seed(1204)
+#' sce <- AggregateDataByBatch(object = pbmc_10Xassays, batch.label = NULL)
+#' logcounts(sce)[1:10,1:10]
+#' head(metadata(sce)$clusters)
 #' 
 AggregateDataByBatch.SingleCellExperiment <- function(object, batch.label, 
                                                       nhvg, p, ...) {
@@ -525,224 +543,3 @@ AggregateDataByBatch.SingleCellExperiment <- function(object, batch.label,
 #' @aliases AggregateDataByBatch
 setMethod("AggregateDataByBatch", signature(object = "SingleCellExperiment"),
           AggregateDataByBatch.SingleCellExperiment)
-
-
-#' @title Split randomly every cluster into k clusters
-#'
-#' @description
-#' Splits randomly every cluster given into k clusters
-#'
-#' @param cluster A clustering result in which each cluster will be divided 
-#' randomly into \code{k} clusters. 
-#' @param k The number of clusters that each cluster given in \code{cluster} 
-#' should be randomly divided into. 
-#' @param cluster.names Names to name the \code{cluster} result given. By 
-#' default \code{NULL}.
-#' 
-#' @return A clustering result where every cluster given was split randomly 
-#' into \code{k} clusters. 
-#'
-#' @keywords random clustering
-#'
-RandomlyDivisiveClustering <- function(cluster, k, cluster.names = NULL) {
-    clt.len <- 1:length(cluster) 
-    clt.idx <- split(x = clt.len, f = cluster)
-    clt.list <- lapply(X= clt.idx, function(x) {
-        factor(sample(seq_len(k), length(x), replace = TRUE))
-    })
-    no.clts <- length(clt.list)
-    clt.seq <- seq(from=k, to=k*no.clts, by=k)
-    ii <- 0
-    for (i in seq_along(clt.list)) {
-        if (i > 1) {
-            levels(clt.list[[i]]) <- (clt.seq[ii]+1):clt.seq[i]  
-        }
-        ii <- i
-    }
-    rand.divisive.clts <- unlist(clt.list)
-    rand.divisive.clts <- rand.divisive.clts[order(unlist(clt.idx))]
-    if (!is.null(cluster.names)) names(rand.divisive.clts) <- cluster.names
-    return(rand.divisive.clts)
-}
-
-#' @title Sample cells based on principal components distribution
-#'
-#' @description
-#' Samples cells based on their distributions along one principal component
-#'
-#' @param data Data to compute PCA and sample cells from. Rows and columns 
-#' should represent cells and features/genes, respectively.   
-#' @param batch Batch cell label identity (character) matching cells giving in 
-#' \code{data}. Use \code{NULL} in the absence of batches. If the batch is given 
-#' the cells are sampled in a batch wise manner, otherwise the cells are sampled 
-#' without any grouping factor. By default is \code{NULL}.   
-#' @param q.split Split (cell) batch principal component distribution by this 
-#' quantile (numeric). By default {0.5}, i.e., median.  
-#' @param p Number of principal components to compute (integer). By default 
-#' \code{30}.
-#' @param use.pc Which principal component should be used for sampling cells per
-#' batch. By default \code{"PC1"}, i.e., first principal component is used. 
-#' @param center Should the features/genes given in \code{data} centered before
-#' performing the PCA (logical). By default \code{TRUE}. 
-#' @param scale. Should the features/genes given in \code{data} scaled before
-#' performing the PCA (logical). By default \code{TRUE}. 
-#' 
-#' @return A factor with cell cluster identities (two clusters). 
-#'
-#' @keywords sample PCA cells
-#'
-#' @importFrom irlba prcomp_irlba
-#' @importFrom stats quantile
-#' @importFrom sparseMatrixStats colSds
-#' 
-SamplePCACells <- function(data, batch = NULL, q.split = 0.5, p=30, use.pc="PC1", 
-                           center=TRUE, scale.=TRUE) {
-    # Check batch
-    if (is.null(batch)) {
-        batch <- factor(rep("0", nrow(data)))
-    }
-    
-    # Compute PCA
-    genes.sd <- colSds(data) 
-    genes.sd.diff0 <- which(genes.sd != 0)
-    cell.names <- row.names(data)
-    pca <- prcomp_irlba(x=data[,genes.sd.diff0], n=p, center = center, scale. = scale.)
-    # Select PC of interest
-    pc <- pca$x[,use.pc]
-    names(pc) <- cell.names
-    # Index by batch labels
-    cell.batch <- split(x = 1:length(batch), f = batch)
-    pc.batch <- split(x = pc, f = batch)
-    # Split PC by quantile - median by default
-    batch.names <- names(cell.batch)
-    names(batch.names) <- batch.names
-    q.batch <- lapply(X = pc.batch, FUN = function(x) quantile(x = x, probs = q.split))
-    split.half.batch <- lapply(X = batch.names, FUN = function(x) {
-        (pc.batch[[x]] <= q.batch[[x]])
-    })
-    first.half.batch <- lapply(X = batch.names, function(x) {
-        names(pc.batch[[x]][split.half.batch[[x]]]) 
-    })
-    second.half.batch <- lapply(X = batch.names, function(x) {
-        names(pc.batch[[x]][!split.half.batch[[x]]]) 
-    })
-    # Clustering 
-    first.half.batch <- unlist(first.half.batch)
-    second.half.batch <- unlist(second.half.batch)
-    cluster <- factor(rep(1:2, c(length(first.half.batch), length(second.half.batch))))
-    names(cluster) <- c(first.half.batch, second.half.batch)
-    cluster <- factor(cluster[cell.names])
-    return(cluster)
-}
-
-#' @title Sample cells based on cluster probabilities distribution
-#'
-#' @description
-#' Samples cells based on cluster probabilities distribution
-#'
-#' @param cluster Clustering cell labels predicted by ICP (factor). 
-#' @param probs Clustering probabilities predicted by ICP (matrix). 
-#' @param q.split Split (cell) batch principal component distribution by this 
-#' quantile (numeric). By default {0.5}, i.e., median.  
-
-#' @return A factor with cell cluster identities. 
-#'
-#' @keywords sample cluster probabilities ICP
-#' 
-#' @importFrom stats quantile
-#'
-SampleClusterProbs <- function(cluster, probs, q.split = 0.5) {
-    # Split cells & probs by cluster/prediction
-    clts <- as.character(unique(cluster))
-    names(clts) <- clts
-    cell.idx <- 1:length(cluster)
-    clt.cell.idx <- split(x = cell.idx, f = cluster)
-    max.probs <- apply(X = probs, MARGIN = 1, FUN = function(x) max(x)) 
-    clt.probs <- split(x = max.probs, f = cluster)
-    # Quantile - median by default
-    clt.q.split <- lapply(X = clt.probs, FUN = function(x) quantile(x, probs = q.split))
-    clt.q.probs.split <- lapply(X = clts, FUN = function(x) (clt.probs[[x]] <= clt.q.split[[x]]))
-    # Make new clusterings
-    new.idx <- new.clt <- vector(mode="numeric", length = length(cluster))
-    s.pos <- 1
-    e.pos <- i <- 0
-    for (clt in clts) {
-        new.clt1 <- clt.cell.idx[[clt]][clt.q.probs.split[[clt]]]
-        new.clt2 <- clt.cell.idx[[clt]][!clt.q.probs.split[[clt]]]
-        make.clt <- rep(c(1+i, 2+i), c(length(new.clt1), length(new.clt2)))
-        e.pos <- e.pos + length(make.clt) 
-        new.idx[s.pos:e.pos] <- c(new.clt1, new.clt2)
-        new.clt[s.pos:e.pos] <- make.clt
-        i <- i + 2
-        s.pos <- s.pos + length(make.clt) 
-    }
-    new.clt <- factor(new.clt[order(new.idx)])
-    return(new.clt)
-}
-
-#' @title Sample cells based on cluster probabilities distribution batch wise
-#'
-#' @description
-#' Samples cells based on cluster probabilities distribution batch wise
-#'
-#' @param cluster Clustering cell labels predicted by ICP (factor). 
-#' @param probs Clustering probabilities predicted by ICP (matrix). 
-#' @param batch Batch labels for the corresponding clusters (character or factor). 
-#' @param q.split Split (cell) batch principal component distribution by this 
-#' quantile (numeric). By default {0.5}, i.e., median.  
-
-#' @return A factor with cell cluster identities. 
-#'
-#' @keywords sample cluster probabilities ICP
-#' 
-#' @importFrom stats quantile
-#'
-SampleClusterBatchProbs <- function(cluster, probs, batch, q.split = 0.5) {
-    # Split cells & probs by cluster/prediction
-    clts <- as.character(sort(unique(cluster)))
-    names(clts) <- clts
-    batches <- unique(as.character(batch))
-    names(batches) <- batches
-    cell.idx <- 1:length(cluster)
-    clt.cell.idx <- split(x = cell.idx, f = cluster)
-    max.probs <- apply(X = probs, MARGIN = 1, FUN = function(x) max(x)) 
-    clt.probs <- split(x = max.probs, f = cluster)
-    clt.batch <- split(x = batch, f = cluster)
-    # Split divided idx & probs by batch
-    clt.probs.batch <- lapply(X = clts, FUN = function(x) {
-        split(x = clt.probs[[x]], f = clt.batch[[x]])
-    })
-    clt.cell.idx.batch <- lapply(X = clts, FUN = function(x) {
-        split(x = clt.cell.idx[[x]], f = clt.batch[[x]])
-    })
-    # Quantile - median by default
-    clt.b.q.split <- lapply(X = clt.probs.batch, FUN = function(x) {
-        lapply(X = x, FUN = function(y) {
-            quantile(y, probs = q.split) 
-        })
-    })
-    clt.q.probs.split <- lapply(X = clts, FUN = function(x) {
-        unlist(
-            lapply(X = batches, FUN = function(y) {
-                (clt.probs.batch[[x]][[y]] <= clt.b.q.split[[x]][[y]])
-            })
-        )
-    })
-    clt.cell.idx. <- lapply(X = clt.cell.idx.batch, FUN = function(x) unlist(x[batches])) 
-    # Make new clusterings
-    new.idx <- new.clt <- vector(mode="numeric", length = length(cluster))
-    s.pos <- 1
-    e.pos <- i <- 0
-    for (clt in clts) {
-        new.clt1 <- clt.cell.idx.[[clt]][clt.q.probs.split[[clt]]]
-        new.clt2 <- clt.cell.idx.[[clt]][!clt.q.probs.split[[clt]]]
-        make.clt <- rep(c(1+i, 2+i), c(length(new.clt1), length(new.clt2)))
-        e.pos <- e.pos + length(make.clt) 
-        new.idx[s.pos:e.pos] <- c(new.clt1, new.clt2)
-        new.clt[s.pos:e.pos] <- make.clt
-        i <- i + 2
-        s.pos <- s.pos + length(make.clt) 
-    }
-    new.clt <- factor(new.clt[order(new.idx)])
-    return(new.clt)
-}
