@@ -1,8 +1,7 @@
 #' @title Reference mapping
 #'
-#' @description
-#' This function allows to project new query data sets onto a reference built 
-#' with Coralysis as well as transfer cell labels from the reference to queries. 
+#' @description This function allows to project new query data sets onto a reference 
+#' built with Coralysis as well as transfer cell labels from the reference to queries. 
 #'
 #' @param ref An object of \code{SingleCellExperiment} class trained with Coralysis
 #' and after running \code{RunPCA(..., return.model = TRUE)} function. 
@@ -11,7 +10,7 @@
 #' @param ref.label A character cell metadata column name from the \code{ref} 
 #' object to transfer to the queries.  
 #' @param scale.query.by Should the query data be scaled by \code{cell} or by 
-#' \code{gene}. By default is \code{NULL}, i.e., is not scaled. Scale it if 
+#' \code{feature}. By default is \code{NULL}, i.e., is not scaled. Scale it if 
 #' reference was scaled.  
 #' @param project.umap Project query data onto reference UMAP (logical). By 
 #' default \code{FALSE}. If \code{TRUE}, the \code{ref} object needs to have a 
@@ -38,13 +37,37 @@
 #' @importFrom SingleCellExperiment logcounts SingleCellExperiment
 #' @importFrom SummarizedExperiment colData
 #' 
+#' @examples 
+#' ## Reference-mapping
+#' # Split the SCE object by 'batch'
+#' ref <- pbmc_10Xassays[,pbmc_10Xassays$batch=="V2"] # let V2 assay batch be the reference data set
+#' query <- pbmc_10Xassays[,pbmc_10Xassays$batch=="V1"] # let V1 be the query (unknown annotations)
+#' 
+#' # 1) Train the reference - 'L = 4' just for highlighting purposes; use 'L=50' (default) or greater
+#' set.seed(123)
+#' ref <- RunParallelDivisiveICP(object = ref, L = 4, divisive.method = "cluster", threads = 1) # runs without 'batch.label' as it represents 1 sample only
+#' 
+#' # 2) Compute reference PCA & UMAP
+#' ref <- RunPCA(ref, return.model = TRUE, pca.method = "stats")
+#' set.seed(123)
+#' ref <- RunUMAP(ref, return.model = TRUE)
+#' 
+#' # 3) Project & predict query cell labels 
+#' set.seed(1024)
+#' map <- ReferenceMapping(ref = ref, query = query, ref.label = "cell_type", scale.query.by = NULL, project.umap = TRUE)
+#' 
+#' # Calculate accuracy
+#' preds_x_truth <- table(map$ilo_labels, map$cell_type)
+#' preds_x_truth
+#' sum(diag(preds_x_truth)) / sum(preds_x_truth) # 0.806 : 81%
+#' 
 ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
                                                   scale.query.by, project.umap, 
                                                   select.icp.models, k.nn, 
                                                   dimred.name.prefix) {
     # Check input params
     stopifnot(is(ref, "SingleCellExperiment"), is(query, "SingleCellExperiment"), 
-              (ref.label %in% colnames(colData(ref))), any(is.null(scale.query.by), (scale.query.by %in% c("cell", "gene"))), 
+              (ref.label %in% colnames(colData(ref))), any(is.null(scale.query.by), (scale.query.by %in% c("cell", "feature"))), 
               is.logical(project.umap), any(is.null(select.icp.models), is.numeric(select.icp.models)), 
               all(is.numeric(k.nn), (length(k.nn)==1)), is.character(dimred.name.prefix))
     if (is.null(metadata(ref)$coralysis$pca.model)) {
@@ -83,7 +106,7 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
         if (scale.query.by=="cell") {
             query.data <- Scale(x = query.data, scale.by = "row")
         } 
-        if (scale.query.by=="gene") {
+        if (scale.query.by=="feature") {
             query.data <- Scale(x = query.data, scale.by = "col")
         }
     }
