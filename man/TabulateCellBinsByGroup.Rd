@@ -32,6 +32,26 @@ A list of tables with the frequency of cells per bin of cell cluster probability
 Frequency of cells per cell cluster probability bin by group for each label. 
 The label has to be specified beforehand to the function \code{BinCellClusterProbability()}.
 }
+\examples{
+# Packages
+library("SingleCellExperiment")
+
+# Prepare data
+pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1)
+
+# Cell states SCE object for a given cell type annotation or clustering
+cellstate.sce <- BinCellClusterProbability(object = pbmc_10Xassays, label = "cell_type", icp.round = 4, bins = 20) 
+cellstate.sce
+
+# Tabulate cell bins by group 
+# give an interesting variable to the "group" parameter instead "batch" - given for illustrative purposes only
+cellbins.tables <- TabulateCellBinsByGroup(object = cellstate.sce, group = "batch", relative = TRUE, margin = 1)
+
+}
 \keyword{Table}
 \keyword{bins}
 \keyword{cell}

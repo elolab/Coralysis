@@ -34,7 +34,22 @@
 #' @importFrom SingleCellExperiment SingleCellExperiment 
 #' @importFrom S4Vectors metadata
 #' @importFrom SummarizedExperiment colData assay assayNames
-#' @importFrom dplyr %>% group_by mutate ntile ungroup
+#' @importFrom dplyr %>% group_by mutate ntile ungroup distinct
+#'
+#' @examples 
+#' # Packages
+#' library("SingleCellExperiment")
+#' 
+#' # Prepare data
+#' pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1)
+#' 
+#' # Cell states SCE object for a given cell type annotation or clustering
+#' cellstate.sce <- BinCellClusterProbability(object = pbmc_10Xassays, label = "cell_type", icp.round = 4, bins = 20) 
+#' cellstate.sce
 #'
 BinCellClusterProbability.SingleCellExperiment <- function(object, label, icp.run, icp.round, 
                                                            funs, bins, aggregate.bins.by, 
@@ -70,7 +85,7 @@ BinCellClusterProbability.SingleCellExperiment <- function(object, label, icp.ru
         mutate("aggregated_probability_bins" = get(aggregate.bins.by)(probability), 
                "aggregated_label_bins" = paste(label, paste0("bin", probability_bins), sep = "_")) %>% 
         ungroup(.)
-    # Gene expression averaged by 'label' x bins
+    # Feature expression averaged by 'label' x bins
     gexp.bins <- AggregateClusterExpression(mtx = assay(x = object, i = use.assay), 
                                             cluster = bins.by.label$aggregated_label_bins, 
                                             fun = "mean")
@@ -94,9 +109,10 @@ BinCellClusterProbability.SingleCellExperiment <- function(object, label, icp.ru
 setMethod("BinCellClusterProbability", signature(object = "SingleCellExperiment"),
           BinCellClusterProbability.SingleCellExperiment)
 
+
 #' @title Cell cluster probability distribution
 #' 
-#' @description Plot cell cluster probability distribution per label by group
+#' @description Plot cell cluster probability distribution per label by group.
 #' 
 #' @param object An object of \code{SingleCellExperiment} class with aggregated 
 #' cell cluster probability available in \code{colData(object)}, which can be 
@@ -123,6 +139,25 @@ setMethod("BinCellClusterProbability", signature(object = "SingleCellExperiment"
 #' @import ggplot2
 #' @importFrom S4Vectors metadata
 #' @importFrom SummarizedExperiment colData
+#'
+#' @examples 
+#' # Packages
+#' library("SingleCellExperiment")
+#' 
+#' # Prepare data
+#' pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1)
+#' 
+#' # Summarise cell cluster probability
+#' pbmc_10Xassays <- SummariseCellClusterProbability(object = pbmc_10Xassays, icp.round = 4) # save result in 'colData'
+#' 
+#' # Search for differences in probabilities across group(s) 
+#' # give an interesting variable to the "group" parameter instead "batch" - given for illustrative purposes only
+#' prob.dist <- CellClusterProbabilityDistribution(object = pbmc_10Xassays, label = "cell_type", group = "batch", probability = "scaled_mean_probs")
+#' prob.dist # print plot
 #'
 CellClusterProbabilityDistribution.SingleCellExperiment <- function(object, label, group, probability) {
     
@@ -155,6 +190,7 @@ CellClusterProbabilityDistribution.SingleCellExperiment <- function(object, labe
 setMethod("CellClusterProbabilityDistribution", signature(object = "SingleCellExperiment"),
           CellClusterProbabilityDistribution.SingleCellExperiment)
 
+
 #' @title Tabulate cell bins by group
 #' 
 #' @description Frequency of cells per cell cluster probability bin by group for each label. 
@@ -178,6 +214,25 @@ setMethod("CellClusterProbabilityDistribution", signature(object = "SingleCellEx
 #' @keywords Table cell bins group
 #'
 #' @importFrom S4Vectors metadata
+#'
+#' @examples 
+#' # Packages
+#' library("SingleCellExperiment")
+#' 
+#' # Prepare data
+#' pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1)
+#' 
+#' # Cell states SCE object for a given cell type annotation or clustering
+#' cellstate.sce <- BinCellClusterProbability(object = pbmc_10Xassays, label = "cell_type", icp.round = 4, bins = 20) 
+#' cellstate.sce
+#'
+#' # Tabulate cell bins by group 
+#' # give an interesting variable to the "group" parameter instead "batch" - given for illustrative purposes only
+#' cellbins.tables <- TabulateCellBinsByGroup(object = cellstate.sce, group = "batch", relative = TRUE, margin = 1)
 #'
 TabulateCellBinsByGroup.SingleCellExperiment <- function(object, group, relative, margin) {
     # Check input
@@ -204,6 +259,7 @@ TabulateCellBinsByGroup.SingleCellExperiment <- function(object, group, relative
 setMethod("TabulateCellBinsByGroup", signature(object = "SingleCellExperiment"),
           TabulateCellBinsByGroup.SingleCellExperiment)
 
+
 #' @title Cell bins feature correlation
 #' 
 #' @description Correlation between cell bins for the given labels and features.
@@ -227,6 +283,24 @@ setMethod("TabulateCellBinsByGroup", signature(object = "SingleCellExperiment"),
 #' @importFrom S4Vectors metadata
 #' @importFrom SummarizedExperiment colData
 #' @importFrom SingleCellExperiment logcounts
+#'
+#' @examples 
+#' # Packages
+#' library("SingleCellExperiment")
+#' 
+#' # Prepare data
+#' pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+#' 
+#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' set.seed(123)
+#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1)
+#' 
+#' # Cell states SCE object for a given cell type annotation or clustering
+#' cellstate.sce <- BinCellClusterProbability(object = pbmc_10Xassays, label = "cell_type", icp.round = 4, bins = 20) 
+#' cellstate.sce
+#'
+#' # Pearson correlated features with "Monocyte"
+#' cor.features.mono <- CellBinsFeatureCorrelation(object = cellstate.sce, labels = "Monocyte")
 #'
 CellBinsFeatureCorrelation.SingleCellExperiment <- function(object, labels, method) {
     

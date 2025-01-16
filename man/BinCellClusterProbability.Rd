@@ -65,6 +65,22 @@ cell \code{label} probability bins.
 \description{
 Bin cell cluster probability by a given cell label.
 }
+\examples{
+# Packages
+library("SingleCellExperiment")
+
+# Prepare data
+pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1)
+
+# Cell states SCE object for a given cell type annotation or clustering
+cellstate.sce <- BinCellClusterProbability(object = pbmc_10Xassays, label = "cell_type", icp.round = 4, bins = 20) 
+cellstate.sce
+
+}
 \keyword{Bin}
 \keyword{cell}
 \keyword{cluster}

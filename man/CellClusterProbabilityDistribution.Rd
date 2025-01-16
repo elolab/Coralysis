@@ -44,7 +44,27 @@ function was run with \code{funs = "mean"} and \code{scale.funs = TRUE}.}
 A plot of class \code{ggplot}.
 }
 \description{
-Plot cell cluster probability distribution per label by group
+Plot cell cluster probability distribution per label by group.
+}
+\examples{
+# Packages
+library("SingleCellExperiment")
+
+# Prepare data
+pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+
+# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1)
+
+# Summarise cell cluster probability
+pbmc_10Xassays <- SummariseCellClusterProbability(object = pbmc_10Xassays, icp.round = 4) # save result in 'colData'
+
+# Search for differences in probabilities across group(s) 
+# give an interesting variable to the "group" parameter instead "batch" - given for illustrative purposes only
+prob.dist <- CellClusterProbabilityDistribution(object = pbmc_10Xassays, label = "cell_type", group = "batch", probability = "scaled_mean_probs")
+prob.dist # print plot
+
 }
 \keyword{Distribution}
 \keyword{cell}
