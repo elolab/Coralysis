@@ -70,13 +70,13 @@ PrepareData.SingleCellExperiment <- function(object) {
         return(object)
     }
     
-    # Filter genes that are not expressed in any of the cells
-    genes_before_filtering <- nrow(object)
-    non_expressing_genes <- rownames(object)[Matrix::rowSums(logcounts(object)) != 0]
-    object <- object[non_expressing_genes,]
-    genes_after_filtering <- nrow(object)
-    message(paste(genes_after_filtering,"/",genes_before_filtering,
-                  " genes remain after filtering genes with only zero values.",
+    # Filter features that are not expressed in any of the cells
+    features_before_filtering <- nrow(object)
+    non_expressing_features <- rownames(object)[Matrix::rowSums(logcounts(object)) != 0]
+    object <- object[non_expressing_features,]
+    features_after_filtering <- nrow(object)
+    message(paste(features_after_filtering,"/",features_before_filtering,
+                  " features remain after filtering features with only zero values.",
                   sep = ""))
     
     # Create a place into `metadata`` slot for the data from Coralysis

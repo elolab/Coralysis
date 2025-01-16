@@ -2,12 +2,12 @@
 % Please edit documentation in R/Utils.R
 \name{ScaleByBatch}
 \alias{ScaleByBatch}
-\title{Scale sparse matrix by genes (column) by batch}
+\title{Scale sparse matrix by features (column) by batch}
 \usage{
 ScaleByBatch(x, batch)
 }
 \arguments{
-\item{x}{A matrix of class `dgCMatrix`. Cells by genes (rows x columns).}
+\item{x}{A matrix of class `dgCMatrix`. Cells by features (rows x columns).}
 
 \item{batch}{A character vector with batch labels corresponding to the cells
 given in \code{x}. The character batch labels need to be named
@@ -17,6 +17,6 @@ with the cells names given in the rows of \code{x}.}
 A scaled matrix of class `dgCMatrix`.
 }
 \description{
-Scales genes by batch
+Scales features by batch
 }
 \keyword{scale}

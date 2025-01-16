@@ -18,7 +18,7 @@ LogisticRegression(
 }
 \arguments{
 \item{training.sparse.matrix}{A sparse matrix (dgCMatrix) containing training
-sample's gene expression data with genes in rows and cells in columns.
+sample's feature expression data with features in rows and cells in columns.
 Default is \code{NULL}.}
 
 \item{training.ident}{A named factor containing sample's cluster labels for
@@ -30,7 +30,7 @@ regression (C). Default is \code{0.3}.}
 \item{reg.type}{"L1" for LASSO and "L2" for Ridge. Default is "L1".}
 
 \item{test.sparse.matrix}{A sparse matrix (dgCMatrix) containing test
-sample's gene expression data with genes in rows and cells in columns.
+sample's feature expression data with features in rows and cells in columns.
 Default is \code{NULL}.}
 
 \item{d}{A numeric smaller than \code{1} and greater than \code{0}

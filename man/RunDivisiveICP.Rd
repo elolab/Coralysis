@@ -25,7 +25,7 @@ RunDivisiveICP(
 }
 \arguments{
 \item{normalized.data}{A sparse matrix (dgCMatrix) containing
-normalized gene expression data with cells in rows and genes in columns.
+normalized feature expression data with cells in rows and features in columns.
 Default is \code{NULL}.}
 
 \item{batch.label}{A character vector with batch labels corresponding to the cells

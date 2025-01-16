@@ -2,29 +2,29 @@
 % Please edit documentation in R/Utils.R
 \name{AggregateClusterExpression}
 \alias{AggregateClusterExpression}
-\title{Aggregates cell gene expression by clusters}
+\title{Aggregates cell feature expression by clusters}
 \usage{
 AggregateClusterExpression(mtx, cluster, select.features = NULL, fun = "mean")
 }
 \arguments{
-\item{mtx}{Matrix with genes vs cells (rows vs cols) with gene expression to 
+\item{mtx}{Matrix with features vs cells (rows vs cols) with feature expression to 
 aggregate.}
 
 \item{cluster}{Cluster identities vector corresponding to the cells in 
 \code{mtx}.}
 
-\item{select.features}{Should features, i.e., genes, be selected. By default 
-\code{NULL}, all genes used.}
+\item{select.features}{Should features be selected. By default \code{NULL}, 
+all features used.}
 
-\item{fun}{Character specifying if gene expression should be aggregated by 
+\item{fun}{Character specifying if feature expression should be aggregated by 
 \code{mean} or \code{sum}. By default \code{"mean"}.}
 }
 \value{
-Matrix of gene expressed aggregated by clusters.
+Matrix of feature expressed aggregated by clusters.
 }
 \description{
-The function aggregates cell gene expression by clusters provided.
+The function aggregates cell feature expression by clusters provided.
 }
 \keyword{aggregated}
 \keyword{expression}
-\keyword{gene}
+\keyword{feature}

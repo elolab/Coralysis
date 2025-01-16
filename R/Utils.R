@@ -71,23 +71,22 @@ ClusterCells <- function(object, nclusters=500, use.emb=TRUE, emb.name="PCA") {
     return(object)
 } 
 
-#' @title Aggregates cell gene expression by clusters
+#' @title Aggregates cell feature expression by clusters
 #'
-#' @description
-#' The function aggregates cell gene expression by clusters provided.
+#' @description The function aggregates cell feature expression by clusters provided.
 #'
-#' @param mtx Matrix with genes vs cells (rows vs cols) with gene expression to 
+#' @param mtx Matrix with features vs cells (rows vs cols) with feature expression to 
 #' aggregate.
 #' @param cluster Cluster identities vector corresponding to the cells in 
 #' \code{mtx}.
-#' @param select.features Should features, i.e., genes, be selected. By default 
-#' \code{NULL}, all genes used. 
-#' @param fun Character specifying if gene expression should be aggregated by 
+#' @param select.features Should features be selected. By default \code{NULL}, 
+#' all features used. 
+#' @param fun Character specifying if feature expression should be aggregated by 
 #' \code{mean} or \code{sum}. By default \code{"mean"}. 
 #'
-#' @return Matrix of gene expressed aggregated by clusters.
+#' @return Matrix of feature expressed aggregated by clusters.
 #'
-#' @keywords aggregated gene expression
+#' @keywords aggregated feature expression
 #'
 AggregateClusterExpression <- function(mtx, cluster, select.features = NULL, 
                                        fun = "mean") {
@@ -174,11 +173,11 @@ Scale <- function(x, center=TRUE, scale=TRUE, scale.by="col") {
 }
 
 
-#' @title Scale sparse matrix by genes (column) by batch
+#' @title Scale sparse matrix by features (column) by batch
 #'
-#' @description Scales genes by batch
+#' @description Scales features by batch
 #'
-#' @param x A matrix of class `dgCMatrix`. Cells by genes (rows x columns).  
+#' @param x A matrix of class `dgCMatrix`. Cells by features (rows x columns).  
 #' @param batch A character vector with batch labels corresponding to the cells
 #' given in \code{x}. The character batch labels need to be named
 #' with the cells names given in the rows of \code{x}. 
@@ -343,7 +342,7 @@ FindClusterBatchKNN <- function(preds, probs, batch, k = 10, k.prop = NULL) {
 #' L1-regularized logistic regression model.
 #'
 #' @param training.sparse.matrix A sparse matrix (dgCMatrix) containing training
-#' sample's gene expression data with genes in rows and cells in columns.
+#' sample's feature expression data with features in rows and cells in columns.
 #' Default is \code{NULL}.
 #' @param training.ident A named factor containing sample's cluster labels for
 #' each cell in training.sparse.matrix. Default is \code{NULL}.
@@ -351,7 +350,7 @@ FindClusterBatchKNN <- function(preds, probs, batch, k = 10, k.prop = NULL) {
 #' regression (C). Default is \code{0.3}.
 #' @param reg.type "L1" for LASSO and "L2" for Ridge. Default is "L1".
 #' @param test.sparse.matrix A sparse matrix (dgCMatrix) containing test
-#' sample's gene expression data with genes in rows and cells in columns.
+#' sample's feature expression data with features in rows and cells in columns.
 #' Default is \code{NULL}.
 #' @param d A numeric smaller than \code{1} and greater than \code{0}
 #' that determines how many cells per cluster should be
@@ -430,7 +429,7 @@ LogisticRegression <- function(training.sparse.matrix = NULL,
 #' a divisive clustering manner.
 #'
 #' @param normalized.data A sparse matrix (dgCMatrix) containing
-#' normalized gene expression data with cells in rows and genes in columns.
+#' normalized feature expression data with cells in rows and features in columns.
 #' Default is \code{NULL}.
 #' @param batch.label A character vector with batch labels corresponding to the cells
 #' given in \code{normalized.data}. The character batch labels need to be named
