@@ -375,7 +375,7 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
                        .verbose = FALSE,
                        .combine = list,
                        .maxcombine = 1000,
-                       .inorder = FALSE,
+                       .inorder = TRUE,
                        .multicombine = TRUE,
                        .packages=c("Coralysis", "parallel"),
                        .options.snow = opts)  %dorng% {
