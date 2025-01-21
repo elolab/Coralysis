@@ -4,7 +4,7 @@
 \alias{RunPCA}
 \alias{RunPCA.SingleCellExperiment}
 \alias{RunPCA,SingleCellExperiment-method}
-\title{PCA transformation of the joint probability matrix}
+\title{Principal Component Analysis}
 \usage{
 RunPCA.SingleCellExperiment(
   object,
@@ -81,8 +81,8 @@ default \code{"PCA"}.}
 object of \code{SingleCellExperiment} class
 }
 \description{
-Perform the PCA transformation of the joint probability matrix,
-which reduces the dimensionality from k*L to p.
+Perform principal component analysis using assays or the
+the joint probability matrix as input.
 }
 \examples{
 # Import package

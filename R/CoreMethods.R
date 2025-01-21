@@ -90,10 +90,10 @@ setMethod("PrepareData", signature(object = "SingleCellExperiment"),
           PrepareData.SingleCellExperiment)
 
 
-#' @title PCA transformation of the joint probability matrix
+#' @title Principal Component Analysis
 #'
-#' @description Perform the PCA transformation of the joint probability matrix,
-#' which reduces the dimensionality from k*L to p.
+#' @description Perform principal component analysis using assays or the
+#' the joint probability matrix as input.
 #'
 #' @param object A \code{SingleCellExperiment} object.
 #' @param assay.name Name of the assay to compute PCA. One of \code{assayNames(object)}
