@@ -1,8 +1,0 @@
-pandoc: 2.19.2
-pkgdown: 2.0.6
-pkgdown_sha: ~
-articles:
-  01_QuickStart: 01_QuickStart.html
-  02_CellState: 02_CellState.html
-last_built: 2025-02-07T16:54Z
-
