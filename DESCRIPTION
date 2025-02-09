@@ -1,17 +1,21 @@
 Package: Coralysis
 Type: Package
-Title: Coralysis: sensitive identification of cell types and states in single-cell data via multi-level integration
+Title: Coralysis sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration
 Version: 1.0.0
 Description: Coralysis is an R package featuring a multi-level integration algorithm for sensitive integration, reference-mapping, and cell state identification in single-cell data.
 Authors@R: c(person("António", "Sousa",
              email = "aggode@utu.fi",
-             role=c("cre", "aut")),
+             role=c("cre", "aut"), 
+             comment = c(ORCID = "0000-0003-4779-6459")),
              person("Johannes", "Smolander",
-             role=c("ctb", "aut")),
+             role=c("ctb", "aut"), 
+             comment = c(ORCID = "0000-0003-3872-9668")),
              person("Sini", "Junttila",
-             role=c("aut")),
+             role=c("aut"), 
+             comment = c(ORCID = "0000-0003-3754-5584")),
              person("Laura L", "Elo",
-             role=c("aut")))
+             role=c("aut"), 
+             comment = c(ORCID = "0000-0001-5648-4532")))
 License: GPL-3
 Imports: 
     Matrix (<= 1.6.5), 
@@ -56,5 +60,5 @@ biocViews: SingleCell, Software, Clustering, DimensionReduction,
            DataRepresentation, DifferentialExpression, Transcription,
            GeneExpression
 NeedsCompilation: no
-URL: https://github.com/elolab/Coralysis
+URL: https://github.com/elolab/Coralysis, https://elolab.github.io/Coralysis/
 BugReports: https://github.com/elolab/Coralysis/issues

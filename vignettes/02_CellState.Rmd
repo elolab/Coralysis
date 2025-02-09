@@ -40,7 +40,7 @@ The single-cell RNA sequencing dataset of peripheral blood mononuclear cells (PB
 
 ```{r data, message=FALSE, warning=FALSE}
 # Import data 
-sce <- readRDS("../../covid_Wilk_et_al.rds")
+sce <- readRDS("covid_Wilk_et_al.rds")
 ```
 
 <br>
