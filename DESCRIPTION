@@ -18,12 +18,12 @@ Authors@R: c(person("António", "Sousa",
              comment = c(ORCID = "0000-0001-5648-4532")))
 License: GPL-3
 Imports: 
-    Matrix (<= 1.6.5), 
+    Matrix, 
     parallel, 
     foreach, 
     aricode, 
     LiblineaR, 
-    SparseM (<= 1.82), 
+    SparseM, 
     ggplot2, 
     cowplot, 
     RSpectra, 
