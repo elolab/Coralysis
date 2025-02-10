@@ -24,6 +24,8 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 
 ```{r packages, message=FALSE, warning=FALSE}
 # Packages loaded
+if (! "ComplexHeatmap" %in% installed.packages()) pak::pkg_install("ComplexHeatmap")
+if (! "scater" %in% installed.packages()) pak::pkg_install("scater")
 suppressWarnings(suppressMessages(library("SingleCellExperiment")))
 suppressWarnings(suppressMessages(library("scater")))
 suppressWarnings(suppressMessages(library("dplyr")))
@@ -40,7 +42,8 @@ The single-cell RNA sequencing dataset of peripheral blood mononuclear cells (PB
 
 ```{r data, message=FALSE, warning=FALSE}
 # Import data 
-sce <- readRDS("covid_Wilk_et_al.rds")
+data.url <- "https://zenodo.org/records/14845751/files/covid_Wilk_et_al.rds?download=1"
+sce <- readRDS(file = url(data.url))
 ```
 
 <br>

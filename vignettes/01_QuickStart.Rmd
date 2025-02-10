@@ -35,8 +35,8 @@ library("ggplot2")
 
 ```{r data}
 # Import data distributed with Coralysis
-data("pbmc_10Xassays") # it imports object as sce
-pbmc_10Xassays
+data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+pbmc_10Xassays <- readRDS(file = url(data.url))
 ```
 
 Check how the data looks before integrating. 
