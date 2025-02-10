@@ -2,7 +2,7 @@
 
 <br>
 
-#### Coralysis is an R package featuring a multi-level integration algorithm for sensitive integration, reference-mapping, and cell state identification in single-cell data.
+#### Coralysis is an R package featuring a multi-level integration algorithm for sensitive integration, reference-mapping, and cell state identification in single-cell data, described in the paper: _[Coralysis enables sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration](https://doi.org/10.1101/2025.02.07.637023)_.
 
 <br>
 
@@ -79,6 +79,18 @@ cowplot::plot_grid(plotlist = plots, ncol = 2, align = "vh") # join plots togeth
 <br>
 
 If you have questions related to `Coralysis`, please contact us [here](https://github.com/elolab/Coralysis/issues). 
+
+<br>
+
+---
+
+<br>
+
+## Citation
+
+<br>
+
+Sousa A, Smolander J, Junttila S, Elo L (2025). **Coralysis enables sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration.** _bioRxiv_. [doi:10.1101/2025.02.07.637023](https://doi.org/10.1101/2025.02.07.637023)
 
 <br>
 
