@@ -9,6 +9,12 @@
 #' (\code{character} or \code{factor}) to use.
 #' @param features Feature names to plot by cluster (\code{character}) matching 
 #' \code{row.names(object)}.
+#' @param use.color Character specifying the colors for the clusters. By default 
+#' \code{NULL}, i.e., colors are randomly chosen based on the seed given at 
+#' \code{seed.color}. It is overwritten in case the argument \code{annotation_colors} 
+#' is provided. 
+#' @param seed.color Seed to randomly select colors. By default \code{123}. It 
+#' is overwritten in case the argument \code{annotation_colors} is provided. 
 #' @param ... Parameters to pass to \code{pheatmap::pheatmap} function.
 #'
 #' @name HeatmapFeatures
@@ -40,7 +46,8 @@
 #' HeatmapFeatures(object = pbmc_10Xassays, clustering.label = "cell_type", features = genes) # log-normalized
 #' HeatmapFeatures(object = pbmc_10Xassays, clustering.label = "cell_type", features = genes, scale = "row") # scale genes
 #' 
-HeatmapFeatures.SingleCellExperiment <- function(object, clustering.label, features, ...) {
+HeatmapFeatures.SingleCellExperiment <- function(object, clustering.label, features, 
+                                                 use.color, seed.color, ...) {
     
     # Check input params
     stopifnot(is(object, "SingleCellExperiment"), 
@@ -61,7 +68,16 @@ HeatmapFeatures.SingleCellExperiment <- function(object, clustering.label, featu
     data <- data[,order(clustering)]
     
     # Generate column annotations
-    annotation = data.frame(cluster=sort(clustering))
+    annotation <- data.frame(cluster = sort(clustering))
+    if (is.null(use.color)) {
+        color.palettes <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == 'qual',]
+        color.palette <- unlist(mapply(RColorBrewer::brewer.pal, color.palettes$maxcolors, rownames(color.palettes)))
+        ngroups <- nlevels(clustering)
+        set.seed(seed.color)
+        use.color <- sample(color.palette, ngroups)
+    }
+    names(use.color) <- levels(clustering)
+    use.color <- list(cluster = use.color)
     
     # Plot heatmap
     extra.params <- list(...)
@@ -70,6 +86,7 @@ HeatmapFeatures.SingleCellExperiment <- function(object, clustering.label, featu
     extra.params$cluster_cols <- ifelse(is.null(extra.params$cluster_cols), FALSE, extra.params$cluster_cols)
     if (is.null(extra.params$gaps_col)) extra.params$gaps_col <- cumsum(table(clustering[order(clustering)]))
     if (is.null(extra.params$annotation_col)) extra.params$annotation_col <- annotation
+    if (is.null(extra.params$annotation_colors)) extra.params$annotation_colors <- use.color
     params <- c(list(mat = data), extra.params)
     do.call(pheatmap, params)
 }

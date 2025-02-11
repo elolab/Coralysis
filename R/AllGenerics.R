@@ -106,6 +106,8 @@ setGeneric("HeatmapFeatures", signature = "object",
            function(object,
                     clustering.label,
                     features, 
+                    use.color = NULL,
+                    seed.color = 123,
                     ...) {
              standardGeneric("HeatmapFeatures")
            })

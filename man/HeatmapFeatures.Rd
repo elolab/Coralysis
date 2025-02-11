@@ -6,9 +6,23 @@
 \alias{HeatmapFeatures,SingleCellExperiment-method}
 \title{Heatmap visualization of the expression of features by clusters}
 \usage{
-HeatmapFeatures.SingleCellExperiment(object, clustering.label, features, ...)
+HeatmapFeatures.SingleCellExperiment(
+  object,
+  clustering.label,
+  features,
+  use.color,
+  seed.color,
+  ...
+)
 
-\S4method{HeatmapFeatures}{SingleCellExperiment}(object, clustering.label, features, ...)
+\S4method{HeatmapFeatures}{SingleCellExperiment}(
+  object,
+  clustering.label,
+  features,
+  use.color = NULL,
+  seed.color = 123,
+  ...
+)
 }
 \arguments{
 \item{object}{of \code{SingleCellExperiment} class}
@@ -19,6 +33,14 @@ in the cell metadata \code{colData(object)} with the clustering labels
 
 \item{features}{Feature names to plot by cluster (\code{character}) matching 
 \code{row.names(object)}.}
+
+\item{use.color}{Character specifying the colors for the clusters. By default 
+\code{NULL}, i.e., colors are randomly chosen based on the seed given at 
+\code{seed.color}. It is overwritten in case the argument \code{annotation_colors} 
+is provided.}
+
+\item{seed.color}{Seed to randomly select colors. By default \code{123}. It 
+is overwritten in case the argument \code{annotation_colors} is provided.}
 
 \item{...}{Parameters to pass to \code{pheatmap::pheatmap} function.}
 }
