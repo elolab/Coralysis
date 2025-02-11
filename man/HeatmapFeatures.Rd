@@ -39,8 +39,9 @@ in the cell metadata \code{colData(object)} with the clustering labels
 \code{seed.color}. It is overwritten in case the argument \code{annotation_colors} 
 is provided.}
 
-\item{seed.color}{Seed to randomly select colors. By default \code{123}. It 
-is overwritten in case the argument \code{annotation_colors} is provided.}
+\item{seed.color}{Seed to randomly select colors for the clusters. By default 
+\code{123}. It is overwritten in case the argument \code{annotation_colors} 
+is provided.}
 
 \item{...}{Parameters to pass to \code{pheatmap::pheatmap} function.}
 }

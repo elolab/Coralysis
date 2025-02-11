@@ -13,8 +13,9 @@
 #' \code{NULL}, i.e., colors are randomly chosen based on the seed given at 
 #' \code{seed.color}. It is overwritten in case the argument \code{annotation_colors} 
 #' is provided. 
-#' @param seed.color Seed to randomly select colors. By default \code{123}. It 
-#' is overwritten in case the argument \code{annotation_colors} is provided. 
+#' @param seed.color Seed to randomly select colors for the clusters. By default 
+#' \code{123}. It is overwritten in case the argument \code{annotation_colors} 
+#' is provided. 
 #' @param ... Parameters to pass to \code{pheatmap::pheatmap} function.
 #'
 #' @name HeatmapFeatures
