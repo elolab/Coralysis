@@ -92,8 +92,8 @@ setMethod("PrepareData", signature(object = "SingleCellExperiment"),
 
 #' @title Principal Component Analysis
 #'
-#' @description Perform principal component analysis using assays or the
-#' the joint probability matrix as input.
+#' @description Perform principal component analysis using assays or the joint 
+#' probability matrix as input.
 #'
 #' @param object A \code{SingleCellExperiment} object.
 #' @param assay.name Name of the assay to compute PCA. One of \code{assayNames(object)}

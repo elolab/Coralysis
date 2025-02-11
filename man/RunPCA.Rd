@@ -81,8 +81,8 @@ default \code{"PCA"}.}
 object of \code{SingleCellExperiment} class
 }
 \description{
-Perform principal component analysis using assays or the
-the joint probability matrix as input.
+Perform principal component analysis using assays or the joint 
+probability matrix as input.
 }
 \examples{
 # Import package
