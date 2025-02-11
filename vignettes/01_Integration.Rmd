@@ -1,0 +1,317 @@
+---
+title: "Integration"
+date: "Compiled: `r format(Sys.Date(), '%d/%m/%Y')`"
+output: 
+   html_document:
+      toc: false
+      toc_float: false
+      code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Dataset
+
+<br>
+
+To illustrate the multi-level integration algorithm, we will use in this vignette two 10X PBMCs (Peripheral Blood Mononuclear Cells) 3' assays: **V1** and **V2**. The datasets have been downloaded from 10X website. The PBMC dataset **V1** corresponds to sample _pbmc6k_ and **V2** to `pbmc8k`: 
+
+   + **V1**: [pbmc6k](https://support.10xgenomics.com/single-cell-gene-expression/datasets/1.1.0/pbmc6k)
+   
+   + **V2**: [pbmc8k](https://support.10xgenomics.com/single-cell-gene-expression/datasets/2.1.0/pbmc8k)
+
+<br>
+
+Cells were annotated using the annotations provided by [Korsunsky et al., 2019](https://www.nature.com/articles/s41592-019-0619-0) (Source Data Figure 4 file). The overall data was downsampled to 2K cells (1K per assay) and 2K highly variable genes selected with `scran` R package. To facilitate the reproduction of this vignette, the data is distributed through _Zenodo_ as a `SingleCellExperiment` object, the object (class) required by most functions in `Coralysis` (see [Chapter 4 The SingleCellExperiment class - OSCA manual](https://bioconductor.org/books/3.13/OSCA.intro/the-singlecellexperiment-class.html)). The `SCE` object provided comprises `counts` (raw count data), `logcounts` (log-normalized data) and cell `colData` (which includes batch and cell labels, designated as `batch` and `cell_type`, respectively).   
+
+Run the code below to import the `R` packages and data required to reproduce this vignette.  
+
+```{r packages, message=FALSE, warning=FALSE}
+# Packages
+library("ggplot2")
+library("Coralysis")
+library("SingleCellExperiment")
+```
+
+```{r data}
+# Import data from Zenodo
+data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+pbmc_10Xassays <- readRDS(file = url(data.url))
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## DimRed: pre-integration
+
+<br>
+
+The batch effect between assays can be inspected below by projecting the data onto _t_-distributed Stochastic Neighbor Embedding (t-SNE). This can be achieved by running sequentially the `Coralysis` functions `RunPCA` and `RunTSNE`. Provide a seed before running each one of these functions to ensure reproducibility. The function `RunPCA` runs by default the PCA method implemented the R package `irlba` (`pca.method="irlba"`), which requires a seed to ensure the same PCA result. In addition, the `assay.name` argument needs to be provided, otherwise uses by default the probabilities which are obtained only after integration (after running `RunParallelDivisiveICP`). The assay `logcounts`, corresponding to the log-normalized data, and number of principal components to use `p` were provided. In this case, the data has been previously normalized, but it could have been normalized using methods available in _Bioconductor_ (see [Chapter 7 Normalization - OSCA manual](https://bioconductor.org/books/3.12/OSCA/normalization.html)). Any categorical variable available in `colData(pbmc_10Xassays)`, such as `batch` or `cell_type`, can be visualized in a low dimensional embedding stored in `reducedDimNames(pbmc_10Xassays)` with the `Coralysis` function `PlotDimRed`. 
+
+```{r dimred: pre-integration, fig.width=6, fig.height=4}
+# Compute PCA & TSNE
+set.seed(123)
+pbmc_10Xassays <- RunPCA(object = pbmc_10Xassays, 
+                         assay.name = "logcounts", 
+                         p = 30, dimred.name = "unintPCA")
+set.seed(123)
+pbmc_10Xassays <- RunTSNE(pbmc_10Xassays, 
+                          dimred.type = "unintPCA", 
+                          dimred.name = "unintTSNE")
+
+# Plot TSNE highlighting the batch & cell type
+unint.batch.plot <- PlotDimRed(object = pbmc_10Xassays, 
+                               color.by = "batch", 
+                               dimred = "unintTSNE",
+                               point.size = 0.01, 
+                               legend.nrow = 1, 
+                               seed.color = 1024)
+unint.cell.plot <- PlotDimRed(object = pbmc_10Xassays, 
+                              color.by = "cell_type", 
+                              dimred = "unintTSNE", 
+                              point.size = 0.01, 
+                              legend.nrow = 5, 
+                              seed.color = 7)
+cowplot::plot_grid(unint.batch.plot, unint.cell.plot, ncol = 2, align = "vh")
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Multi-level integration
+
+<br>
+
+Integrate assays with the multi-level integration algorithm implemented in `Coralysis` by running the function `RunParallelDivisiveICP`. The only arguments required by this function are `object` and `batch.label`. The `object` requires a `SingleCellExperiment` object with the assay `logcounts`. The matrix in `logcounts` should be sparse, i.e., `is(logcounts(pbmc_10Xassays), "dgCMatrix")` is `TRUE`, and it should not contain non-expressing genes. This is ensured by running `PrepareData` before. The `batch.label` argument requires a label column name in `colData(pbmc_10Xassays)` corresponding to the batch label that should be used for integration. In the absence of a batch, the same function, `RunParallelDivisiveICP`, can be run without providing `batch.label` (i.e., `batch.label = NULL`), in which case the data will be modeled through the algorithm to identify fine-grained populations that do not required batch correction. An higher number of `threads` can be provided to speed up computing time depending on the number of cores available. For this example, the algorithm was run 10 times (`L = 10`), but generally, this number should be higher (with the default being `L = 50`).       
+
+```{r multi-level integration, message=TRUE, warning=FALSE}
+# Prepare data for integration: 
+#remove non-expressing genes & logcounts is from `dgCMatrix` class
+pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+
+# Perform integration with Coralysis
+set.seed(1024)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, 
+                                         batch.label = "batch", 
+                                         L = 10, threads = 2)
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## DimRed: post-integration
+
+<br>
+
+The integration result can be visually inspected by running sequentially the functions `RunPCA` and `RunTSNE`. The `assay.name` provided to `RunPCA` must be `joint.probability` (the default), the primary output of integration with `Coralysis`. The probability matrices from `Coralysis` (i.e., `joint.probability`) can be used to obtain an integrated embedding by running `RunPCA(..., assay.name = "joint.probability")`. This integrated PCA can, in turn, be used downstream for clustering or non-linear dimensional reduction techniques, such as `RunTSNE`. Below, the integrated PCA was named `intPCA`. 
+
+```{r dimred: post-integration, fig.width=6, fig.height=4}
+# Compute PCA with joint cluster probabilities & TSNE
+set.seed(123)
+pbmc_10Xassays <- RunPCA(pbmc_10Xassays, 
+                         assay.name = "joint.probability", 
+                         dimred.name = "intPCA")
+set.seed(123)
+pbmc_10Xassays <- RunTSNE(pbmc_10Xassays, 
+                          dimred.type = "intPCA", 
+                          dimred.name = "intTSNE")
+
+# Plot TSNE highlighting the batch & cell type
+int.batch.plot <- PlotDimRed(object = pbmc_10Xassays, 
+                             color.by = "batch", 
+                             dimred = "intTSNE", 
+                             point.size = 0.01, 
+                             legend.nrow = 1, 
+                             seed.color = 1024)
+int.cell.plot <- PlotDimRed(object = pbmc_10Xassays, 
+                            color.by = "cell_type", 
+                            dimred = "intTSNE", 
+                            point.size = 0.01, 
+                            legend.nrow = 5, 
+                            seed.color = 7)
+cowplot::plot_grid(int.batch.plot, int.cell.plot, 
+                   ncol = 2, align = "vh")
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Clustering
+
+<br>
+
+Run graph-based clustering with the `scran` function `clusterCells` (see [Chapter 5 Clustering - OSCA manual](https://bioconductor.org/books/3.14/OSCA.basic/clustering.html)). 
+
+```{r clustering, fig.width=11, fig.height=4.5}
+# Graph-based clustering on the integrated PCA w/ 'scran' package
+blusparams <- bluster::SNNGraphParam(k = 15, cluster.fun = "louvain")
+set.seed(123)
+pbmc_10Xassays$cluster <- scran::clusterCells(pbmc_10Xassays, 
+                                              use.dimred = "intPCA", 
+                                              BLUSPARAM = blusparams)
+
+# Plot clustering
+clt.plot <- PlotDimRed(object = pbmc_10Xassays, 
+                       color.by = "cluster", 
+                       dimred = "intTSNE", 
+                       point.size = 0.01, 
+                       legend.nrow = 3, 
+                       seed.color = 65)
+cowplot::plot_grid(int.batch.plot, int.cell.plot, 
+                   clt.plot, ncol = 3, align = "h")
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Cluster markers
+
+<br>
+
+Identify the cluster markers by running the `Coralysis` function `FindAllClusterMarkers`. Provide the `clustering.label`, in this case, the label used above, i.e., `cluster`. The top three positive markers per cluster were retrieved and plotted below using the `Coralysis` function `HeatmapFeatures`.
+
+```{r cluster markers, fig.width=5, fig.height=5}
+# Cluster markers 
+cluster.markers <- FindAllClusterMarkers(object = pbmc_10Xassays, clustering.label = "cluster")
+
+# Select the top 3 positive markers per cluster 
+top3.markers <- lapply(X = split(x = cluster.markers, f = cluster.markers$cluster), FUN = function(x) {
+    head(x[order(x$log2FC, decreasing = TRUE),], n = 3)
+})
+top3.markers <- do.call(rbind, top3.markers)
+top3.markers <- top3.markers[order(as.numeric(top3.markers$cluster)),]
+
+# Heatmap of the top 3 positive markers per cluster
+HeatmapFeatures(object = pbmc_10Xassays, 
+                clustering.label = "cluster", 
+                features = top3.markers$marker, 
+                seed.color = 65)
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## DGE
+
+<br>
+
+`Coralysis` was able to separate the CD8 effector T cells into two clusters: 6 and 11. From the differential gene expression (DGE) analysis below, it is clear that cluster 11 is more cytotoxic and similar to NK cells (expressing GZMH and GZMB) than cluster 6. 
+
+```{r dge, fig.width=9, fig.height=4.5}
+# DGE analysis: cluster 6 vs 11
+dge.clt6vs11 <- FindClusterMarkers(pbmc_10Xassays, 
+                                   clustering.label = "cluster", 
+                                   clusters.1 = "6", 
+                                   clusters.2 = "11")
+head(dge.clt6vs11[order(abs(dge.clt6vs11$log2FC), decreasing = TRUE),])
+top6.degs <- head(dge.clt6vs11[order(abs(dge.clt6vs11$log2FC), 
+                                     decreasing = TRUE),"marker"])
+exp.plots <- lapply(X = top6.degs, FUN = function(x) {
+    PlotExpression(object = pbmc_10Xassays, color.by = x,
+                   scale.values = TRUE, point.size = 0.5, point.stroke = 0.5)
+})
+cowplot::plot_grid(plotlist = exp.plots, align = "vh", ncol = 3)
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+### R session
+
+<br>
+
+```{r rsession}
+# R session
+sessionInfo()
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+### References
+
+<br>
+
+Amezquita R, Lun A, Becht E, Carey V, Carpp L, Geistlinger L, Marini F, Rue-Albrecht K, Risso D, Soneson C, Waldron L, Pages H, Smith M, Huber W, Morgan M, Gottardo R, Hicks S (2020). "Orchestrating single-cell analysis with Bioconductor." _Nature Methods_, *17*, 137-145. [https://www.nature.com/articles/s41592-019-0654-x](https://www.nature.com/articles/s41592-019-0654-x).
+
+Lun ATL, McCarthy DJ, Marioni JC (2016). "A step-by-step workflow for low-level analysis of single-cell RNA-seq data with Bioconductor." _F1000Res._, *5*, 2122. [doi:10.12688/f1000research.9501.2](https://doi.org/10.12688/f1000research.9501.2).
+
+Sousa A, Smolander J, Junttila S, Elo L (2025). "Coralysis enables sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration." _bioRxiv_. [doi:10.1101/2025.02.07.637023](https://doi.org/10.1101/2025.02.07.637023)
+
+Wickham H (2016). "ggplot2: Elegant Graphics for Data Analysis." _Springer-Verlag New York_.
+
+<br>
+
+<br>
+
+<br>
+
+<br>
