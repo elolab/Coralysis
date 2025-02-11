@@ -277,7 +277,7 @@ cowplot::plot_grid(plotlist = exp.plots, align = "vh", ncol = 3)
 
 <br>
 
-### R session
+## R session
 
 <br>
 
@@ -296,7 +296,7 @@ sessionInfo()
 
 <br>
 
-### References
+## References
 
 <br>
 
