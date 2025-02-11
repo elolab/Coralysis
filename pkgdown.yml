@@ -2,8 +2,9 @@ pandoc: 3.1.11
 pkgdown: 2.1.1
 pkgdown_sha: ~
 articles:
-  01_QuickStart: 01_QuickStart.html
-last_built: 2025-02-11T07:31Z
+  01_Integration: 01_Integration.html
+  02_RefMap: 02_RefMap.html
+last_built: 2025-02-11T18:04Z
 urls:
   reference: https://elolab.github.io/Coralysis/reference
   article: https://elolab.github.io/Coralysis/articles

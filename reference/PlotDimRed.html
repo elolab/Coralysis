@@ -18,7 +18,8 @@
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/01_QuickStart.html">Integration &amp; reference-mapping</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/01_Integration.html">Integration</a></li>
+    <li><a class="dropdown-item" href="../articles/02_RefMap.html">Reference-mapping</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -970,11 +971,13 @@ default <code>TRUE</code>, if more than 3e4 cells, otherwise <code>FALSE</code>.
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Plot batch </span></span></span>
 <span class="r-in"><span><span class="fu">PlotDimRed</span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span>, color.by <span class="op">=</span> <span class="st">"batch"</span>, dimred <span class="op">=</span> <span class="st">"UMAP"</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in loadNamespace(x):</span> there is no package called ‘ggrastr’</span>
+<span class="r-plt img"><img src="PlotDimRed-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Plot cell type annotations</span></span></span>
 <span class="r-in"><span><span class="fu">PlotDimRed</span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span>, color.by <span class="op">=</span> <span class="st">"cell_type"</span>, legend.nrow <span class="op">=</span> <span class="fl">3</span>, dimred <span class="op">=</span> <span class="st">"UMAP"</span>, label <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in loadNamespace(x):</span> there is no package called ‘ggrepel’</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Removed 1986 rows containing missing values or values outside the scale range</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> (`geom_text_repel()`).</span>
+<span class="r-plt img"><img src="PlotDimRed-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

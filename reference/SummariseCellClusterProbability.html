@@ -18,7 +18,8 @@
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/01_QuickStart.html">Integration &amp; reference-mapping</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/01_Integration.html">Integration</a></li>
+    <li><a class="dropdown-item" href="../articles/02_RefMap.html">Reference-mapping</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -915,11 +916,11 @@ i.e., the summary of probabilities retrieved is save in the SCE object in
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Plot the clustering result for ICP run no. 3 </span></span></span>
 <span class="r-in"><span><span class="fu"><a href="PlotDimRed.html">PlotDimRed</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span>, color.by <span class="op">=</span> <span class="st">"icp_run_round_3_4_clusters"</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in loadNamespace(x):</span> there is no package called ‘ggrastr’</span>
+<span class="r-plt img"><img src="SummariseCellClusterProbability-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Plot Coralysis mean cell cluster probabilities </span></span></span>
 <span class="r-in"><span><span class="fu"><a href="PlotExpression.html">PlotExpression</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span>, color.by <span class="op">=</span> <span class="st">"mean_probs"</span>, color.scale <span class="op">=</span> <span class="st">"viridis"</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="SummariseCellClusterProbability-1.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="SummariseCellClusterProbability-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
