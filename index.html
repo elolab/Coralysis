@@ -31,6 +31,7 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
+<li class="nav-item"><a class="nav-link" href="articles/Coralysis.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -39,6 +40,7 @@
     <li><a class="dropdown-item" href="articles/02_RefMap.html">Reference-mapping</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -73,7 +75,7 @@
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <p><br></p>
-<p>The latest version of <code>Coralysis</code> can be downloaded from GitHub using the devtools R package.</p>
+<p>The latest version of <code>Coralysis</code> can be downloaded from GitHub using the <a href="https://devtools.r-lib.org/" class="external-link"><code>devtools</code></a> R package.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"elolab/Coralysis"</span><span class="op">)</span></span></code></pre></div>
 <p><br></p>
@@ -81,40 +83,12 @@
 <p><br></p>
 </div>
 <div class="section level2">
-<h2 id="quick-start">Quick-start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
+<h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
 </h2>
 <p><br></p>
-<p>To run <code>Coralysis</code>, follow the instructions below:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Packages</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://github.com/elolab/Coralysis" class="external-link">"Coralysis"</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressPackageStartupMessages</a></span><span class="op">(</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st">"SingleCellExperiment"</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Import data from Zenodo</span></span>
-<span><span class="va">data.url</span> <span class="op">&lt;-</span> <span class="st">"https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"</span></span>
-<span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span>file <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/connections.html" class="external-link">url</a></span><span class="op">(</span><span class="va">data.url</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Prepare data: checks 'logcounts' format &amp; removes non-expressed genes</span></span>
-<span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/PrepareData.html">PrepareData</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Multi-level integration</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
-<span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/RunParallelDivisiveICP.html">RunParallelDivisiveICP</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span>, batch.label <span class="op">=</span> <span class="st">"batch"</span>, threads <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> </span>
-<span></span>
-<span><span class="co"># Compute integrated PCA from joint probability</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">125</span><span class="op">)</span></span>
-<span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/RunPCA.html">RunPCA</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Run UMAP</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1204</span><span class="op">)</span></span>
-<span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/RunUMAP.html">RunUMAP</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span>, umap.method <span class="op">=</span> <span class="st">"uwot"</span>, n_neighbors <span class="op">=</span> <span class="fl">20</span>, min_dist <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Visualize integrated data </span></span>
-<span><span class="va">vars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"batch"</span>, <span class="st">"cell_type"</span><span class="op">)</span></span>
-<span><span class="va">plots</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span>X <span class="op">=</span> <span class="va">vars</span>, FUN <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="fu"><a href="reference/PlotDimRed.html">PlotDimRed</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span>, color.by <span class="op">=</span> <span class="va">x</span>, point.size <span class="op">=</span> <span class="fl">0.5</span>, point.stroke <span class="op">=</span> <span class="fl">0.5</span>, legend.nrow <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span> </span>
-<span><span class="fu">cowplot</span><span class="fu">::</span><span class="fu"><a href="https://wilkelab.org/cowplot/reference/plot_grid.html" class="external-link">plot_grid</a></span><span class="op">(</span>plotlist <span class="op">=</span> <span class="va">plots</span>, ncol <span class="op">=</span> <span class="fl">2</span>, align <span class="op">=</span> <span class="st">"vh"</span><span class="op">)</span> <span class="co"># join plots together</span></span></code></pre></div>
+<blockquote>
+<p>Sousa A, Smolander J, Junttila S, Elo L (2025). <strong>Coralysis enables sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration.</strong> <em>bioRxiv</em>. <a href="https://doi.org/10.1101/2025.02.07.637023" class="external-link">doi:10.1101/2025.02.07.637023</a></p>
+</blockquote>
 <p><br></p>
 <hr>
 <p><br></p>
@@ -124,15 +98,6 @@
 </h2>
 <p><br></p>
 <p>If you have questions related to <code>Coralysis</code>, please contact us <a href="https://github.com/elolab/Coralysis/issues" class="external-link">here</a>.</p>
-<p><br></p>
-<hr>
-<p><br></p>
-</div>
-<div class="section level2">
-<h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
-</h2>
-<p><br></p>
-<p>Sousa A, Smolander J, Junttila S, Elo L (2025). <strong>Coralysis enables sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration.</strong> <em>bioRxiv</em>. <a href="https://doi.org/10.1101/2025.02.07.637023" class="external-link">doi:10.1101/2025.02.07.637023</a></p>
 <p><br></p>
 <hr>
 <p><br></p>
