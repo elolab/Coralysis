@@ -18,5 +18,4 @@ a list containing the output of the LiblineaR prediction
 The function implements a script down- and oversamples data to
 include n cells.
 }
-\keyword{downsampling}
-\keyword{oversampling}
+\keyword{internal}

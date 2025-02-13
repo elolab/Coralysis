@@ -56,9 +56,4 @@ a logistic regression classifier model
 and then projects its clustering onto itself using a trained
 L1-regularized logistic regression model.
 }
-\keyword{LiblineaR}
-\keyword{downsampling}
-\keyword{logistic}
-\keyword{oversampling}
-\keyword{projection}
-\keyword{regression}
+\keyword{internal}

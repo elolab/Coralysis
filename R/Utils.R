@@ -12,7 +12,7 @@
 #'
 #' @return A SingleCellExperiment object with clusters.
 #'
-#' @keywords cluster
+#' @keywords internal
 #' 
 #' @importFrom flexclust kcca kccaFamily
 #'
@@ -57,7 +57,7 @@ ClusterCells <- function(object, nclusters=500, use.emb=TRUE, emb.name="PCA") {
 #'
 #' @return Matrix of feature expressed aggregated by clusters.
 #'
-#' @keywords aggregated feature expression
+#' @keywords internal
 #'
 AggregateClusterExpression <- function(mtx, cluster, select.features = NULL, 
                                        fun = "mean") {
@@ -96,7 +96,7 @@ AggregateClusterExpression <- function(mtx, cluster, select.features = NULL,
 #' 
 #' @return A matrix of class `dgCMatrix`. 
 #'
-#' @keywords scale
+#' @keywords internal
 #'
 #' @importFrom sparseMatrixStats colMeans2 colSds rowMeans2 rowSds
 #' 
@@ -155,7 +155,7 @@ Scale <- function(x, center=TRUE, scale=TRUE, scale.by="col") {
 #' 
 #' @return A scaled matrix of class `dgCMatrix`. 
 #'
-#' @keywords scale
+#' @keywords internal
 #' 
 ScaleByBatch <- function(x, batch) {
     x.batch <- split(x = as.data.frame(as.matrix(x)), f = batch)
@@ -180,7 +180,7 @@ ScaleByBatch <- function(x, batch) {
 #'
 #' @return a list containing the output of the LiblineaR prediction
 #'
-#' @keywords downsampling oversampling
+#' @keywords internal
 #'
 DownOverSampling <- function(x, n = 50) {
   if (length(x) < n) {
@@ -203,7 +203,7 @@ DownOverSampling <- function(x, n = 50) {
 #'
 #' @return a list containing the output of the LiblineaR prediction
 #'
-#' @keywords downsampling oversampling
+#' @keywords internal
 #'
 DownOverSampleEvenlyBatches <- function(x, batch, n = 50) {
     n.batch <- length(unique(as.character(batch)))
@@ -228,7 +228,7 @@ DownOverSampleEvenlyBatches <- function(x, batch, n = 50) {
 #'
 #' @return a list containing the k nearest neighbors for every cell queried
 #'
-#' @keywords knn 
+#' @keywords internal
 #'
 #' @importFrom RANN nn2
 #'
@@ -283,7 +283,7 @@ FindBatchKNN <- function(idx, group, prob, k = 10) {
 #'
 #' @return a list containing the k nearest neighbors for every cluster
 #'
-#' @keywords knn 
+#' @keywords internal
 #'
 FindClusterBatchKNN <- function(preds, probs, batch, k = 10, k.prop = NULL) {
     clts <- ncol(probs)
@@ -337,7 +337,7 @@ FindClusterBatchKNN <- function(preds, probs, batch, k = 10, k.prop = NULL) {
 #'
 #' @return a list containing the output of the LiblineaR prediction
 #'
-#' @keywords logistic regression LiblineaR projection downsampling oversampling
+#' @keywords internal
 #'
 #' @import Matrix
 #' @import SparseM
@@ -456,7 +456,7 @@ LogisticRegression <- function(training.sparse.matrix = NULL,
 #' @return A list that includes the probability matrix and the clustering
 #' similarity measures: ARI, NMI, etc.
 #'
-#' @keywords iterative clustering projection ICP clustering
+#' @keywords internal
 #'
 #' @import Matrix
 #' @importFrom aricode clustComp
@@ -669,7 +669,7 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
 #' @return A clustering result where every cluster given was split randomly 
 #' into \code{k} clusters. 
 #'
-#' @keywords random clustering
+#' @keywords internal
 #'
 RandomlyDivisiveClustering <- function(cluster, k, cluster.names = NULL) {
     clt.len <- 1:length(cluster) 
@@ -717,7 +717,7 @@ RandomlyDivisiveClustering <- function(cluster, k, cluster.names = NULL) {
 #' 
 #' @return A factor with cell cluster identities (two clusters). 
 #'
-#' @keywords sample PCA cells
+#' @keywords internal
 #'
 #' @importFrom irlba prcomp_irlba
 #' @importFrom stats quantile
@@ -776,7 +776,7 @@ SamplePCACells <- function(data, batch = NULL, q.split = 0.5, p=30, use.pc="PC1"
 
 #' @return A factor with cell cluster identities. 
 #'
-#' @keywords sample cluster probabilities ICP
+#' @keywords internal
 #' 
 #' @importFrom stats quantile
 #'
@@ -823,7 +823,7 @@ SampleClusterProbs <- function(cluster, probs, q.split = 0.5) {
 
 #' @return A factor with cell cluster identities. 
 #'
-#' @keywords sample cluster probabilities ICP
+#' @keywords internal
 #' 
 #' @importFrom stats quantile
 #'

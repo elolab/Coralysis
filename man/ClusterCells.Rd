@@ -23,4 +23,4 @@ A SingleCellExperiment object with clusters.
 \description{
 The function clusters cells with the K-means++ algorithm
 }
-\keyword{cluster}
+\keyword{internal}

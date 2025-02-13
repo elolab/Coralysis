@@ -23,5 +23,4 @@ into \code{k} clusters.
 \description{
 Splits randomly every cluster given into k clusters
 }
-\keyword{clustering}
-\keyword{random}
+\keyword{internal}

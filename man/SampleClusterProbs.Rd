@@ -20,7 +20,4 @@ A factor with cell cluster identities.
 \description{
 Samples cells based on cluster probabilities distribution
 }
-\keyword{ICP}
-\keyword{cluster}
-\keyword{probabilities}
-\keyword{sample}
+\keyword{internal}

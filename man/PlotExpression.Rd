@@ -86,7 +86,7 @@ features <- row.names(sce)[1:4]
 exp.plots <- lapply(X = features, FUN = function(x) {
     PlotExpression(object = sce, color.by = x, scale.values = TRUE)
 })
-cowplot::plot_grid(plotlist = exp.plots, ncol = 4, align = "vh")
+cowplot::plot_grid(plotlist = exp.plots, ncol = 2, align = "vh")
 
 }
 \keyword{Dimensional}

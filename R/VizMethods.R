@@ -463,7 +463,7 @@ setMethod("PlotDimRed", signature(object = "SingleCellExperiment"),
 #' exp.plots <- lapply(X = features, FUN = function(x) {
 #'     PlotExpression(object = sce, color.by = x, scale.values = TRUE)
 #' })
-#' cowplot::plot_grid(plotlist = exp.plots, ncol = 4, align = "vh")
+#' cowplot::plot_grid(plotlist = exp.plots, ncol = 2, align = "vh")
 #' 
 PlotExpression.SingleCellExperiment <- function(object, color.by, dimred, scale.values, color.scale, 
                                                 plot.theme, legend.title, point.size, point.stroke) {

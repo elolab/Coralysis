@@ -118,7 +118,7 @@ cowplot::plot_grid(PlotDimRed(object = map, color.by = "Species",
                              legend.nrow = 1),
                 PlotExpression(object = map, color.by = "coral_probability", 
                                  color.scale = "viridis"),
-                ncol = 3, align = "vh")
+                ncol = 2, align = "vh")
 
 }
 \keyword{ICP}

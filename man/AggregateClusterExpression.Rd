@@ -25,6 +25,4 @@ Matrix of feature expressed aggregated by clusters.
 \description{
 The function aggregates cell feature expression by clusters provided.
 }
-\keyword{aggregated}
-\keyword{expression}
-\keyword{feature}
+\keyword{internal}

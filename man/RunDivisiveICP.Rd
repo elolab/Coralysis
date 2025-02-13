@@ -103,7 +103,4 @@ a supervised learning-based clustering, which maximizes clustering similarity
 between the clustering and its projection by logistic regression, doing it in 
 a divisive clustering manner.
 }
-\keyword{ICP}
-\keyword{clustering}
-\keyword{iterative}
-\keyword{projection}
+\keyword{internal}

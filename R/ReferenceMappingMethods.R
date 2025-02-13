@@ -88,7 +88,7 @@
 #'                              legend.nrow = 1),
 #'                 PlotExpression(object = map, color.by = "coral_probability", 
 #'                                  color.scale = "viridis"),
-#'                 ncol = 3, align = "vh")
+#'                 ncol = 2, align = "vh")
 #' 
 ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
                                                   scale.query.by, project.umap, 

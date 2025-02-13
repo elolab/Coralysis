@@ -19,4 +19,4 @@ A scaled matrix of class `dgCMatrix`.
 \description{
 Scales features by batch
 }
-\keyword{scale}
+\keyword{internal}

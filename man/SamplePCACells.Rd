@@ -44,6 +44,4 @@ A factor with cell cluster identities (two clusters).
 \description{
 Samples cells based on their distributions along one principal component
 }
-\keyword{PCA}
-\keyword{cells}
-\keyword{sample}
+\keyword{internal}

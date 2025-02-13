@@ -28,4 +28,4 @@ a list containing the k nearest neighbors for every cluster
 The function finds batch k nearest neighbors for the cell with the highest 
 probability for every batch per cluster.
 }
-\keyword{knn}
+\keyword{internal}

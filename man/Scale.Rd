@@ -28,4 +28,4 @@ the \code{scale} function by not performing the root-mean-square when
 \code{scale=TRUE} and \code{center=FALSE}. In this case it divides the values
 by the standard deviation of the column or row used (depending on \code{scale.by}).
 }
-\keyword{scale}
+\keyword{internal}
