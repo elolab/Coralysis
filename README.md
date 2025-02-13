@@ -39,8 +39,12 @@ To run `Coralysis`, follow the instructions below:
 
 ```R
 # Packages
-library("SingleCellExperiment")
 library("Coralysis")
+suppressPackageStartupMessages(library("SingleCellExperiment"))
+
+# Import data from Zenodo
+data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+sce <- readRDS(file = url(data.url))
 
 # Prepare data: checks 'logcounts' format & removes non-expressed genes
 pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
