@@ -25,7 +25,7 @@ Coralysis is an R package featuring a multi-level integration algorithm for sens
 
 <br>
 
-The latest version of `Coralysis` can be downloaded from GitHub using the devtools R package.
+The latest version of `Coralysis` can be downloaded from GitHub using the [`devtools`](https://devtools.r-lib.org/) R package.
 
 ```R
 devtools::install_github("elolab/Coralysis")
@@ -37,43 +37,11 @@ devtools::install_github("elolab/Coralysis")
 
 <br>
 
-## Quick-start
+## Citation
 
 <br>
 
-To run `Coralysis`, follow the instructions below: 
-
-```R
-# Packages
-library("Coralysis")
-suppressPackageStartupMessages(library("SingleCellExperiment"))
-
-# Import data from Zenodo
-data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
-pbmc_10Xassays <- readRDS(file = url(data.url))
-
-# Prepare data: checks 'logcounts' format & removes non-expressed genes
-pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
-
-# Multi-level integration
-set.seed(123)
-pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", threads = 4) 
-
-# Compute integrated PCA from joint probability
-set.seed(125)
-pbmc_10Xassays <- RunPCA(object = pbmc_10Xassays)
-
-# Run UMAP
-set.seed(1204)
-pbmc_10Xassays <- RunUMAP(object = pbmc_10Xassays, umap.method = "uwot", n_neighbors = 20, min_dist = 0.3)
-
-# Visualize integrated data 
-vars <- c("batch", "cell_type")
-plots <- lapply(X = vars, FUN = function(x) {
-    PlotDimRed(object = pbmc_10Xassays, color.by = x, point.size = 0.5, point.stroke = 0.5, legend.nrow = 3)
-}) 
-cowplot::plot_grid(plotlist = plots, ncol = 2, align = "vh") # join plots together
-```
+>Sousa A, Smolander J, Junttila S, Elo L (2025). **Coralysis enables sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration.** _bioRxiv_. [doi:10.1101/2025.02.07.637023](https://doi.org/10.1101/2025.02.07.637023)
 
 <br>
 
@@ -86,18 +54,6 @@ cowplot::plot_grid(plotlist = plots, ncol = 2, align = "vh") # join plots togeth
 <br>
 
 If you have questions related to `Coralysis`, please contact us [here](https://github.com/elolab/Coralysis/issues). 
-
-<br>
-
----
-
-<br>
-
-## Citation
-
-<br>
-
-Sousa A, Smolander J, Junttila S, Elo L (2025). **Coralysis enables sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration.** _bioRxiv_. [doi:10.1101/2025.02.07.637023](https://doi.org/10.1101/2025.02.07.637023)
 
 <br>
 

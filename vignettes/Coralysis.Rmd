@@ -1,0 +1,104 @@
+---
+title: "Getting started"
+date: "Compiled: `r format(Sys.Date(), '%d/%m/%Y')`"
+output: 
+   html_document:
+      toc: false
+      toc_float: false
+      code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## QuickStart
+
+<br>
+
+```{r quickstart}
+# Packages
+library("Coralysis")
+suppressPackageStartupMessages(library("SingleCellExperiment"))
+
+# Import data from Zenodo
+data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+pbmc_10Xassays <- readRDS(file = url(data.url))
+
+# Prepare data: checks 'logcounts' format & removes non-expressed genes
+pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+
+# Multi-level integration
+set.seed(123)
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 10, threads = 2) 
+
+# Compute integrated PCA from joint probability
+set.seed(125)
+pbmc_10Xassays <- RunPCA(object = pbmc_10Xassays)
+
+# Run UMAP
+set.seed(1204)
+pbmc_10Xassays <- RunUMAP(object = pbmc_10Xassays, umap.method = "uwot", n_neighbors = 20, min_dist = 0.3)
+
+# Visualize integrated data 
+vars <- c("batch", "cell_type")
+plots <- lapply(X = vars, FUN = function(x) {
+    PlotDimRed(object = pbmc_10Xassays, color.by = x, point.size = 0.5, point.stroke = 0.5, legend.nrow = 3)
+}) 
+cowplot::plot_grid(plotlist = plots, ncol = 2, align = "vh") # join plots together
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## R session
+
+<br>
+
+```{r rsession}
+# R session
+sessionInfo()
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## References
+
+<br>
+
+Amezquita R, Lun A, Becht E, Carey V, Carpp L, Geistlinger L, Marini F, Rue-Albrecht K, Risso D, Soneson C, Waldron L, Pages H, Smith M, Huber W, Morgan M, Gottardo R, Hicks S (2020). "Orchestrating single-cell analysis with Bioconductor." _Nature Methods_, *17*, 137-145. [https://www.nature.com/articles/s41592-019-0654-x](https://www.nature.com/articles/s41592-019-0654-x).
+
+Sousa A, Smolander J, Junttila S, Elo L (2025). "Coralysis enables sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration." _bioRxiv_. [doi:10.1101/2025.02.07.637023](https://doi.org/10.1101/2025.02.07.637023)
+
+<br>
+
+<br>
+
+<br>
+
+<br>
