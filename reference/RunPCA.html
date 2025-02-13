@@ -152,793 +152,32 @@ default <code>"PCA"</code>.</p></dd>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Import package</span></span></span>
-<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st">"SingleCellExperiment"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressPackageStartupMessages</a></span><span class="op">(</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st">"SingleCellExperiment"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Create toy SCE data</span></span></span>
+<span class="r-in"><span><span class="va">batches</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"b1"</span>, <span class="st">"b2"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">239</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">batch</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">batches</span>, size <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">iris</span><span class="op">)</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/SingleCellExperiment/man/SingleCellExperiment.html" class="external-link">SingleCellExperiment</a></span><span class="op">(</span>assays <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>logcounts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>,  </span></span>
+<span class="r-in"><span>                            colData <span class="op">=</span> <span class="fu">DataFrame</span><span class="op">(</span><span class="st">"Species"</span> <span class="op">=</span> <span class="va">iris</span><span class="op">$</span><span class="va">Species</span>, </span></span>
+<span class="r-in"><span>                                               <span class="st">"Batch"</span> <span class="op">=</span> <span class="va">batch</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"samp"</span>, <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Prepare SCE object for analysis</span></span></span>
-<span class="r-in"><span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu"><a href="PrepareData.html">PrepareData</a></span><span class="op">(</span><span class="va">pbmc_10Xassays</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Data in `logcounts` slot already of `dgCMatrix` class...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2000/2000 features remain after filtering features with only zero values.</span>
+<span class="r-in"><span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="PrepareData.html">PrepareData</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Converting object of `matrix` class into `dgCMatrix`. Please note that Coralysis has been designed to work with sparse data, i.e. data with a high proportion of zero values! Dense data will likely increase run time and memory usage drastically!</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 4/4 features remain after filtering features with only zero values.</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater</span></span></span>
+<span class="r-in"><span><span class="co"># Multi-level integration (just for highlighting purposes; use default parameters)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu"><a href="RunParallelDivisiveICP.html">RunParallelDivisiveICP</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span>, batch.label <span class="op">=</span> <span class="st">"batch"</span>, L <span class="op">=</span> <span class="fl">4</span>, threads <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> </span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Building training set...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Training set successfully built.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Computing cluster seed.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Parallelism disabled, because threads = 1</span>
+<span class="r-in"><span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="RunParallelDivisiveICP.html">RunParallelDivisiveICP</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">sce</span>, batch.label <span class="op">=</span> <span class="st">"Batch"</span>, </span></span>
+<span class="r-in"><span>                              k <span class="op">=</span> <span class="fl">2</span>, L <span class="op">=</span> <span class="fl">25</span>, C <span class="op">=</span> <span class="fl">1</span>, train.k.nn <span class="op">=</span> <span class="fl">10</span>, </span></span>
+<span class="r-in"><span>                              train.k.nn.prop <span class="op">=</span> <span class="cn">NULL</span>, use.cluster.seed <span class="op">=</span> <span class="cn">FALSE</span>,</span></span>
+<span class="r-in"><span>                              build.train.set <span class="op">=</span> <span class="cn">FALSE</span>, ari.cutoff <span class="op">=</span> <span class="fl">0.1</span>, </span></span>
+<span class="r-in"><span>                             threads <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Initializing divisive ICP clustering...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ICP run: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 500 500</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 507 493</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.820656512175675</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 507 493</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 305 695</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 507 493</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 229 771</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 507 493</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 215 785</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 507 493</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 397 603</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 507 493</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 390 610</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 254 253 247 246</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 240 251 223 286</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.610512906764122</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 240 251 223 286</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 178 222 281 319</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.624701443134292</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 178 222 281 319</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 178 220 261 341</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.92549568249167</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 178 220 261 341</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 178 223 242 357</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.942882446336459</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 178 223 242 357</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 179 224 243 354</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.965384950223849</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 179 224 243 354</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 179 223 235 363</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 179 224 243 354</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 179 223 228 370</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 179 224 243 354</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 176 223 233 368</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 179 224 243 354</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 179 224 226 371</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 179 224 243 354</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 181 219 231 369</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 90 89 112 112 122 121 178 176</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 75 102 79 142 120 132 152 198</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.556620816299057</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 75 102 79 142 120 132 152 198</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 58 116 58 164 110 139 141 214</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.684965717343665</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 58 116 58 164 110 139 141 214</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 49 130 44 173 112 137 146 209</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.787852864331197</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 49 130 44 173 112 137 146 209</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 49 135 33 184 108 140 108 243</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.823146690674369</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 49 135 33 184 108 140 108 243</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 29 151 17 198 107 139 96 263</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.885166773941308</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 29 151 17 198 107 139 96 263</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 24 155 8 211 113 128 93 268</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.912600794577665</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 7</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 24 155 8 211 113 128 93 268</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 20 159 4 214 110 125 97 271</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.933592238687329</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> k 8 decreased to 7</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 20 159 4 214 110 125 97 271</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 13 168 0 219 105 118 106 271</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.936239315867647</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 7</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 9</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 13 168 0 219 105 118 106 271</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 7 176 0 220 98 115 115 269</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.957108984439776</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> k 7 decreased to 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 7 176 0 220 98 115 115 269</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 8 176 0 220 134 140 322 0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 7</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 7 176 0 220 98 115 115 269</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 7 246 0 222 233 109 103 80</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 7</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 7 176 0 220 98 115 115 269</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 7 181 0 219 107 137 95 254</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 7</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 7 176 0 220 98 115 115 269</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 7 180 0 220 121 143 329 0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 7</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 7 176 0 220 98 115 115 269</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 7 177 0 219 112 134 0 351</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 14</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> k 16 decreased to 14</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 4 3 88 88 110 110 49 49 58 57 58 57 135 134</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 6 3 64 109 125 95 37 58 48 73 48 70 83 181</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.58411256789772</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 14</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 6 3 64 109 125 95 37 58 48 73 48 70 83 181</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 2 3 58 120 148 73 19 64 44 74 48 69 57 221</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.72343379957138</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 14</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 2 3 58 120 148 73 19 64 44 74 48 69 57 221</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 2 4 53 129 160 60 11 67 39 77 47 78 27 246</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.842885763011903</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 14</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 2 4 53 129 160 60 11 67 39 77 47 78 27 246</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 3 2 50 129 164 55 5 77 40 80 53 73 10 259</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.881473686553216</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 14</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 3 2 50 129 164 55 5 77 40 80 53 73 10 259</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 1 3 44 140 175 45 1 85 35 81 47 72 3 268</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 12</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> k 14 decreased to 11</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 3 2 50 129 164 55 5 77 40 80 53 73 10 259</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 0 0 41 144 182 36 0 83 35 80 49 65 1 284</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 12</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 3 2 50 129 164 55 5 77 40 80 53 73 10 259</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 5 0 55 129 175 46 4 112 38 87 49 299 0 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 13</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 3 2 50 129 164 55 5 77 40 80 53 73 10 259</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 3 0 32 152 166 52 1 94 29 91 48 66 1 265</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 12</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 3 2 50 129 164 55 5 77 40 80 53 73 10 259</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 2 4 32 148 169 54 0 183 38 80 29 260 0 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ICP converged at EPOCH 1.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Maximum ARI reached: 0.881473686553216.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ICP run: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 500 500</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 503 497</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.827927761718037</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 503 497</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 315 685</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 503 497</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 225 775</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 503 497</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 225 775</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 503 497</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 221 779</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 503 497</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 270 730</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 252 251 249 248</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 246 257 209 288</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.622891971970668</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 246 257 209 288</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 180 223 268 329</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 246 257 209 288</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 199 236 225 340</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 246 257 209 288</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 187 219 260 334</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 246 257 209 288</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 247 233 181 339</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.687965646662765</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 247 233 181 339</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 180 222 251 347</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.774904992388955</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 180 222 251 347</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 177 222 255 346</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.960996154214872</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 177 222 255 346</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 176 222 260 342</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.969913976759884</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 176 222 260 342</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 180 223 242 355</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 176 222 260 342</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 177 224 236 363</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 176 222 260 342</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 179 224 235 362</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 176 222 260 342</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 178 222 240 360</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 176 222 260 342</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 179 224 221 376</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 89 87 112 110 131 129 172 170</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 97 80 102 119 131 128 153 190</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.568622246023177</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 97 80 102 119 131 128 153 190</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 91 81 114 109 151 98 126 230</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.686240575186566</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 91 81 114 109 151 98 126 230</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 62 110 143 81 173 70 78 283</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 91 81 114 109 151 98 126 230</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 58 119 158 63 183 63 43 313</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 91 81 114 109 151 98 126 230</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 71 108 149 67 189 58 32 326</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 91 81 114 109 151 98 126 230</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 64 118 177 40 189 58 30 324</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 91 81 114 109 151 98 126 230</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 71 103 113 110 140 85 269 109</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 46 45 41 40 58 56 55 54 76 75 49 49 64 62 115 115</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 39 48 51 38 65 60 39 57 79 70 39 57 98 70 101 89</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.431400621805209</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 39 48 51 38 65 60 39 57 79 70 39 57 98 70 101 89</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 39 49 58 31 76 52 45 47 93 57 21 61 117 50 107 97</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.572354136280868</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 39 49 58 31 76 52 45 47 93 57 21 61 117 50 107 97</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 21 62 67 27 85 53 42 39 96 52 28 53 137 39 98 101</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.667388469573626</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 21 62 67 27 85 53 42 39 96 52 28 53 137 39 98 101</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 12 57 94 20 93 49 39 38 99 56 40 39 168 26 72 98</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 21 62 67 27 85 53 42 39 96 52 28 53 137 39 98 101</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 4 55 112 10 113 42 29 37 106 51 47 39 209 23 42 81</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 21 62 67 27 85 53 42 39 96 52 28 53 137 39 98 101</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 3 61 109 5 116 38 28 40 136 51 18 45 174 20 77 79</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 21 62 67 27 85 53 42 39 96 52 28 53 137 39 98 101</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 3 62 111 3 126 36 18 41 110 77 11 32 197 25 72 76</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> k 16 decreased to 15</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 21 62 67 27 85 53 42 39 96 52 28 53 137 39 98 101</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 1 68 115 0 150 14 11 40 119 75 5 51 75 21 151 104</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ICP converged at EPOCH 1.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Maximum ARI reached: 0.667388469573626.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ICP run: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 500 500</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 503 497</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.806210023022484</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 503 497</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 366 634</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 503 497</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 225 775</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 503 497</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 222 778</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 503 497</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 396 604</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 503 497</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 437 563</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 252 251 249 248</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 218 263 238 281</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.547419100706512</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 218 263 238 281</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 181 224 270 325</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.595431627480682</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 181 224 270 325</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 178 224 249 349</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.905857968903036</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 178 224 249 349</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 178 223 246 353</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.969058057702433</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 178 223 246 353</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 177 223 240 360</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 178 223 246 353</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 176 222 242 360</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.969134899530728</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 176 222 242 360</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 177 223 237 363</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 176 222 242 360</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 178 221 235 366</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 176 222 242 360</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 177 224 209 390</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 176 222 242 360</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 178 221 207 394</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 176 222 242 360</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 177 222 202 399</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 88 88 112 110 121 121 181 179</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 75 105 92 132 119 134 98 245</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.568200181254668</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 75 105 92 132 119 134 98 245</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 59 113 71 152 123 131 57 294</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.685724669992193</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 59 113 71 152 123 131 57 294</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 52 120 54 168 113 140 25 328</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.820816888848888</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 52 120 54 168 113 140 25 328</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 54 121 39 182 114 140 22 328</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.927983947210822</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 54 121 39 182 114 140 22 328</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 55 122 36 183 107 144 23 330</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.960498040121679</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 55 122 36 183 107 144 23 330</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 56 122 35 182 108 144 21 332</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.967877933136761</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 7</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 56 122 35 182 108 144 21 332</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 58 121 34 182 111 139 23 332</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.977289780897713</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 58 121 34 182 111 139 23 332</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 59 119 35 182 106 142 26 331</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.97753652193791</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 9</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 59 119 35 182 106 142 26 331</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 55 119 36 184 104 141 23 338</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 9</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 59 119 35 182 106 142 26 331</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 58 117 34 183 106 148 26 328</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 9</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 59 119 35 182 106 142 26 331</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 56 119 35 185 104 139 21 341</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 9</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 59 119 35 182 106 142 26 331</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 56 120 35 184 104 141 22 338</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 9</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 59 119 35 182 106 142 26 331</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 58 120 36 185 107 139 19 336</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 30 29 60 59 18 17 92 90 54 52 72 70 14 12 166 165</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 23 42 44 74 22 16 70 109 59 55 43 95 16 20 152 160</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.511814242302804</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 23 42 44 74 22 16 70 109 59 55 43 95 16 20 152 160</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 15 44 24 99 27 8 47 137 50 57 20 121 13 12 185 141</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.659280276359074</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 15 44 24 99 27 8 47 137 50 57 20 121 13 12 185 141</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 8 42 11 115 33 2 29 157 47 56 7 134 6 10 201 142</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.809505849162123</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 15</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> k 16 decreased to 15</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 8 42 11 115 33 2 29 157 47 56 7 134 6 10 201 142</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 4 48 3 125 36 0 16 168 46 60 4 137 1 10 206 136</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.879548480596558</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 13</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> k 15 decreased to 12</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 4 48 3 125 36 0 16 168 46 60 4 137 1 10 206 136</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 1 51 4 124 38 0 11 169 47 46 0 144 0 4 361 0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 13</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> k 12 decreased to 9</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 4 48 3 125 36 0 16 168 46 60 4 137 1 10 206 136</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 0 72 0 141 36 0 1 189 59 143 3 356 0 0 0 0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 12</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 4 48 3 125 36 0 16 168 46 60 4 137 1 10 206 136</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 0 26 3 151 36 0 1 181 22 66 0 159 0 3 204 148</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 11</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 4 48 3 125 36 0 16 168 46 60 4 137 1 10 206 136</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 4 281 3 130 35 0 0 186 111 89 0 161 0 0 0 0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 13</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 4 48 3 125 36 0 16 168 46 60 4 137 1 10 206 136</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 2 40 0 141 59 0 8 174 117 115 0 0 0 0 307 37</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ICP converged at EPOCH 1.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Maximum ARI reached: 0.879548480596558.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ICP run: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 500 500</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 502 498</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.809809622287621</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 502 498</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 328 672</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 502 498</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 220 780</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 502 498</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 221 779</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 502 498</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 235 765</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 502 498</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 218 782</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 251 251 249 249</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 259 248 202 291</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.579689086990992</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 259 248 202 291</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 186 224 244 346</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.601942119579158</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 186 224 244 346</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 178 223 247 352</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.81992922272261</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 178 223 247 352</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 179 223 241 357</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.968378042035475</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 179 223 241 357</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 181 225 211 383</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 179 223 241 357</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 181 221 211 387</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 179 223 241 357</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 182 222 184 412</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 179 223 241 357</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 180 220 186 414</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 179 223 241 357</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 176 223 141 460</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 90 89 112 111 121 120 179 178</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 74 114 79 140 126 136 92 239</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.531440715127228</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 74 114 79 140 126 136 92 239</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 52 128 47 169 126 138 47 293</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.710471973200468</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 52 128 47 169 126 138 47 293</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 32 147 35 182 116 137 37 314</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.849902032408299</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 32 147 35 182 116 137 37 314</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 19 161 58 156 114 137 36 319</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.893796846587781</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 19 161 58 156 114 137 36 319</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 14 165 101 117 109 135 35 324</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.89771134672335</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 14 165 101 117 109 135 35 324</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 12 168 136 85 114 133 33 319</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.910087550870021</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 7</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 12 168 136 85 114 133 33 319</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 9 173 161 59 108 132 26 332</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.910645783074883</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 9 173 161 59 108 132 26 332</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 9 173 170 50 128 116 23 331</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.943114154784047</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 9</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 9 173 170 50 128 116 23 331</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 8 177 175 42 136 111 21 330</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.965229775478377</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 8 177 175 42 136 111 21 330</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 6 178 179 38 136 110 20 333</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 8 177 175 42 136 111 21 330</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 5 178 185 34 133 118 15 332</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 8 177 175 42 136 111 21 330</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 4 181 183 34 133 120 16 329</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 8 177 175 42 136 111 21 330</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 5 180 184 33 131 123 17 327</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 8 177 175 42 136 111 21 330</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 4 178 184 34 133 123 13 331</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 5 3 89 88 88 87 22 20 69 67 56 55 11 10 165 165</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 7 3 79 96 61 111 27 20 40 97 48 64 14 19 101 213</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.526606265454719</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 7 3 79 96 61 111 27 20 40 97 48 64 14 19 101 213</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 7 1 69 103 50 125 33 11 31 109 48 64 5 12 68 264</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.693528104269222</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 15</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> k 16 decreased to 15</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 7 1 69 103 50 125 33 11 31 109 48 64 5 12 68 264</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 8 0 60 112 33 144 38 5 32 112 41 69 1 9 49 287</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.810663045265528</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 13</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> k 15 decreased to 12</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 8 0 60 112 33 144 38 5 32 112 41 69 1 9 49 287</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 6 0 68 113 6 178 35 0 31 147 33 71 0 5 307 0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 13</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 8 0 60 112 33 144 38 5 32 112 41 69 1 9 49 287</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 5 0 33 152 25 157 35 2 35 186 33 78 0 10 0 249</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 13</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 8 0 60 112 33 144 38 5 32 112 41 69 1 9 49 287</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 4 0 85 93 27 156 36 0 35 133 24 82 0 0 19 306</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 12</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> k 12 decreased to 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 8 0 60 112 33 144 38 5 32 112 41 69 1 9 49 287</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 7 0 11 201 23 154 41 0 34 419 39 71 0 0 0 0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 15</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 8 0 60 112 33 144 38 5 32 112 41 69 1 9 49 287</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 7 0 52 120 18 163 39 0 36 128 24 76 0 0 18 319</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.83043783423148</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 11</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 7 0 52 120 18 163 39 0 36 128 24 76 0 0 18 319</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 6 0 51 136 8 175 37 0 40 423 13 81 0 0 30 0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 11</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 7 0 52 120 18 163 39 0 36 128 24 76 0 0 18 319</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 5 0 13 161 13 168 66 0 45 165 23 0 0 0 0 341</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.838032403500304</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 9</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> k 10 decreased to 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 5 0 13 161 13 168 66 0 45 165 23 0 0 0 0 341</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 2 0 0 251 11 169 40 0 60 461 6 0 0 0 0 0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 5 0 13 161 13 168 66 0 45 165 23 0 0 0 0 341</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 8 0 3 187 10 170 49 0 163 26 7 0 0 0 0 377</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 5 0 13 161 13 168 66 0 45 165 23 0 0 0 0 341</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 3 0 1 448 11 174 65 0 84 203 9 0 0 0 0 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 5 0 13 161 13 168 66 0 45 165 23 0 0 0 0 341</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 4 0 0 183 11 169 54 0 31 205 11 0 0 0 0 332</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.853843724755049</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 7</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> k 8 decreased to 7</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 7</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 4 0 0 183 11 169 54 0 31 205 11 0 0 0 0 332</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 2 0 0 344 12 171 40 0 11 420 0 0 0 0 0 0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> k 7 decreased to 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 7</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 4 0 0 183 11 169 54 0 31 205 11 0 0 0 0 332</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 6 0 0 168 9 172 67 0 0 0 0 0 0 0 0 578</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> k decreased, starting from the beginning... consider increasing d to 0.5 and C to 1 or increasing the ICP batch size and check the input data (scaled dense data might cause problems)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 5 3 89 88 88 87 22 20 69 67 56 55 11 10 165 165</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 6 3 69 106 75 96 26 22 58 81 43 63 19 18 114 201</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.519251941347066</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 6 3 69 106 75 96 26 22 58 81 43 63 19 18 114 201</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 4 3 57 119 71 108 21 19 51 100 30 73 7 11 126 200</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.693838711791634</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 4 3 57 119 71 108 21 19 51 100 30 73 7 11 126 200</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 3 3 54 123 60 121 26 12 48 102 26 78 5 6 168 165</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.735657791383824</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 3 3 54 123 60 121 26 12 48 102 26 78 5 6 168 165</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 5 3 50 126 48 132 33 5 47 118 19 77 2 0 189 146</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.7997876483612</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 15</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 5 3 50 126 48 132 33 5 47 118 19 77 2 0 189 146</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 3 2 43 134 36 146 38 0 52 120 10 78 2 0 205 131</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ARI=0.834231415504474</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 13</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 3 2 43 134 36 146 38 0 52 120 10 78 2 0 205 131</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 3 3 36 141 22 157 38 0 51 114 5 81 1 0 348 0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 12</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 3 2 43 134 36 146 38 0 52 120 10 78 2 0 205 131</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 2 0 45 167 14 166 38 0 118 364 3 83 0 0 0 0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 12</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 3 2 43 134 36 146 38 0 52 120 10 78 2 0 205 131</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 3 0 26 150 14 171 37 0 45 152 0 86 0 0 229 87</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 11</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 3 2 43 134 36 146 38 0 52 120 10 78 2 0 205 131</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 3 0 22 177 12 169 39 0 53 435 0 90 0 0 0 0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> probability matrix dimensions = 1000 12</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> EPOCH: 6</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> current clustering = 3 2 43 134 36 146 38 0 52 120 10 78 2 0 205 131</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> projected clustering = 3 0 28 147 33 147 54 0 102 158 0 0 0 0 194 134</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ICP converged at EPOCH 1.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Maximum ARI reached: 0.834231415504474.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |                                                                              |                                                                      |   0%  |                                                                              |===                                                                   |   4%  |                                                                              |======                                                                |   8%  |                                                                              |=========                                                             |  12%  |                                                                              |============                                                          |  17%  |                                                                              |===============                                                       |  21%  |                                                                              |==================                                                    |  25%  |                                                                              |====================                                                  |  29%  |                                                                              |=======================                                               |  33%  |                                                                              |==========================                                            |  38%  |                                                                              |=============================                                         |  42%  |                                                                              |================================                                      |  46%  |                                                                              |===================================                                   |  50%  |                                                                              |======================================                                |  54%  |                                                                              |=========================================                             |  58%  |                                                                              |============================================                          |  62%  |                                                                              |===============================================                       |  67%  |                                                                              |==================================================                    |  71%  |                                                                              |====================================================                  |  75%  |                                                                              |=======================================================               |  79%  |                                                                              |==========================================================            |  83%  |                                                                              |=============================================================         |  88%  |                                                                              |================================================================      |  92%  |                                                                              |===================================================================   |  96%  |                                                                              |======================================================================| 100%</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Divisive ICP clustering completed successfully.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
@@ -947,10 +186,17 @@ default <code>"PCA"</code>.</p></dd>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Multi-level integration completed successfully.</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Run PCA </span></span></span>
+<span class="r-in"><span><span class="co"># Integrated PCA</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">125</span><span class="op">)</span> <span class="co"># to ensure reproducibility for the default 'irlba' method</span></span></span>
-<span class="r-in"><span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu">RunPCA</span><span class="op">(</span><span class="va">pbmc_10Xassays</span>, assay.name <span class="op">=</span> <span class="st">"joint.probability"</span>, p <span class="op">=</span> <span class="fl">10</span>, dimred.name <span class="op">=</span> <span class="st">"PCA"</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Divisive ICP: selecting ICP tables multiple of 4</span>
+<span class="r-in"><span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu">RunPCA</span><span class="op">(</span>object <span class="op">=</span> <span class="va">sce</span>, assay.name <span class="op">=</span> <span class="st">"joint.probability"</span>, p <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Divisive ICP: selecting ICP tables multiple of 1</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Plot result </span></span></span>
+<span class="r-in"><span><span class="fu">cowplot</span><span class="fu">::</span><span class="fu"><a href="https://wilkelab.org/cowplot/reference/plot_grid.html" class="external-link">plot_grid</a></span><span class="op">(</span><span class="fu"><a href="PlotDimRed.html">PlotDimRed</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">sce</span>, color.by <span class="op">=</span> <span class="st">"Batch"</span>, </span></span>
+<span class="r-in"><span>                              legend.nrow <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                   <span class="fu"><a href="PlotDimRed.html">PlotDimRed</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">sce</span>, color.by <span class="op">=</span> <span class="st">"Species"</span>, </span></span>
+<span class="r-in"><span>                             legend.nrow <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="RunPCA-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

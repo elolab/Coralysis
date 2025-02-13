@@ -36,9 +36,9 @@
     </div>
 
     <div class="section level2">
-      <h2 id="all-functions">All functions<a class="anchor" aria-label="anchor" href="#all-functions"></a></h2>
+      <h2 id="integration">Integration<a class="anchor" aria-label="anchor" href="#integration"></a></h2>
 
-
+      <div class="section-desc"><p>Multi-level integration functions</p></div>
 
 
     </div><div class="section level2">
@@ -48,28 +48,56 @@
 
       <dl><dt>
 
-          <code><a href="AggregateClusterExpression.html">AggregateClusterExpression()</a></code>
-
-        </dt>
-        <dd>Aggregates cell feature expression by clusters</dd>
-      </dl><dl><dt>
-
           <code><a href="AggregateDataByBatch.html">AggregateDataByBatch.SingleCellExperiment()</a></code> <code><a href="AggregateDataByBatch.html">AggregateDataByBatch(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
 
         </dt>
         <dd>Aggregates feature expression by cell clusters, per batch if provided.</dd>
       </dl><dl><dt>
 
-          <code><a href="BinCellClusterProbability.html">BinCellClusterProbability.SingleCellExperiment()</a></code> <code><a href="BinCellClusterProbability.html">BinCellClusterProbability(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
+          <code><a href="RunParallelDivisiveICP.html">RunParallelDivisiveICP.SingleCellExperiment()</a></code> <code><a href="RunParallelDivisiveICP.html">RunParallelDivisiveICP(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
 
         </dt>
-        <dd>Bin cell cluster probability</dd>
+        <dd>Multi-level integration</dd>
+      </dl></div><div class="section level2">
+      <h2 id="reference-mapping">Reference-mapping<a class="anchor" aria-label="anchor" href="#reference-mapping"></a></h2>
+
+      <div class="section-desc"><p>Reference-mapping function</p></div>
+
+
+    </div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="ReferenceMapping.html">ReferenceMapping.SingleCellExperiment()</a></code> <code><a href="ReferenceMapping.html">ReferenceMapping(<i>&lt;SingleCellExperiment&gt;</i>,<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Reference mapping</dd>
+      </dl></div><div class="section level2">
+      <h2 id="cell-state">Cell state<a class="anchor" aria-label="anchor" href="#cell-state"></a></h2>
+
+      <div class="section-desc"><p>Cell state functions</p></div>
+
+
+    </div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="GetCellClusterProbability.html">GetCellClusterProbability.SingleCellExperiment()</a></code> <code><a href="GetCellClusterProbability.html">GetCellClusterProbability(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Get ICP cell cluster probability</dd>
       </dl><dl><dt>
 
-          <code><a href="CellBinsFeatureCorrelation.html">CellBinsFeatureCorrelation.SingleCellExperiment()</a></code> <code><a href="CellBinsFeatureCorrelation.html">CellBinsFeatureCorrelation(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
+          <code><a href="SummariseCellClusterProbability.html">SummariseCellClusterProbability.SingleCellExperiment()</a></code> <code><a href="SummariseCellClusterProbability.html">SummariseCellClusterProbability(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
 
         </dt>
-        <dd>Cell bins feature correlation</dd>
+        <dd>Summarise ICP cell cluster probability</dd>
       </dl><dl><dt>
 
           <code><a href="CellClusterProbabilityDistribution.html">CellClusterProbabilityDistribution.SingleCellExperiment()</a></code> <code><a href="CellClusterProbabilityDistribution.html">CellClusterProbabilityDistribution(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
@@ -78,22 +106,39 @@
         <dd>Cell cluster probability distribution</dd>
       </dl><dl><dt>
 
-          <code><a href="ClusterCells.html">ClusterCells()</a></code>
+          <code><a href="BinCellClusterProbability.html">BinCellClusterProbability.SingleCellExperiment()</a></code> <code><a href="BinCellClusterProbability.html">BinCellClusterProbability(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
 
         </dt>
-        <dd>Cluster cells</dd>
+        <dd>Bin cell cluster probability</dd>
       </dl><dl><dt>
 
-          <code><a href="DownOverSampleEvenlyBatches.html">DownOverSampleEvenlyBatches()</a></code>
+          <code><a href="TabulateCellBinsByGroup.html">TabulateCellBinsByGroup.SingleCellExperiment()</a></code> <code><a href="TabulateCellBinsByGroup.html">TabulateCellBinsByGroup(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
 
         </dt>
-        <dd>Down- and oversample data evenly batches</dd>
+        <dd>Tabulate cell bins by group</dd>
       </dl><dl><dt>
 
-          <code><a href="DownOverSampling.html">DownOverSampling()</a></code>
+          <code><a href="CellBinsFeatureCorrelation.html">CellBinsFeatureCorrelation.SingleCellExperiment()</a></code> <code><a href="CellBinsFeatureCorrelation.html">CellBinsFeatureCorrelation(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
 
         </dt>
-        <dd>Down- and oversample data</dd>
+        <dd>Cell bins feature correlation</dd>
+      </dl></div><div class="section level2">
+      <h2 id="cluster-markers">Cluster markers<a class="anchor" aria-label="anchor" href="#cluster-markers"></a></h2>
+
+      <div class="section-desc"><p>Cluster markers functions</p></div>
+
+
+    </div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="FindClusterMarkers.html">FindClusterMarkers.SingleCellExperiment()</a></code> <code><a href="FindClusterMarkers.html">FindClusterMarkers(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Differential expression between cell clusters</dd>
       </dl><dl><dt>
 
           <code><a href="FindAllClusterMarkers.html">FindAllClusterMarkers.SingleCellExperiment()</a></code> <code><a href="FindAllClusterMarkers.html">FindAllClusterMarkers(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
@@ -102,64 +147,56 @@
         <dd>Identification of feature markers for all clusters</dd>
       </dl><dl><dt>
 
-          <code><a href="FindBatchKNN.html">FindBatchKNN()</a></code>
-
-        </dt>
-        <dd>Find batch k nearest neighbors</dd>
-      </dl><dl><dt>
-
-          <code><a href="FindClusterBatchKNN.html">FindClusterBatchKNN()</a></code>
-
-        </dt>
-        <dd>Find batch k nearest neighbors per cluster</dd>
-      </dl><dl><dt>
-
-          <code><a href="FindClusterMarkers.html">FindClusterMarkers.SingleCellExperiment()</a></code> <code><a href="FindClusterMarkers.html">FindClusterMarkers(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Differential expression between cell clusters</dd>
-      </dl><dl><dt>
-
-          <code><a href="GetCellClusterProbability.html">GetCellClusterProbability.SingleCellExperiment()</a></code> <code><a href="GetCellClusterProbability.html">GetCellClusterProbability(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Get ICP cell cluster probability</dd>
-      </dl><dl><dt>
-
-          <code><a href="GetFeatureCoefficients.html">GetFeatureCoefficients.SingleCellExperiment()</a></code> <code><a href="GetFeatureCoefficients.html">GetFeatureCoefficients(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Get feature coefficients</dd>
-      </dl><dl><dt>
-
-          <code><a href="HeatmapFeatures.html">HeatmapFeatures.SingleCellExperiment()</a></code> <code><a href="HeatmapFeatures.html">HeatmapFeatures(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Heatmap visualization of the expression of features by clusters</dd>
-      </dl><dl><dt>
-
-          <code><a href="LogisticRegression.html">LogisticRegression()</a></code>
-
-        </dt>
-        <dd>Clustering projection using logistic regression from the LiblineaR R package</dd>
-      </dl><dl><dt>
-
           <code><a href="MajorityVotingFeatures.html">MajorityVotingFeatures.SingleCellExperiment()</a></code> <code><a href="MajorityVotingFeatures.html">MajorityVotingFeatures(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
 
         </dt>
         <dd>Majority voting features by label</dd>
+      </dl></div><div class="section level2">
+      <h2 id="dimensional-reduction">Dimensional reduction<a class="anchor" aria-label="anchor" href="#dimensional-reduction"></a></h2>
+
+      <div class="section-desc"><p>Dimensional reduction functions</p></div>
+
+
+    </div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="RunPCA.html">RunPCA.SingleCellExperiment()</a></code> <code><a href="RunPCA.html">RunPCA(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Principal Component Analysis</dd>
       </dl><dl><dt>
+
+          <code><a href="RunTSNE.html">RunTSNE.SingleCellExperiment()</a></code> <code><a href="RunTSNE.html">RunTSNE(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Barnes-Hut implementation of t-Distributed Stochastic Neighbor Embedding (t-SNE)</dd>
+      </dl><dl><dt>
+
+          <code><a href="RunUMAP.html">RunUMAP.SingleCellExperiment()</a></code> <code><a href="RunUMAP.html">RunUMAP(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Uniform Manifold Approximation and Projection (UMAP)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="visualization">Visualization<a class="anchor" aria-label="anchor" href="#visualization"></a></h2>
+
+      <div class="section-desc"><p>Visualization functions</p></div>
+
+
+    </div><div class="section level2">
+
+
+
+
+      <dl><dt>
 
           <code><a href="PCAElbowPlot.html">PCAElbowPlot.SingleCellExperiment()</a></code> <code><a href="PCAElbowPlot.html">PCAElbowPlot(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
 
         </dt>
         <dd>Elbow plot of the standard deviations of the principal components</dd>
-      </dl><dl><dt>
-
-          <code><a href="PlotClusterTree.html">PlotClusterTree.SingleCellExperiment()</a></code> <code><a href="PlotClusterTree.html">PlotClusterTree(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Plot cluster tree</dd>
       </dl><dl><dt>
 
           <code><a href="PlotDimRed.html">PlotDimRed.SingleCellExperiment()</a></code> <code><a href="PlotDimRed.html">PlotDimRed(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
@@ -174,94 +211,10 @@
         <dd>Plot dimensional reduction feature expression</dd>
       </dl><dl><dt>
 
-          <code><a href="PrepareData.html">PrepareData.SingleCellExperiment()</a></code> <code><a href="PrepareData.html">PrepareData(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
+          <code><a href="PlotClusterTree.html">PlotClusterTree.SingleCellExperiment()</a></code> <code><a href="PlotClusterTree.html">PlotClusterTree(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
 
         </dt>
-        <dd>Prepare <code>SingleCellExperiment</code> object for analysis</dd>
-      </dl><dl><dt>
-
-          <code><a href="RandomlyDivisiveClustering.html">RandomlyDivisiveClustering()</a></code>
-
-        </dt>
-        <dd>Split randomly every cluster into k clusters</dd>
-      </dl><dl><dt>
-
-          <code><a href="ReferenceMapping.html">ReferenceMapping.SingleCellExperiment()</a></code> <code><a href="ReferenceMapping.html">ReferenceMapping(<i>&lt;SingleCellExperiment&gt;</i>,<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Reference mapping</dd>
-      </dl><dl><dt>
-
-          <code><a href="RunDivisiveICP.html">RunDivisiveICP()</a></code>
-
-        </dt>
-        <dd>Divisive Iterative Clustering Projection (ICP) clustering</dd>
-      </dl><dl><dt>
-
-          <code><a href="RunPCA.html">RunPCA.SingleCellExperiment()</a></code> <code><a href="RunPCA.html">RunPCA(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Principal Component Analysis</dd>
-      </dl><dl><dt>
-
-          <code><a href="RunParallelDivisiveICP.html">RunParallelDivisiveICP.SingleCellExperiment()</a></code> <code><a href="RunParallelDivisiveICP.html">RunParallelDivisiveICP(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Multi-level integration</dd>
-      </dl><dl><dt>
-
-          <code><a href="RunTSNE.html">RunTSNE.SingleCellExperiment()</a></code> <code><a href="RunTSNE.html">RunTSNE(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Barnes-Hut implementation of t-Distributed Stochastic Neighbor Embedding (t-SNE)</dd>
-      </dl><dl><dt>
-
-          <code><a href="RunUMAP.html">RunUMAP.SingleCellExperiment()</a></code> <code><a href="RunUMAP.html">RunUMAP(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Uniform Manifold Approximation and Projection (UMAP)</dd>
-      </dl><dl><dt>
-
-          <code><a href="SampleClusterBatchProbs.html">SampleClusterBatchProbs()</a></code>
-
-        </dt>
-        <dd>Sample cells based on cluster probabilities distribution batch wise</dd>
-      </dl><dl><dt>
-
-          <code><a href="SampleClusterProbs.html">SampleClusterProbs()</a></code>
-
-        </dt>
-        <dd>Sample cells based on cluster probabilities distribution</dd>
-      </dl><dl><dt>
-
-          <code><a href="SamplePCACells.html">SamplePCACells()</a></code>
-
-        </dt>
-        <dd>Sample cells based on principal components distribution</dd>
-      </dl><dl><dt>
-
-          <code><a href="Scale.html">Scale()</a></code>
-
-        </dt>
-        <dd>Scale a sparse matrix by row or column</dd>
-      </dl><dl><dt>
-
-          <code><a href="ScaleByBatch.html">ScaleByBatch()</a></code>
-
-        </dt>
-        <dd>Scale sparse matrix by features (column) by batch</dd>
-      </dl><dl><dt>
-
-          <code><a href="SummariseCellClusterProbability.html">SummariseCellClusterProbability.SingleCellExperiment()</a></code> <code><a href="SummariseCellClusterProbability.html">SummariseCellClusterProbability(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Summarise ICP cell cluster probability</dd>
-      </dl><dl><dt>
-
-          <code><a href="TabulateCellBinsByGroup.html">TabulateCellBinsByGroup.SingleCellExperiment()</a></code> <code><a href="TabulateCellBinsByGroup.html">TabulateCellBinsByGroup(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Tabulate cell bins by group</dd>
+        <dd>Plot cluster tree</dd>
       </dl><dl><dt>
 
           <code><a href="VlnPlot.html">VlnPlot.SingleCellExperiment()</a></code> <code><a href="VlnPlot.html">VlnPlot(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
@@ -270,12 +223,36 @@
         <dd>Visualization of feature expression using violin plots</dd>
       </dl><dl><dt>
 
-          <code><a href="pbmc_10Xassays.html">pbmc_10Xassays</a></code>
+          <code><a href="HeatmapFeatures.html">HeatmapFeatures.SingleCellExperiment()</a></code> <code><a href="HeatmapFeatures.html">HeatmapFeatures(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
 
         </dt>
-        <dd>A toy SCE dataset of two 10X PBMCs 3' assays downsampled to 2K cells.</dd>
+        <dd>Heatmap visualization of the expression of features by clusters</dd>
+      </dl></div><div class="section level2">
+      <h2 id="miscelllaneous">Miscelllaneous<a class="anchor" aria-label="anchor" href="#miscelllaneous"></a></h2>
+
+      <div class="section-desc"><p>Miscelllaneous functions</p></div>
+
+
+    </div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="PrepareData.html">PrepareData.SingleCellExperiment()</a></code> <code><a href="PrepareData.html">PrepareData(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Prepare <code>SingleCellExperiment</code> object for analysis</dd>
+      </dl><dl><dt>
+
+          <code><a href="GetFeatureCoefficients.html">GetFeatureCoefficients.SingleCellExperiment()</a></code> <code><a href="GetFeatureCoefficients.html">GetFeatureCoefficients(<i>&lt;SingleCellExperiment&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Get feature coefficients</dd>
       </dl></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">
