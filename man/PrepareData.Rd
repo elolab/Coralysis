@@ -23,10 +23,17 @@ with at least data in the \code{logcounts} slot.
 }
 \examples{
 # Import package
-library("SingleCellExperiment")
+suppressPackageStartupMessages(library("SingleCellExperiment"))
 
-# Run function
-pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+# Create toy SCE data
+batches <- c("b1", "b2")
+set.seed(239)
+batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+                            colData = DataFrame("Species" = iris$Species, 
+                                               "Batch" = batch))
+colnames(sce) <- paste0("samp", 1:ncol(sce))
+sce <- PrepareData(sce)
 
 }
 \keyword{clean}

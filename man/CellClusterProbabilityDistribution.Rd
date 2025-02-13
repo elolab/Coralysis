@@ -47,23 +47,32 @@ A plot of class \code{ggplot}.
 Plot cell cluster probability distribution per label by group.
 }
 \examples{
+\dontrun{
 # Packages
-library("SingleCellExperiment")
+suppressPackageStartupMessages(library("SingleCellExperiment"))
+
+# Import data from Zenodo
+data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+sce <- readRDS(file = url(data.url))
 
 # Prepare data
-pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+sce <- PrepareData(object = sce)
 
-# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+# Multi-level integration - 'L = 4' just for highlighting purposes
 set.seed(123)
-pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1)
+sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", L = 4, 
+                              threads = 2)
 
 # Summarise cell cluster probability
-pbmc_10Xassays <- SummariseCellClusterProbability(object = pbmc_10Xassays, icp.round = 4) # save result in 'colData'
+sce <- SummariseCellClusterProbability(object = sce, icp.round = 4) # saved in 'colData'
 
 # Search for differences in probabilities across group(s) 
-# give an interesting variable to the "group" parameter instead "batch" - given for illustrative purposes only
-prob.dist <- CellClusterProbabilityDistribution(object = pbmc_10Xassays, label = "cell_type", group = "batch", probability = "scaled_mean_probs")
+# give an interesting variable to the "group" parameter
+prob.dist <- CellClusterProbabilityDistribution(object = sce, label = "cell_type", 
+                                                group = "batch", 
+                                                probability = "scaled_mean_probs")
 prob.dist # print plot
+}
 
 }
 \keyword{Distribution}

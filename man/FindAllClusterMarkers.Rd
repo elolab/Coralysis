@@ -81,28 +81,20 @@ but this might lead to missing weak signals.
 }
 \examples{
 # Import package
-library("SingleCellExperiment")
+suppressPackageStartupMessages(library("SingleCellExperiment"))
 
-# Prepare SCE object for analysis
-pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+# Create toy SCE data
+batches <- c("b1", "b2")
+set.seed(239)
+batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+                            colData = DataFrame("Species" = iris$Species, 
+                                               "Batch" = batch))
+colnames(sce) <- paste0("samp", 1:ncol(sce))
 
-# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
-set.seed(123)
-pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
-
-# Run PCA 
-set.seed(125) # to ensure reproducibility for the default 'irlba' method
-pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
-
-# Perform differential expression on a given clustering or cell type annotations
-## Clustering
-# Perform clustering on the integrated PCA with your favorite algorithm, e.g., graph-based clustering with 'scran'
-#set .seed(123)
-#pbmc_10Xassays$cluster <- scran::clusterCells(pbmc_10Xassays, use.dimred="PCA", BLUSPARAM = bluster::SNNGraphParam(k = 15, cluster.fun = "louvain"))
-#markers <- FindAllClusterMarkers(pbmc_10Xassays, clustering.label = "cluster")
-
-## Cell type annotations or other pre-existing annotations 
-markers <- FindAllClusterMarkers(pbmc_10Xassays, clustering.label = "cell_type")
+# Markers
+dge <- FindAllClusterMarkers(sce, clustering.label = "Species")
+dge
 
 }
 \keyword{DE}

@@ -31,17 +31,26 @@ The function aggregates feature expression by cell clusters, per
 batch if provided.
 }
 \examples{
+\dontrun{
+# Import package
+suppressPackageStartupMessages(library("SingleCellExperiment"))
+
+# Import data from Zenodo
+data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+sce <- readRDS(file = url(data.url))
+
 # Run with a batch
 set.seed(1204)
-sce <- AggregateDataByBatch(object = pbmc_10Xassays, batch.label = "batch")
+sce <- AggregateDataByBatch(object = sce, batch.label = "batch")
 logcounts(sce)[1:10,1:10]
 head(metadata(sce)$clusters)
 
 # Run without a batch
 set.seed(1204)
-sce <- AggregateDataByBatch(object = pbmc_10Xassays, batch.label = NULL)
+sce <- AggregateDataByBatch(object = sce, batch.label = NULL)
 logcounts(sce)[1:10,1:10]
 head(metadata(sce)$clusters)
+} 
 
 }
 \keyword{aggregated}

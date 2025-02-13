@@ -19,10 +19,19 @@
 #'
 #' @examples
 #' # Import package
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
 #' 
-#' # Run function
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                             colData = DataFrame("Species" = iris$Species, 
+#'                                                "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
+
+# # Prepare SCE object for analysis
+#' sce <- PrepareData(sce)
 #'
 PrepareData.SingleCellExperiment <- function(object) {
     
@@ -142,18 +151,37 @@ setMethod("PrepareData", signature(object = "SingleCellExperiment"),
 #'
 #' @examples
 #' # Import package
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
+#' 
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                             colData = DataFrame("Species" = iris$Species, 
+#'                                                "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
 #' 
 #' # Prepare SCE object for analysis
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' sce <- PrepareData(sce)
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' # Multi-level integration (just for highlighting purposes; use default parameters)
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+#' sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", 
+#'                               k = 2, L = 25, C = 1, train.k.nn = 10, 
+#'                               train.k.nn.prop = NULL, use.cluster.seed = FALSE,
+#'                               build.train.set = FALSE, ari.cutoff = 0.1, 
+#'                              threads = 2)
 #' 
-#' # Run PCA 
+#' # Integrated PCA
 #' set.seed(125) # to ensure reproducibility for the default 'irlba' method
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, assay.name = "joint.probability", p = 10, dimred.name = "PCA")
+#' sce <- RunPCA(object = sce, assay.name = "joint.probability", p = 10)
+#' 
+#' # Plot result 
+#' cowplot::plot_grid(PlotDimRed(object = sce, color.by = "Batch", 
+#'                               legend.nrow = 1),
+#'                    PlotDimRed(object = sce, color.by = "Species", 
+#'                              legend.nrow = 1), ncol = 2)
 #'
 RunPCA.SingleCellExperiment <- function(object, assay.name, p, scale, center, threshold,
                                         pca.method, return.model, select.icp.tables, 
@@ -255,75 +283,6 @@ setMethod("RunPCA", signature(object = "SingleCellExperiment"),
           RunPCA.SingleCellExperiment)
 
 
-#' @title Elbow plot of the standard deviations of the principal components
-#'
-#' @description Draw an elbow plot of the standard deviations of the principal 
-#' components to deduce an appropriate value for \code{p}.
-#'
-#' @param object A \code{SingleCellExperiment} object obtained after running 
-#' \code{RunParallelDivisiveICP}.
-#' @param dimred.name Dimensional reduction name of the PCA to select from 
-#' \code{reducedDimNames(object)}. By default \code{"PCA"}. 
-#' @param return.plot logical indicating if the ggplot2 object should be returned.
-#' By default \code{FALSE}.
-#'
-#' @name PCAElbowPlot
-#'
-#' @return A ggplot2 object, if \code{return.plot=TRUE}.
-#'
-#' @keywords PCA elbow plot
-#'
-#' @import ggplot2
-#' @importFrom reshape2 melt
-#' @importFrom SingleCellExperiment reducedDim
-#' @importFrom S4Vectors metadata metadata<-
-#' @importFrom stats sd
-#'
-#' @examples
-#' # Import package
-#' library("SingleCellExperiment")
-#' 
-#' # Prepare SCE object for analysis
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
-#' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
-#' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
-#' 
-#' # Run PCA 
-#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
-#' 
-#' # Plot Elbow
-#' PCAElbowPlot(pbmc_10Xassays)
-#'
-PCAElbowPlot.SingleCellExperiment <- function(object, dimred.name, return.plot) {
-
-  df <- matrix(apply(reducedDim(object, dimred.name), 2, sd),
-               nrow = metadata(object)$coralysis$p,
-               ncol = 1,
-               dimnames = list(seq_len(metadata(object)$coralysis$p), "SD"))
-  df <- melt(df)
-
-  p <- ggplot(df, aes_string(x = 'Var1', y = 'value')) +
-    geom_line(color = "blue") +
-    geom_point(color = "black") +
-    theme_bw() +
-    ylab("Standard Deviation") +
-    xlab("PC")
-
-  if (return.plot) {
-    return(p)
-  } else {
-    print(p)
-  }
-}
-#' @rdname PCAElbowPlot
-#' @aliases PCAElbowPlot
-setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
-          PCAElbowPlot.SingleCellExperiment)
-
-
 #' @title Uniform Manifold Approximation and Projection (UMAP)
 #'
 #' @description Run nonlinear dimensionality reduction using UMAP with a dimensional 
@@ -355,23 +314,49 @@ setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
 #'
 #' @examples
 #' # Import package
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
+#' 
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                             colData = DataFrame("Species" = iris$Species, 
+#'                                                "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
 #' 
 #' # Prepare SCE object for analysis
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' sce <- PrepareData(sce)
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' # Multi-level integration (just for highlighting purposes; use default parameters)
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+#' sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", 
+#'                               k = 2, L = 25, C = 1, train.k.nn = 10, 
+#'                               train.k.nn.prop = NULL, use.cluster.seed = FALSE,
+#'                               build.train.set = FALSE, ari.cutoff = 0.1, 
+#'                              threads = 2)
 #' 
-#' # Run PCA 
+#' # Integrated PCA
 #' set.seed(125) # to ensure reproducibility for the default 'irlba' method
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+#' sce <- RunPCA(object = sce, assay.name = "joint.probability", p = 10)
 #' 
+#' # Plot result 
+#' cowplot::plot_grid(PlotDimRed(object = sce, color.by = "Batch", 
+#'                               legend.nrow = 1),
+#'                    PlotDimRed(object = sce, color.by = "Species", 
+#'                              legend.nrow = 1), ncol = 2)
+#'
 #' # Run UMAP
 #' set.seed(123)
-#' pbmc_10Xassays <- RunUMAP(pbmc_10Xassays, dimred.type = "PCA")
-#'
+#' sce <- RunUMAP(sce, dimred.type = "PCA")
+#' 
+#' # Plot results
+#' # Plot result 
+#' cowplot::plot_grid(PlotDimRed(object = sce, color.by = "Batch", 
+#'                               legend.nrow = 1),
+#'                    PlotDimRed(object = sce, color.by = "Species", 
+#'                              legend.nrow = 1), ncol = 2)
+#'                              
 RunUMAP.SingleCellExperiment <- function(object, dims, dimred.type, return.model, 
                                          umap.method, dimred.name, ...) {
     
@@ -454,23 +439,32 @@ setMethod("RunUMAP", signature(object = "SingleCellExperiment"),
 #'
 #' @examples
 #' # Import package
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
 #' 
-#' # Prepare SCE object for analysis
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                             colData = DataFrame("Species" = iris$Species, 
+#'                                                "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
-#' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
-#' 
-#' # Run PCA 
+#' # Run PCA
 #' set.seed(125) # to ensure reproducibility for the default 'irlba' method
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+#' sce <- RunPCA(object = sce, assay.name = "logcounts", 
+#'               pca.method = "stats", p = nrow(sce))
 #' 
 #' # Run t-SNE
-#' set.seed(123)
-#' pbmc_10Xassays <- RunTSNE(pbmc_10Xassays, dimred.type = "PCA")
-#'
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
+#' sce <- RunTSNE(object = sce, dimred.type = "PCA", check_duplicates = FALSE)
+#' 
+#' # Plot result 
+#' cowplot::plot_grid(PlotDimRed(object = sce, color.by = "Batch", 
+#'                               legend.nrow = 1),
+#'                    PlotDimRed(object = sce, color.by = "Species", 
+#'                              legend.nrow = 1), ncol = 2)
+#'                    
 RunTSNE.SingleCellExperiment <- function(object, dims, dimred.type, perplexity, dimred.name, ...) {
     
     # Check arguments 
@@ -548,29 +542,21 @@ setMethod("RunTSNE", signature(object = "SingleCellExperiment"),
 #'
 #' @examples
 #' # Import package
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
 #' 
-#' # Prepare SCE object for analysis
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                             colData = DataFrame("Species" = iris$Species, 
+#'                                                "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
-#' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+#' # Markers
+#' dge <- FindAllClusterMarkers(sce, clustering.label = "Species")
+#' dge
 #' 
-#' # Run PCA 
-#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
-#' 
-#' # Perform differential expression on a given clustering or cell type annotations
-#' ## Clustering
-#' # Perform clustering on the integrated PCA with your favorite algorithm, e.g., graph-based clustering with 'scran'
-#' #set .seed(123)
-#' #pbmc_10Xassays$cluster <- scran::clusterCells(pbmc_10Xassays, use.dimred="PCA", BLUSPARAM = bluster::SNNGraphParam(k = 15, cluster.fun = "louvain"))
-#' #markers <- FindAllClusterMarkers(pbmc_10Xassays, clustering.label = "cluster")
-#' 
-#' ## Cell type annotations or other pre-existing annotations 
-#' markers <- FindAllClusterMarkers(pbmc_10Xassays, clustering.label = "cell_type")
-#'
 FindAllClusterMarkers.SingleCellExperiment <- function(object,
                                                        clustering.label,
                                                        test,
@@ -720,7 +706,7 @@ setMethod("FindAllClusterMarkers", signature(object = "SingleCellExperiment"),
 #' lead to missing weak signals.
 #'
 #' @param object A \code{SingleCellExperiment} object.
-#' #' @param clustering.label A variable name (of class \code{character}) available 
+#' @param clustering.label A variable name (of class \code{character}) available 
 #' in the cell metadata \code{colData(object)} with the clustering labels 
 #' (\code{character} or \code{factor}) to use.
 #' @param clusters.1 a character or numeric vector denoting which clusters
@@ -764,31 +750,23 @@ setMethod("FindAllClusterMarkers", signature(object = "SingleCellExperiment"),
 #'
 #' @examples
 #' # Import package
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
 #' 
-#' # Prepare SCE object for analysis
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                             colData = DataFrame("Species" = iris$Species, 
+#'                                                "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
-#' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+#' # Markers between versicolor vs virginica
+#' dge <- FindClusterMarkers(sce, clustering.label = "Species", 
+#'                           clusters.1 = "versicolor", 
+#'                           clusters.2 = "virginica")
+#' dge
 #' 
-#' # Run PCA 
-#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
-#' 
-#' # Perform differential expression on a given clustering or cell type annotations
-#' ## Clustering
-#' # Perform clustering on the integrated PCA with your favorite algorithm, e.g., graph-based clustering with 'scran'
-#' #set .seed(123)
-#' #pbmc_10Xassays$cluster <- scran::clusterCells(pbmc_10Xassays, use.dimred="PCA", BLUSPARAM = bluster::SNNGraphParam(k = 15, cluster.fun = "louvain"))
-#' #cluster_markers_1 <- FindClusterMarkers(pbmc_10Xassays, clustering.label = "cluster", clusters.1 = "1") 
-#' #cluster_markers_1_vs_2 <- FindClusterMarkers(pbmc_10Xassays, clustering.label = "cluster", clusters.1 = "1", clusters.1 = "2") 
-#' 
-#' ## Cell type annotations or other pre-existing annotations  
-#' gene_markers_Bmem <- FindClusterMarkers(pbmc_10Xassays, clustering.label = "cell_type", clusters.1 = "B mem")
-#' gene_markers_Bmem_vs_Bnaive <- FindClusterMarkers(pbmc_10Xassays, clustering.label = "cell_type", clusters.1 = "B mem", clusters.2 = "B naive") 
-#'
 FindClusterMarkers.SingleCellExperiment <- function(object, 
                                                     clustering.label,
                                                     clusters.1,
@@ -984,22 +962,32 @@ setMethod("FindClusterMarkers", signature(object = "SingleCellExperiment"),
 #' @importFrom S4Vectors metadata metadata<-
 #' 
 #' @examples 
-#' #' # Import package
-#' library("SingleCellExperiment")
+#' # Import package
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
+#' 
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                             colData = DataFrame("Species" = iris$Species, 
+#'                                                "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
 #' 
 #' # Prepare SCE object for analysis
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' sce <- PrepareData(sce)
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' # Multi-level integration (just for highlighting purposes; use default parameters)
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+#' sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", 
+#'                               k = 2, L = 25, C = 1, train.k.nn = 10, 
+#'                               train.k.nn.prop = NULL, use.cluster.seed = FALSE,
+#'                               build.train.set = FALSE, ari.cutoff = 0.1, 
+#'                              threads = 2)
 #' 
-#' # Run PCA 
-#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
-#' 
-#' # Get cluster probability for all ICP runs for the last 4th round 
-#' probs <- GetCellClusterProbability(object = pbmc_10Xassays, icp.round = 4, concatenate = TRUE) # matrix 2,000 cells x 56 cell clusters
+#' # Get cluster probability for all ICP runs 
+#' probs <- GetCellClusterProbability(object = sce, icp.round = 1, concatenate = TRUE) 
+#' probs[1:10, 1:5]
 #' 
 GetCellClusterProbability.SingleCellExperiment <- function(object, icp.run, icp.round, concatenate) {
     
@@ -1078,27 +1066,42 @@ setMethod("GetCellClusterProbability", signature(object = "SingleCellExperiment"
 #'  
 #' @examples 
 #' # Import package
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
+#' 
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                             colData = DataFrame("Species" = iris$Species, 
+#'                                                "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
 #' 
 #' # Prepare SCE object for analysis
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' sce <- PrepareData(sce)
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' # Multi-level integration (just for highlighting purposes; use default parameters)
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
-#' 
-#' # Run PCA 
+#' sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", 
+#'                               k = 2, L = 25, C = 1, train.k.nn = 10, 
+#'                               train.k.nn.prop = NULL, use.cluster.seed = FALSE,
+#'                               build.train.set = FALSE, ari.cutoff = 0.1, 
+#'                              threads = 2)
+#'                              
+#' # Integrated PCA
 #' set.seed(125) # to ensure reproducibility for the default 'irlba' method
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+#' sce <- RunPCA(object = sce, assay.name = "joint.probability", p = 10)
 #' 
 #' # Summarise cluster probability
-#' pbmc_10Xassays <- SummariseCellClusterProbability(object = pbmc_10Xassays, icp.round = 4, save.in.sce = TRUE) # save result in 'colData'
+#' sce <- SummariseCellClusterProbability(object = sce, icp.round = 1, 
+#'                                        save.in.sce = TRUE) # saved in 'colData'
 #' 
 #' # Plot the clustering result for ICP run no. 3 
-#' PlotDimRed(object = pbmc_10Xassays, color.by = "icp_run_round_3_4_clusters")
+#' PlotDimRed(object = sce, color.by = "icp_run_round_3_1_clusters")
 #' 
 #' # Plot Coralysis mean cell cluster probabilities 
-#' PlotExpression(object = pbmc_10Xassays, color.by = "mean_probs", color.scale = "viridis")
+#' PlotExpression(object = sce, color.by = "mean_probs", 
+#'                color.scale = "viridis")
 #' 
 SummariseCellClusterProbability.SingleCellExperiment <- function(object, icp.run, icp.round, funs, scale.funs, save.in.sce) {
     
@@ -1191,23 +1194,27 @@ setMethod("SummariseCellClusterProbability", signature(object = "SingleCellExper
 #' @importFrom dplyr %>%
 #' 
 #' @examples 
+#' \dontrun{
 #' # Import package
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
 #' 
-#' # Prepare SCE object for analysis
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' # Import data from Zenodo
+#' data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+#' sce <- readRDS(file = url(data.url))
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' # Multi-level integration (just for highlighting purposes; use default parameters)
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
-#' 
-#' # Run PCA 
-#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+#' sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", 
+#'                               k = 4, L = 10, C = 1, d = 0.5, 
+#'                               train.with.bnn = FALSE, use.cluster.seed = FALSE,
+#'                               build.train.set = FALSE, ari.cutoff = 0.1, 
+#'                               threads = 2)
 #' 
 #' # GetFeatureCoefficients
-#' gene_coefficients_icp_2_4 <- GetFeatureCoefficients(object = pbmc_10Xassays, icp.run = 2, icp.round = 4)
+#' gene_coefficients_icp_2_4 <- GetFeatureCoefficients(object = sce, 
+#'                                                     icp.run = 2, icp.round = 4)
 #' head(gene_coefficients_icp_2_4$icp_8)
+#' }
 #' 
 GetFeatureCoefficients.SingleCellExperiment <- function(object, icp.run = NULL, icp.round = NULL) {
     
@@ -1248,7 +1255,7 @@ GetFeatureCoefficients.SingleCellExperiment <- function(object, icp.run = NULL, 
     df.feature.coeffs <- lapply(X = feature.coeffs, FUN = function(x) {
         Reduce(function(y1, y2) merge(y1, y2, by = "feature", all.x = TRUE, all.y = TRUE), x) %>% 
             `colnames<-`(c("feature", paste0("coeff_clt", names(x)))) %>% 
-            replace(is.na(.), 0)
+            replace(is.na(.data$.), 0)
     })
     names(df.feature.coeffs) <- paste0("icp_", pick.icp)
     
@@ -1280,25 +1287,29 @@ setMethod("GetFeatureCoefficients", signature(object = "SingleCellExperiment"),
 #' @importFrom dplyr %>% select filter all_of
 #' 
 #' @examples 
+#' \dontrun{
 #' # Import package
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
 #' 
-#' # Prepare SCE object for analysis
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' # Import data from Zenodo
+#' data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+#' sce <- readRDS(file = url(data.url))
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' # Multi-level integration (just for highlighting purposes; use default parameters)
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+#' sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", 
+#'                               k = 4, L = 10, C = 1, d = 0.5, 
+#'                               train.with.bnn = FALSE, use.cluster.seed = FALSE,
+#'                               build.train.set = FALSE, ari.cutoff = 0.1, 
+#'                               threads = 2)
 #' 
-#' # Run PCA 
-#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
-#' 
-#' # Get gene coefficients by majority voting for a given clustering or cell type annotations
-#' gene_coeff <- MajorityVotingFeatures(object = pbmc_10Xassays, label = "cell_type")
+#' # Get coefficients by majority voting for a given categorical variable
+#' coeff <- MajorityVotingFeatures(object = sce, label = "cell_type")
 #' gene_coeff$summary
-#' head(gene_coeff$feature_coeff$Monocyte[order(gene_coeff$feature_coeff$Monocyte$coeff_clt4, decreasing = TRUE), ], n = 15)
-#' PlotExpression(object = pbmc_10Xassays, color.by = "LGALS2")
+#' order.rows <- order(coeff$feature_coeff$Monocyte$coeff_clt2, 
+#'                     decreasing = TRUE)
+#' head(coeff$feature_coeff$Monocyte[order.rows,], n = 10)
+#' }
 #' 
 MajorityVotingFeatures.SingleCellExperiment <- function(object, label) {
     

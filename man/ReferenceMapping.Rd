@@ -46,6 +46,12 @@ reference was scaled.}
 default \code{FALSE}. If \code{TRUE}, the \code{ref} object needs to have a 
 UMAP embedding obtained with \code{RunUMAP(..., return.model = TRUE)} function.}
 
+\item{select.icp.models}{Select the reference ICP models to use for query 
+cluster probability prediction. By default \code{metadata(ref)$coralysis$pca.params$select.icp.tables}, 
+i.e., the models selected to compute the reference PCA are selected. 
+If \code{NULL} all are used. Otherwise a numeric vector should be given
+to select the ICP models of interest.}
+
 \item{k.nn}{The number of \code{k} nearest neighbors to use in the classification
 KNN algorithm used to transfer labels from the reference to queries (integer).
 By default \code{10}.}
@@ -53,12 +59,6 @@ By default \code{10}.}
 \item{dimred.name.prefix}{Dimensional reduction name prefix to add to the 
 computed PCA and UMAP. By default nothing is added, i.e., 
 \code{dimred.name.prefix = ""}.}
-
-\item{selecte.icp.models}{Select the reference ICP models to use for query 
-cluster probability prediction. By default \code{metadata(ref)$coralysis$pca.params$select.icp.tables}, 
-i.e., the models selected to compute the reference PCA are selected. 
-If \code{NULL} all are used. Otherwise a numeric vector should be given
-to select the ICP models of interest.}
 }
 \value{
 An object of \code{SingleCellExperiment} class.
@@ -68,28 +68,57 @@ This function allows to project new query data sets onto a reference
 built with Coralysis as well as transfer cell labels from the reference to queries.
 }
 \examples{
-## Reference-mapping
-# Split the SCE object by 'batch'
-ref <- pbmc_10Xassays[,pbmc_10Xassays$batch=="V2"] # let V2 assay batch be the reference data set
-query <- pbmc_10Xassays[,pbmc_10Xassays$batch=="V1"] # let V1 be the query (unknown annotations)
+# Import package
+suppressPackageStartupMessages(library("SingleCellExperiment"))
 
-# 1) Train the reference - 'L = 4' just for highlighting purposes; use 'L=50' (default) or greater
+# Create toy SCE data
+batches <- c("b1", "b2")
+set.seed(239)
+batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])), 
+                            colData = DataFrame("Species" = iris$Species, 
+                                                "Batch" = batch))
+colnames(sce) <- paste0("samp", 1:ncol(sce))
+
+# Create reference & query SCE objects
+ref <- sce[,sce$Batch=="b1"]
+query <- sce[,sce$Batch=="b2"]
+
+# 1) Train the reference
 set.seed(123)
-ref <- RunParallelDivisiveICP(object = ref, L = 4, divisive.method = "cluster", threads = 1) # runs without 'batch.label' as it represents 1 sample only
-
+ref <- RunParallelDivisiveICP(object = ref, k = 2, L = 25, C = 1, 
+                             train.k.nn = 10, train.k.nn.prop = NULL, 
+                             use.cluster.seed = FALSE, 
+                             build.train.set = FALSE, ari.cutoff = 0.1, 
+                             threads = 2) 
 # 2) Compute reference PCA & UMAP
-ref <- RunPCA(ref, return.model = TRUE, pca.method = "stats")
+ref <- RunPCA(ref, p = 5, return.model = TRUE, pca.method = "stats")
 set.seed(123)
 ref <- RunUMAP(ref, return.model = TRUE)
 
-# 3) Project & predict query cell labels 
-set.seed(1024)
-map <- ReferenceMapping(ref = ref, query = query, ref.label = "cell_type", scale.query.by = NULL, project.umap = TRUE)
+# Plot 
+PlotDimRed(object = ref, color.by = "Species", legend.nrow = 1)
 
-# Calculate accuracy
-preds_x_truth <- table(map$coral_labels, map$cell_type)
-preds_x_truth
-sum(diag(preds_x_truth)) / sum(preds_x_truth) # 0.806 : 81\%
+# 3) Project & predict query cell labels  
+map <- ReferenceMapping(ref = ref, query = query, ref.label = "Species",
+                        project.umap = TRUE)
+
+# Confusion matrix: predictions (rows) x ground-truth (cols)
+preds_x_truth <- table(map$coral_labels, map$Species)
+print(preds_x_truth)
+
+# Accuracy score
+acc <- sum(diag(preds_x_truth)) / sum(preds_x_truth) * 100  
+print(paste0("Coralysis accuracy score: ", round(acc), "\%"))
+
+# Visualize: ground-truth, prediction, confidence scores
+cowplot::plot_grid(PlotDimRed(object = map, color.by = "Species", 
+                              legend.nrow = 1),
+                   PlotDimRed(object = map, color.by = "coral_labels",
+                             legend.nrow = 1),
+                PlotExpression(object = map, color.by = "coral_probability", 
+                                 color.scale = "viridis"),
+                ncol = 3, align = "vh")
 
 }
 \keyword{ICP}

@@ -39,6 +39,9 @@ plot.}
 \item{dimred}{Dimensional reduction available in \code{ReducedDimNames(object)}
 to plot. By default the last dimensional reduction in the object is used.}
 
+\item{scale.values}{Logical specifying if values should be scaled. By default
+\code{FALSE}, i.e., values are not scaled.}
+
 \item{color.scale}{Character of color scale palette to be passed to 
 \code{ggplot2::scale_color_viridis_c}. By default \code{inferno}. Other palettes
 are also available such as \code{viridis}.}
@@ -59,38 +62,31 @@ Plot feature expression in dimensional reduction.
 }
 \examples{
 # Import package
-library("SingleCellExperiment")
+suppressPackageStartupMessages(library("SingleCellExperiment"))
 
-# Prepare SCE object for analysis
-pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+# Create toy SCE data
+batches <- c("b1", "b2")
+set.seed(239)
+batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+                           colData = DataFrame("Species" = iris$Species, 
+                                             "Batch" = batch))
+colnames(sce) <- paste0("samp", 1:ncol(sce))
 
-# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
-set.seed(123)
-pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
-
-# Run PCA 
-set.seed(125) # to ensure reproducibility for the default 'irlba' method
-pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
-
-# Run UMAP
-set.seed(123)
-pbmc_10Xassays <- RunUMAP(pbmc_10Xassays, dimred.type = "PCA")
-
-# Plot cell cluster probabilities - mean
-# possible options: "mean_probs", "median_probs", "scaled_median_probs" 
-pbmc_10Xassays <- SummariseCellClusterProbability(object = pbmc_10Xassays, icp.round = 4, scale.funs = TRUE, save.in.sce = TRUE) # save result in 'colData'
-PlotExpression(object = pbmc_10Xassays, color.by = "scaled_mean_probs", dimred = "UMAP", color.scale = "viridis", legend.title = "Scaled mean prob.\n(min-max)") 
+# Compute dimensional reduction 
+sce <- RunPCA(object = sce, assay.name = "logcounts", p = 4, 
+           pca.method = "stats")
 
 # Plot expression level of one or more features
 ## one 
-PlotExpression(object = pbmc_10Xassays, color.by = "LGALS2", dimred = "UMAP")
+PlotExpression(object = sce, color.by = "Petal.Width")
 
 ## more than one
-genes <- c("CD8A", "CCR7", "GZMA", "MS4A1", "CD27")
-exp.plots <- lapply(X = genes, FUN = function(x) {
-    PlotExpression(object = pbmc_10Xassays, color.by = x, dimred = "UMAP", scale.values = TRUE, point.size = 0.25, point.stroke = 0.25)
+features <- row.names(sce)[1:4] 
+exp.plots <- lapply(X = features, FUN = function(x) {
+    PlotExpression(object = sce, color.by = x, scale.values = TRUE)
 })
-cowplot::plot_grid(plotlist = exp.plots, ncol = 5, align = "vh")
+cowplot::plot_grid(plotlist = exp.plots, ncol = 4, align = "vh")
 
 }
 \keyword{Dimensional}

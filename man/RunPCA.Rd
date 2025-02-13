@@ -86,18 +86,37 @@ probability matrix as input.
 }
 \examples{
 # Import package
-library("SingleCellExperiment")
+suppressPackageStartupMessages(library("SingleCellExperiment"))
+
+# Create toy SCE data
+batches <- c("b1", "b2")
+set.seed(239)
+batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+                            colData = DataFrame("Species" = iris$Species, 
+                                               "Batch" = batch))
+colnames(sce) <- paste0("samp", 1:ncol(sce))
 
 # Prepare SCE object for analysis
-pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+sce <- PrepareData(sce)
 
-# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+# Multi-level integration (just for highlighting purposes; use default parameters)
 set.seed(123)
-pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", 
+                              k = 2, L = 25, C = 1, train.k.nn = 10, 
+                              train.k.nn.prop = NULL, use.cluster.seed = FALSE,
+                              build.train.set = FALSE, ari.cutoff = 0.1, 
+                             threads = 2)
 
-# Run PCA 
+# Integrated PCA
 set.seed(125) # to ensure reproducibility for the default 'irlba' method
-pbmc_10Xassays <- RunPCA(pbmc_10Xassays, assay.name = "joint.probability", p = 10, dimred.name = "PCA")
+sce <- RunPCA(object = sce, assay.name = "joint.probability", p = 10)
+
+# Plot result 
+cowplot::plot_grid(PlotDimRed(object = sce, color.by = "Batch", 
+                              legend.nrow = 1),
+                   PlotDimRed(object = sce, color.by = "Species", 
+                             legend.nrow = 1), ncol = 2)
 
 }
 \keyword{PCA}

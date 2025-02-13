@@ -1,3 +1,91 @@
+#' @title Elbow plot of the standard deviations of the principal components
+#'
+#' @description Draw an elbow plot of the standard deviations of the principal 
+#' components to deduce an appropriate value for \code{p}.
+#'
+#' @param object A \code{SingleCellExperiment} object obtained after running 
+#' \code{RunParallelDivisiveICP}.
+#' @param dimred.name Dimensional reduction name of the PCA to select from 
+#' \code{reducedDimNames(object)}. By default \code{"PCA"}. 
+#' @param return.plot logical indicating if the ggplot2 object should be returned.
+#' By default \code{FALSE}.
+#'
+#' @name PCAElbowPlot
+#'
+#' @return A ggplot2 object, if \code{return.plot=TRUE}.
+#'
+#' @keywords PCA elbow plot
+#'
+#' @import ggplot2
+#' @importFrom reshape2 melt
+#' @importFrom SingleCellExperiment reducedDim
+#' @importFrom S4Vectors metadata metadata<-
+#' @importFrom stats sd
+#'
+#' @examples
+#' # Import package
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
+#' 
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                             colData = DataFrame("Species" = iris$Species, 
+#'                                                "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
+#' 
+#' # Prepare SCE object for analysis
+#' sce <- PrepareData(sce)
+#' 
+#' # Multi-level integration (just for highlighting purposes; use default parameters)
+#' set.seed(123)
+#' sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", 
+#'                               k = 2, L = 25, C = 1, train.k.nn = 10, 
+#'                               train.k.nn.prop = NULL, use.cluster.seed = FALSE,
+#'                               build.train.set = FALSE, ari.cutoff = 0.1, 
+#'                              threads = 2)
+#' 
+#' # Integrated PCA
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
+#' sce <- RunPCA(object = sce, assay.name = "joint.probability", p = 10)
+#' 
+#' # Plot result 
+#' cowplot::plot_grid(PlotDimRed(object = sce, color.by = "Batch", 
+#'                               legend.nrow = 1),
+#'                    PlotDimRed(object = sce, color.by = "Species", 
+#'                              legend.nrow = 1), ncol = 2)
+#'
+#' # Plot Elbow
+#' PCAElbowPlot(sce)
+#'
+PCAElbowPlot.SingleCellExperiment <- function(object, dimred.name, return.plot) {
+    
+    df <- matrix(apply(reducedDim(object, dimred.name), 2, sd),
+                 nrow = metadata(object)$coralysis$p,
+                 ncol = 1,
+                 dimnames = list(seq_len(metadata(object)$coralysis$p), "SD"))
+    df <- melt(df)
+    
+    p <- ggplot(df, aes_string(x = 'Var1', y = 'value')) +
+        geom_line(color = "blue") +
+        geom_point(color = "black") +
+        theme_bw() +
+        ylab("Standard Deviation") +
+        xlab("PC")
+    
+    if (return.plot) {
+        return(p)
+    } else {
+        print(p)
+    }
+}
+#' @rdname PCAElbowPlot
+#' @aliases PCAElbowPlot
+setMethod("PCAElbowPlot", signature(object = "SingleCellExperiment"),
+          PCAElbowPlot.SingleCellExperiment)
+
+
 #' @title Heatmap visualization of the expression of features by clusters
 #'
 #' @description The \code{HeatmapFeatures} function draws a heatmap of features 
@@ -29,23 +117,25 @@
 #' @importFrom SingleCellExperiment logcounts
 #' @examples
 #' # Import package
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
 #' 
-#' # Prepare SCE object for analysis
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                             colData = DataFrame("Species" = iris$Species, 
+#'                                                 "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
-#' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+#' # Plot features by clustering, i.e., grouping variable
+#' # without scaling rows (using 'logcounts' expression): 
+#' HeatmapFeatures(object = sce, clustering.label = "Species", 
+#'                 features = row.names(sce)[1:4])
 #' 
-#' # Run PCA 
-#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
-#' 
-#' # Plot features by cell type (give a clustering instead)
-#' genes <- c("CD8A", "CCR7", "GZMA", "MS4A1", "CD27")
-#' HeatmapFeatures(object = pbmc_10Xassays, clustering.label = "cell_type", features = genes) # log-normalized
-#' HeatmapFeatures(object = pbmc_10Xassays, clustering.label = "cell_type", features = genes, scale = "row") # scale genes
+#' # scaling rows: 
+#' HeatmapFeatures(object = sce, clustering.label = "Species", 
+#'                 features = row.names(sce)[1:4], scale = "row") # scale
 #' 
 HeatmapFeatures.SingleCellExperiment <- function(object, clustering.label, features, 
                                                  use.color, seed.color, ...) {
@@ -126,22 +216,21 @@ setMethod("HeatmapFeatures", signature(object = "SingleCellExperiment"),
 #'
 #' @examples
 #' # Import package
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
 #' 
-#' # Prepare SCE object for analysis
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                           colData = DataFrame("Species" = iris$Species, 
+#'                                              "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
-#' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
-#' 
-#' # Run PCA 
-#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
-#' 
-#' # Plot features by cell type (give a clustering instead)
-#' genes <- c("CD8A", "CCR7", "GZMA", "MS4A1", "CD27")
-#' VlnPlot(pbmc_10Xassays, clustering.label = "cell_type", features = genes, rotate.x.axis.labels = TRUE)
+#' # Plot features by clustering/grouping variable
+#' VlnPlot(sce, clustering.label = "Species", 
+#'       features = row.names(sce)[1:4], 
+#'      rotate.x.axis.labels = TRUE)
 #' 
 VlnPlot.SingleCellExperiment <- function(object, clustering.label, features, return.plot, rotate.x.axis.labels) {
     
@@ -239,28 +328,27 @@ setMethod("VlnPlot", signature(object = "SingleCellExperiment"),
 #'
 #' @examples
 #' # Import package
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
 #' 
-#' # Prepare SCE object for analysis
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                          colData = DataFrame("Species" = iris$Species, 
+#'                                              "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
-#' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
-#' 
-#' # Run PCA 
-#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
-#' 
-#' # Run UMAP
-#' set.seed(123)
-#' pbmc_10Xassays <- RunUMAP(pbmc_10Xassays, dimred.type = "PCA")
+#' # Compute dimensional reduction 
+#' sce <- RunPCA(object = sce, assay.name = "logcounts", p = 4, 
+#'             pca.method = "stats")
 #' 
 #' # Plot batch 
-#' PlotDimRed(object = pbmc_10Xassays, color.by = "batch", dimred = "UMAP")
+#' PlotDimRed(object = sce, color.by = "Batch", dimred = "PCA", legend.nrow = 1)
 #' 
 #' # Plot cell type annotations
-#' PlotDimRed(object = pbmc_10Xassays, color.by = "cell_type", legend.nrow = 3, dimred = "UMAP", label = TRUE)
+#' PlotDimRed(object = sce, color.by = "Species", legend.nrow = 1, 
+#'           dimred = "PCA", label = TRUE)
 #' 
 PlotDimRed.SingleCellExperiment <- function(object, color.by, dimred, dims, use.color,  
                                             point.size, point.stroke, legend.nrow, seed.color, 
@@ -300,7 +388,7 @@ PlotDimRed.SingleCellExperiment <- function(object, color.by, dimred, dims, use.
         guides(color = guide_legend(title=legend.title, nrow = legend.nrow, bycol = TRUE, 
                                     override.aes = list(size=2.5)))
     if (label) {
-        p <- p + ggrepel::geom_text_repel(mapping = aes(x = x, y = y, label = label), 
+        p <- p + ggrepel::geom_text_repel(mapping = aes(x = .data[["x"]], y = .data[["y"]], label = .data[["label"]]), 
                                           size = 3.5, nudge_x = .15, box.padding = 0.5,
                                           nudge_y = 1, segment.curvature = -0.1,
                                           segment.ncp = 3, segment.angle = 20, 
@@ -328,6 +416,8 @@ setMethod("PlotDimRed", signature(object = "SingleCellExperiment"),
 #' plot. 
 #' @param dimred Dimensional reduction available in \code{ReducedDimNames(object)}
 #' to plot. By default the last dimensional reduction in the object is used. 
+#' @param scale.values Logical specifying if values should be scaled. By default
+#' \code{FALSE}, i.e., values are not scaled. 
 #' @param color.scale Character of color scale palette to be passed to 
 #' \code{ggplot2::scale_color_viridis_c}. By default \code{inferno}. Other palettes
 #' are also available such as \code{viridis}.  
@@ -349,38 +439,31 @@ setMethod("PlotDimRed", signature(object = "SingleCellExperiment"),
 #'
 #' @examples 
 #' # Import package
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
 #' 
-#' # Prepare SCE object for analysis
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                            colData = DataFrame("Species" = iris$Species, 
+#'                                              "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
-#' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
-#' 
-#' # Run PCA 
-#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
-#' pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
-#' 
-#' # Run UMAP
-#' set.seed(123)
-#' pbmc_10Xassays <- RunUMAP(pbmc_10Xassays, dimred.type = "PCA")
-#' 
-#' # Plot cell cluster probabilities - mean
-#' # possible options: "mean_probs", "median_probs", "scaled_median_probs" 
-#' pbmc_10Xassays <- SummariseCellClusterProbability(object = pbmc_10Xassays, icp.round = 4, scale.funs = TRUE, save.in.sce = TRUE) # save result in 'colData'
-#' PlotExpression(object = pbmc_10Xassays, color.by = "scaled_mean_probs", dimred = "UMAP", color.scale = "viridis", legend.title = "Scaled mean prob.\n(min-max)") 
+#' # Compute dimensional reduction 
+#' sce <- RunPCA(object = sce, assay.name = "logcounts", p = 4, 
+#'            pca.method = "stats")
 #' 
 #' # Plot expression level of one or more features
 #' ## one 
-#' PlotExpression(object = pbmc_10Xassays, color.by = "LGALS2", dimred = "UMAP")
+#' PlotExpression(object = sce, color.by = "Petal.Width")
 #' 
 #' ## more than one
-#' genes <- c("CD8A", "CCR7", "GZMA", "MS4A1", "CD27")
-#' exp.plots <- lapply(X = genes, FUN = function(x) {
-#'     PlotExpression(object = pbmc_10Xassays, color.by = x, dimred = "UMAP", scale.values = TRUE, point.size = 0.25, point.stroke = 0.25)
+#' features <- row.names(sce)[1:4] 
+#' exp.plots <- lapply(X = features, FUN = function(x) {
+#'     PlotExpression(object = sce, color.by = x, scale.values = TRUE)
 #' })
-#' cowplot::plot_grid(plotlist = exp.plots, ncol = 5, align = "vh")
+#' cowplot::plot_grid(plotlist = exp.plots, ncol = 4, align = "vh")
 #' 
 PlotExpression.SingleCellExperiment <- function(object, color.by, dimred, scale.values, color.scale, 
                                                 plot.theme, legend.title, point.size, point.stroke) {
@@ -417,6 +500,7 @@ setMethod("PlotExpression", signature(object = "SingleCellExperiment"),
           PlotExpression.SingleCellExperiment)
 
 
+utils::globalVariables(c("start", "Kannot", "k"))
 #' @title Plot cluster tree 
 #' 
 #' @description Plot cluster tree by or cluster probability or categorical variable.
@@ -449,23 +533,35 @@ setMethod("PlotExpression", signature(object = "SingleCellExperiment"),
 #'
 #' @examples 
 #' # Import package
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
+#' 
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                             colData = DataFrame("Species" = iris$Species, 
+#'                                                 "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
 #' 
 #' # Prepare SCE object for analysis
-#' pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+#' sce <- PrepareData(sce)
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' # Multi-level integration (just for highlighting purposes; use default parameters)
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+#' sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", k = 4, 
+#'                               L = 25, C = 1, d = 0.5, train.with.bnn = FALSE, 
+#'                               use.cluster.seed = FALSE, build.train.set = FALSE, 
+#'                               ari.cutoff = 0.1, threads = 2)
 #' 
 #' # Plot probability
-#' PlotClusterTree(object = pbmc_10Xassays, icp.run = 2)
+#' PlotClusterTree(object = sce, icp.run = 2)
 #' 
 #' # Plot batch label distribution
-#' PlotClusterTree(object = pbmc_10Xassays, icp.run = 2, color.by = "batch")
+#' PlotClusterTree(object = sce, icp.run = 2, color.by = "Batch")
 #' 
-#' # Plot cell type label distribution
-#' PlotClusterTree(object = pbmc_10Xassays, icp.run = 2, color.by = "cell_type")
+#' # Plot species label distribution
+#' PlotClusterTree(object = sce, icp.run = 2, color.by = "Species")
 #' 
 PlotClusterTree.SingleCellExperiment <- function(object, icp.run, color.by, use.color, 
                                                  seed.color, legend.title, return.data) {
@@ -518,18 +614,19 @@ PlotClusterTree.SingleCellExperiment <- function(object, icp.run, color.by, use.
     if (is.null(color.by)) { # if 'color.by' is NULL, plot median cluster probability tree
         group.by <- c("K", "k", "start", "end")
         df <- df %>%
-            group_by(., across(all_of(group.by))) %>% 
-            summarise(., median = median(p), n = n(), .groups = "keep") %>% 
-            ungroup(.) %>% 
-            mutate(., Kannot = factor(paste0("K", 2**(icp.round))[K], levels = rev(paste0("K", 2**(icp.round)))))
-        p <- ggplot(data = df, mapping = aes(x = start, y = Kannot)) +
-            geom_segment(mapping = aes(x = start, xend = start, 
-                                       yend = as.numeric(Kannot)+1, y = Kannot),
+            group_by(across(all_of(group.by))) %>% 
+            summarise(median = stats::median(.data$p), n = n(), .groups = "keep") %>% 
+            ungroup() %>% 
+            mutate(Kannot = factor(paste0("K", 2**(icp.round))[.data$K], 
+                                   levels = rev(paste0("K", 2**(icp.round)))))
+        p <- ggplot(data = df, mapping = aes(x = .data[["start"]], y = .data[["Kannot"]])) +
+            geom_segment(mapping = aes(x = .data$start, xend = .data$start, 
+                                       yend = as.numeric(.data$Kannot)+1, y = .data$Kannot),
                          color = "black") +
-            geom_segment(mapping = aes(x = start, xend = end, 
-                                       y = as.numeric(Kannot)+1, yend = as.numeric(Kannot)+1), 
+            geom_segment(mapping = aes(x = .data$start, xend = .data$end, 
+                                       y = as.numeric(.data$Kannot)+1, yend = as.numeric(.data$Kannot)+1), 
                          color = "black") + 
-            geom_point(mapping = aes(size = n, color = median)) + 
+            geom_point(mapping = aes(size = .data$n, color = .data$median)) + 
             theme_minimal() + 
             theme(panel.grid.minor.x = element_blank(), 
                   panel.grid.major.x = element_blank(), 
@@ -548,11 +645,12 @@ PlotClusterTree.SingleCellExperiment <- function(object, icp.run, color.by, use.
     } else { # plot cluster tree by 'color.by'
         group.by <- c("K", "k", "start", "end", color.by) 
         df <- df %>%
-            group_by(., across(all_of(group.by))) %>% 
-            summarise(., n = n(), .groups = "keep") %>% 
-            ungroup(.) %>% 
-            mutate(., Kannot = factor(paste0("K", 2**(icp.round))[K], levels = rev(paste0("K", 2**(icp.round))))) %>% 
-            tidyr::pivot_wider(., names_from = .data[[color.by]], values_from = n)
+            group_by(across(all_of(group.by))) %>% 
+            summarise(n = n(), .groups = "keep") %>% 
+            ungroup() %>% 
+            mutate(Kannot = factor(paste0("K", 2**(icp.round))[.data$K], 
+                                   levels = rev(paste0("K", 2**(icp.round))))) %>% 
+            tidyr::pivot_wider(names_from = .data[[color.by]], values_from = .data$n)
         df[is.na(df)] <- 0
         object[[color.by]] <- as.factor(object[[color.by]])
         if (is.null(use.color)) {
@@ -563,12 +661,13 @@ PlotClusterTree.SingleCellExperiment <- function(object, icp.run, color.by, use.
             use.color <- sample(color.palette, ngroups)
         }
         p <- ggplot(data = df) +
-            geom_segment(mapping = aes(x = start, xend = start, 
-                                       yend = as.numeric(Kannot)+1, y = Kannot),
+            geom_segment(mapping = aes(x = .data$start, xend = .data$start, 
+                                       yend = as.numeric(.data$Kannot)+1, y = .data$Kannot),
                          color = "black") +
-            geom_segment(mapping = aes(x = start, xend = end, 
-                                       y = as.numeric(Kannot)+1, yend = as.numeric(Kannot)+1), 
+            geom_segment(mapping = aes(x = .data$start, xend = .data$end, 
+                                       y = as.numeric(.data$Kannot)+1, yend = as.numeric(.data$Kannot)+1), 
                          color = "black") + 
+            # scatterpie doest not use tidy evaluations, i.e., .data$ or .data[[]] do not work
             scatterpie::geom_scatterpie(data = df, mapping = aes(x = start, y = as.numeric(Kannot), group = k), 
                                         cols = levels(object[[color.by]])) + 
             coord_equal() + 

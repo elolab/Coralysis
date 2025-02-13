@@ -57,27 +57,42 @@ Summarise ICP cell cluster probability table(s)
 }
 \examples{
 # Import package
-library("SingleCellExperiment")
+suppressPackageStartupMessages(library("SingleCellExperiment"))
+
+# Create toy SCE data
+batches <- c("b1", "b2")
+set.seed(239)
+batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+                            colData = DataFrame("Species" = iris$Species, 
+                                               "Batch" = batch))
+colnames(sce) <- paste0("samp", 1:ncol(sce))
 
 # Prepare SCE object for analysis
-pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+sce <- PrepareData(sce)
 
-# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+# Multi-level integration (just for highlighting purposes; use default parameters)
 set.seed(123)
-pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
-
-# Run PCA 
+sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", 
+                              k = 2, L = 25, C = 1, train.k.nn = 10, 
+                              train.k.nn.prop = NULL, use.cluster.seed = FALSE,
+                              build.train.set = FALSE, ari.cutoff = 0.1, 
+                             threads = 2)
+                             
+# Integrated PCA
 set.seed(125) # to ensure reproducibility for the default 'irlba' method
-pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+sce <- RunPCA(object = sce, assay.name = "joint.probability", p = 10)
 
 # Summarise cluster probability
-pbmc_10Xassays <- SummariseCellClusterProbability(object = pbmc_10Xassays, icp.round = 4, save.in.sce = TRUE) # save result in 'colData'
+sce <- SummariseCellClusterProbability(object = sce, icp.round = 1, 
+                                       save.in.sce = TRUE) # saved in 'colData'
 
 # Plot the clustering result for ICP run no. 3 
-PlotDimRed(object = pbmc_10Xassays, color.by = "icp_run_round_3_4_clusters")
+PlotDimRed(object = sce, color.by = "icp_run_round_3_1_clusters")
 
 # Plot Coralysis mean cell cluster probabilities 
-PlotExpression(object = pbmc_10Xassays, color.by = "mean_probs", color.scale = "viridis")
+PlotExpression(object = sce, color.by = "mean_probs", 
+               color.scale = "viridis")
 
 }
 \keyword{Summarise}

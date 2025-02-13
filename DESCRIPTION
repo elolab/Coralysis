@@ -25,13 +25,8 @@ Imports:
     LiblineaR, 
     SparseM, 
     ggplot2, 
-    cowplot, 
-    RSpectra, 
     umap, 
-    uwot,
     Rtsne, 
-    plyr, 
-    scales, 
     pheatmap, 
     reshape2, 
     dplyr, 
@@ -48,17 +43,35 @@ Imports:
     irlba, 
     flexclust, 
     scran, 
-    class
-Depends: R (>= 4.0.0)
+    class, 
+    matrixStats,
+    tidyr, 
+    cowplot, 
+    uwot,
+    scatterpie,
+    RColorBrewer,
+    ggrastr,
+    ggrepel, 
+    RSpectra
+Depends: 
+    R (>= 4.0.0)
 Encoding: UTF-8
-LazyData: TRUE
 RoxygenNote: 7.3.2
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
-biocViews: SingleCell, Software, Clustering, DimensionReduction, 
-           RNASeq, Visualization, Transcriptomics, 
-           DataRepresentation, DifferentialExpression, Transcription,
-           GeneExpression
+biocViews: 
+    SingleCell, 
+    RNASeq,
+    Proteomics,
+    Transcriptomics,
+    GeneExpression,
+    BatchEffect,
+    Clustering,
+    Annotation,
+    Classification,
+    DifferentialExpression,
+    DimensionReduction,
+    Software
 NeedsCompilation: no
 URL: https://github.com/elolab/Coralysis, https://elolab.github.io/Coralysis/
 BugReports: https://github.com/elolab/Coralysis/issues

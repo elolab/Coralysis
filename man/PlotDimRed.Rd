@@ -91,28 +91,27 @@ Plot categorical variables in dimensional reduction.
 }
 \examples{
 # Import package
-library("SingleCellExperiment")
+suppressPackageStartupMessages(library("SingleCellExperiment"))
 
-# Prepare SCE object for analysis
-pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+# Create toy SCE data
+batches <- c("b1", "b2")
+set.seed(239)
+batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+                         colData = DataFrame("Species" = iris$Species, 
+                                             "Batch" = batch))
+colnames(sce) <- paste0("samp", 1:ncol(sce))
 
-# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
-set.seed(123)
-pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
-
-# Run PCA 
-set.seed(125) # to ensure reproducibility for the default 'irlba' method
-pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
-
-# Run UMAP
-set.seed(123)
-pbmc_10Xassays <- RunUMAP(pbmc_10Xassays, dimred.type = "PCA")
+# Compute dimensional reduction 
+sce <- RunPCA(object = sce, assay.name = "logcounts", p = 4, 
+            pca.method = "stats")
 
 # Plot batch 
-PlotDimRed(object = pbmc_10Xassays, color.by = "batch", dimred = "UMAP")
+PlotDimRed(object = sce, color.by = "Batch", dimred = "PCA", legend.nrow = 1)
 
 # Plot cell type annotations
-PlotDimRed(object = pbmc_10Xassays, color.by = "cell_type", legend.nrow = 3, dimred = "UMAP", label = TRUE)
+PlotDimRed(object = sce, color.by = "Species", legend.nrow = 1, 
+          dimred = "PCA", label = TRUE)
 
 }
 \keyword{Dimensional}

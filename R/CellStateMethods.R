@@ -33,23 +33,31 @@
 #'
 #' @importFrom SingleCellExperiment SingleCellExperiment 
 #' @importFrom S4Vectors metadata
-#' @importFrom SummarizedExperiment colData assay assayNames
+#' @importFrom SummarizedExperiment colData assay assayNames assayNames<-
 #' @importFrom dplyr %>% group_by mutate ntile ungroup distinct
 #'
 #' @examples 
+#' \dontrun{
 #' # Packages
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
+#' 
+#' # Import data from Zenodo
+#' data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+#' sce <- readRDS(file = url(data.url))
 #' 
 #' # Prepare data
-#' pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+#' sce <- PrepareData(object = sce)
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' # Multi-level integration - 'L = 4' just for highlighting purposes
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1)
+#' sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", L = 4, 
+#'                               threads = 2)
 #' 
 #' # Cell states SCE object for a given cell type annotation or clustering
-#' cellstate.sce <- BinCellClusterProbability(object = pbmc_10Xassays, label = "cell_type", icp.round = 4, bins = 20) 
+#' cellstate.sce <- BinCellClusterProbability(object = sce, label = "cell_type", 
+#'                                            icp.round = 4, bins = 20) 
 #' cellstate.sce
+#' }
 #'
 BinCellClusterProbability.SingleCellExperiment <- function(object, label, icp.run, icp.round, 
                                                            funs, bins, aggregate.bins.by, 
@@ -79,12 +87,12 @@ BinCellClusterProbability.SingleCellExperiment <- function(object, label, icp.ru
     # Obtain probability bins by 'label'
     bins.by.label <- data.bins %>% 
         group_by(label) %>% 
-        mutate("probability_bins" = ntile(probability, n = bins)) %>% 
-        mutate("probability_bins" = as.factor(probability_bins)) %>%
-        group_by(label, probability_bins) %>% 
-        mutate("aggregated_probability_bins" = get(aggregate.bins.by)(probability), 
-               "aggregated_label_bins" = paste(label, paste0("bin", probability_bins), sep = "_")) %>% 
-        ungroup(.)
+        mutate("probability_bins" = ntile(.data$probability, n = bins)) %>% 
+        mutate("probability_bins" = as.factor(.data$probability_bins)) %>%
+        group_by(.data$label, .data$probability_bins) %>% 
+        mutate("aggregated_probability_bins" = get(aggregate.bins.by)(.data$probability), 
+               "aggregated_label_bins" = paste(.data$label, paste0("bin", .data$probability_bins), sep = "_")) %>% 
+        ungroup()
     # Feature expression averaged by 'label' x bins
     gexp.bins <- AggregateClusterExpression(mtx = assay(x = object, i = use.assay), 
                                             cluster = bins.by.label$aggregated_label_bins, 
@@ -93,9 +101,9 @@ BinCellClusterProbability.SingleCellExperiment <- function(object, label, icp.ru
     
     # SCE object
     col.data <- bins.by.label[,c("label", "probability_bins", "aggregated_probability_bins", "aggregated_label_bins")] %>% 
-        distinct(.) %>% 
-        as.data.frame(.) %>% 
-        `row.names<-`(.$aggregated_label_bins)
+        distinct() %>% 
+        as.data.frame() %>% 
+        `row.names<-`(.data$aggregated_label_bins)
     col.data <- col.data[colnames(gexp.bins),]
     bins.by.label <- as.data.frame(cbind(colData(object), bins.by.label))
     sce <- SingleCellExperiment(assays = list("exp" = gexp.bins), 
@@ -141,23 +149,32 @@ setMethod("BinCellClusterProbability", signature(object = "SingleCellExperiment"
 #' @importFrom SummarizedExperiment colData
 #'
 #' @examples 
+#' \dontrun{
 #' # Packages
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
+#' 
+#' # Import data from Zenodo
+#' data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+#' sce <- readRDS(file = url(data.url))
 #' 
 #' # Prepare data
-#' pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+#' sce <- PrepareData(object = sce)
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' # Multi-level integration - 'L = 4' just for highlighting purposes
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1)
+#' sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", L = 4, 
+#'                               threads = 2)
 #' 
 #' # Summarise cell cluster probability
-#' pbmc_10Xassays <- SummariseCellClusterProbability(object = pbmc_10Xassays, icp.round = 4) # save result in 'colData'
+#' sce <- SummariseCellClusterProbability(object = sce, icp.round = 4) # saved in 'colData'
 #' 
 #' # Search for differences in probabilities across group(s) 
-#' # give an interesting variable to the "group" parameter instead "batch" - given for illustrative purposes only
-#' prob.dist <- CellClusterProbabilityDistribution(object = pbmc_10Xassays, label = "cell_type", group = "batch", probability = "scaled_mean_probs")
+#' # give an interesting variable to the "group" parameter
+#' prob.dist <- CellClusterProbabilityDistribution(object = sce, label = "cell_type", 
+#'                                                 group = "batch", 
+#'                                                 probability = "scaled_mean_probs")
 #' prob.dist # print plot
+#' }
 #'
 CellClusterProbabilityDistribution.SingleCellExperiment <- function(object, label, group, probability) {
     
@@ -216,23 +233,34 @@ setMethod("CellClusterProbabilityDistribution", signature(object = "SingleCellEx
 #' @importFrom S4Vectors metadata
 #'
 #' @examples 
+#' \dontrun{
 #' # Packages
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
+#' 
+#' # Import data from Zenodo
+#' data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+#' sce <- readRDS(file = url(data.url))
 #' 
 #' # Prepare data
-#' pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+#' sce <- PrepareData(object = sce)
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' # Multi-level integration - 'L = 4' just for highlighting purposes
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1)
+#' sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", L = 4, 
+#'                               threads = 2)
 #' 
 #' # Cell states SCE object for a given cell type annotation or clustering
-#' cellstate.sce <- BinCellClusterProbability(object = pbmc_10Xassays, label = "cell_type", icp.round = 4, bins = 20) 
+#' cellstate.sce <- BinCellClusterProbability(object = sce, label = "cell_type", 
+#'                                            icp.round = 4, bins = 20) 
 #' cellstate.sce
-#'
+#' 
 #' # Tabulate cell bins by group 
-#' # give an interesting variable to the "group" parameter instead "batch" - given for illustrative purposes only
-#' cellbins.tables <- TabulateCellBinsByGroup(object = cellstate.sce, group = "batch", relative = TRUE, margin = 1)
+#' # give an interesting variable to the "group" parameter
+#' cellbins.tables <- TabulateCellBinsByGroup(object = cellstate.sce, 
+#'                                            group = "batch", 
+#'                                            relative = TRUE, 
+#'                                            margin = 1)
+#' }
 #'
 TabulateCellBinsByGroup.SingleCellExperiment <- function(object, group, relative, margin) {
     # Check input
@@ -285,22 +313,31 @@ setMethod("TabulateCellBinsByGroup", signature(object = "SingleCellExperiment"),
 #' @importFrom SingleCellExperiment logcounts
 #'
 #' @examples 
+#' \dontrun{
 #' # Packages
-#' library("SingleCellExperiment")
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
+#' 
+#' # Import data from Zenodo
+#' data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+#' sce <- readRDS(file = url(data.url))
 #' 
 #' # Prepare data
-#' pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+#' sce <- PrepareData(object = sce)
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' # Multi-level integration - 'L = 4' just for highlighting purposes
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1)
+#' sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", L = 4, 
+#'                               threads = 2)
 #' 
 #' # Cell states SCE object for a given cell type annotation or clustering
-#' cellstate.sce <- BinCellClusterProbability(object = pbmc_10Xassays, label = "cell_type", icp.round = 4, bins = 20) 
+#' cellstate.sce <- BinCellClusterProbability(object = sce, label = "cell_type", 
+#'                                            icp.round = 4, bins = 20) 
 #' cellstate.sce
-#'
+#' 
 #' # Pearson correlated features with "Monocyte"
-#' cor.features.mono <- CellBinsFeatureCorrelation(object = cellstate.sce, labels = "Monocyte")
+#' cor.features.mono <- CellBinsFeatureCorrelation(object = cellstate.sce, 
+#'                                                 labels = "Monocyte")
+#' }
 #'
 CellBinsFeatureCorrelation.SingleCellExperiment <- function(object, labels, method) {
     
@@ -335,7 +372,7 @@ CellBinsFeatureCorrelation.SingleCellExperiment <- function(object, labels, meth
         avg.feature.exp <- logcounts(object[,label.bins])
         avg.feature.exp <- avg.feature.exp[ rowSums(avg.feature.exp>0)>0, ] # remove non-expressed features
         cor.feature.cell.bins <- apply(X = avg.feature.exp, MARGIN = 1, FUN = function(x) {
-            cor(x = x, y = prop.bins, method = method)
+            stats::cor(x = x, y = prop.bins, method = method)
         })
         cor.features[names(cor.feature.cell.bins), label] <- cor.feature.cell.bins
     }

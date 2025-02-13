@@ -30,22 +30,31 @@ across labels (columns).
 Correlation between cell bins for the given labels and features.
 }
 \examples{
+\dontrun{
 # Packages
-library("SingleCellExperiment")
+suppressPackageStartupMessages(library("SingleCellExperiment"))
+
+# Import data from Zenodo
+data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+sce <- readRDS(file = url(data.url))
 
 # Prepare data
-pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+sce <- PrepareData(object = sce)
 
-# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+# Multi-level integration - 'L = 4' just for highlighting purposes
 set.seed(123)
-pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1)
+sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", L = 4, 
+                              threads = 2)
 
 # Cell states SCE object for a given cell type annotation or clustering
-cellstate.sce <- BinCellClusterProbability(object = pbmc_10Xassays, label = "cell_type", icp.round = 4, bins = 20) 
+cellstate.sce <- BinCellClusterProbability(object = sce, label = "cell_type", 
+                                           icp.round = 4, bins = 20) 
 cellstate.sce
 
 # Pearson correlated features with "Monocyte"
-cor.features.mono <- CellBinsFeatureCorrelation(object = cellstate.sce, labels = "Monocyte")
+cor.features.mono <- CellBinsFeatureCorrelation(object = cellstate.sce, 
+                                                labels = "Monocyte")
+}
 
 }
 \keyword{Cell}

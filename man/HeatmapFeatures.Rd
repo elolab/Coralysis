@@ -54,23 +54,25 @@ by cluster identity.
 }
 \examples{
 # Import package
-library("SingleCellExperiment")
+suppressPackageStartupMessages(library("SingleCellExperiment"))
 
-# Prepare SCE object for analysis
-pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+# Create toy SCE data
+batches <- c("b1", "b2")
+set.seed(239)
+batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+                            colData = DataFrame("Species" = iris$Species, 
+                                                "Batch" = batch))
+colnames(sce) <- paste0("samp", 1:ncol(sce))
 
-# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
-set.seed(123)
-pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+# Plot features by clustering, i.e., grouping variable
+# without scaling rows (using 'logcounts' expression): 
+HeatmapFeatures(object = sce, clustering.label = "Species", 
+                features = row.names(sce)[1:4])
 
-# Run PCA 
-set.seed(125) # to ensure reproducibility for the default 'irlba' method
-pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
-
-# Plot features by cell type (give a clustering instead)
-genes <- c("CD8A", "CCR7", "GZMA", "MS4A1", "CD27")
-HeatmapFeatures(object = pbmc_10Xassays, clustering.label = "cell_type", features = genes) # log-normalized
-HeatmapFeatures(object = pbmc_10Xassays, clustering.label = "cell_type", features = genes, scale = "row") # scale genes
+# scaling rows: 
+HeatmapFeatures(object = sce, clustering.label = "Species", 
+                features = row.names(sce)[1:4], scale = "row") # scale
 
 }
 \keyword{feature}

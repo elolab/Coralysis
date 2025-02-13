@@ -114,20 +114,39 @@
 #' @importFrom methods is
 #' 
 #' @examples
-#' # Packages
-#' library("SingleCellExperiment")
+#' # Import package
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
 #' 
-#' # Prepare data
-#' pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                             colData = DataFrame("Species" = iris$Species, 
+#'                                                "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
 #' 
-#' # Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+#' # Prepare SCE object for analysis
+#' sce <- PrepareData(sce)
+#' 
+#' # Multi-level integration (just for highlighting purposes; use default parameters)
 #' set.seed(123)
-#' pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
-#'
+#' sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", 
+#'                               k = 2, L = 25, C = 1, train.k.nn = 10, 
+#'                               train.k.nn.prop = NULL, use.cluster.seed = FALSE,
+#'                               build.train.set = FALSE, ari.cutoff = 0.1, 
+#'                               threads = 2)
+#' 
 #' # Integrated PCA
-#' set.seed(125)
-#' pbmc_10Xassays <- RunPCA(object = pbmc_10Xassays, p = 10)
-#'
+#' set.seed(125) # to ensure reproducibility for the default 'irlba' method
+#' sce <- RunPCA(object = sce, assay.name = "joint.probability", p = 10)
+#' 
+#' # Plot result 
+#' cowplot::plot_grid(PlotDimRed(object = sce, color.by = "Batch", 
+#'                               legend.nrow = 1),
+#'                    PlotDimRed(object = sce, color.by = "Species", 
+#'                               legend.nrow = 1), ncol = 2)
+#'                    
 RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label, 
                                                         k, d, L, r, C,
                                                         reg.type, max.iter,
@@ -378,8 +397,10 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
                        .inorder = TRUE,
                        .multicombine = TRUE,
                        .packages=c("Coralysis", "parallel"),
+                       .noexport = "task",
                        .options.snow = opts)  %dorng% {
                            tryCatch(expr = {
+                               task <- task
                                message(paste0("\nICP run: ", task))
                                RunDivisiveICP(normalized.data = dataset, batch.label = batch.label, 
                                               k = k, d = d, r = r, C = C, reg.type = reg.type, 
@@ -482,18 +503,27 @@ setMethod("RunParallelDivisiveICP", signature(object = "SingleCellExperiment"),
 #' @importFrom scran getTopHVGs
 #' @importFrom irlba prcomp_irlba
 #' 
-#' @examples 
+#' @examples
+#' \dontrun{
+#' # Import package
+#' suppressPackageStartupMessages(library("SingleCellExperiment"))
+#' 
+#' # Import data from Zenodo
+#' data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+#' sce <- readRDS(file = url(data.url))
+#' 
 #' # Run with a batch
 #' set.seed(1204)
-#' sce <- AggregateDataByBatch(object = pbmc_10Xassays, batch.label = "batch")
+#' sce <- AggregateDataByBatch(object = sce, batch.label = "batch")
 #' logcounts(sce)[1:10,1:10]
 #' head(metadata(sce)$clusters)
 #' 
 #' # Run without a batch
 #' set.seed(1204)
-#' sce <- AggregateDataByBatch(object = pbmc_10Xassays, batch.label = NULL)
+#' sce <- AggregateDataByBatch(object = sce, batch.label = NULL)
 #' logcounts(sce)[1:10,1:10]
 #' head(metadata(sce)$clusters)
+#' } 
 #' 
 AggregateDataByBatch.SingleCellExperiment <- function(object, batch.label, 
                                                       nhvg, p, ...) {

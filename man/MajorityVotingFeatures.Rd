@@ -24,25 +24,29 @@ A list of with a list of data frames with feature weights per label and a data f
 Get ICP feature coefficients for a label of interest by majority voting label across ICP clusters.
 }
 \examples{
+\dontrun{
 # Import package
-library("SingleCellExperiment")
+suppressPackageStartupMessages(library("SingleCellExperiment"))
 
-# Prepare SCE object for analysis
-pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+# Import data from Zenodo
+data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+sce <- readRDS(file = url(data.url))
 
-# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+# Multi-level integration (just for highlighting purposes; use default parameters)
 set.seed(123)
-pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
+sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", 
+                              k = 4, L = 10, C = 1, d = 0.5, 
+                              train.with.bnn = FALSE, use.cluster.seed = FALSE,
+                              build.train.set = FALSE, ari.cutoff = 0.1, 
+                              threads = 2)
 
-# Run PCA 
-set.seed(125) # to ensure reproducibility for the default 'irlba' method
-pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
-
-# Get gene coefficients by majority voting for a given clustering or cell type annotations
-gene_coeff <- MajorityVotingFeatures(object = pbmc_10Xassays, label = "cell_type")
+# Get coefficients by majority voting for a given categorical variable
+coeff <- MajorityVotingFeatures(object = sce, label = "cell_type")
 gene_coeff$summary
-head(gene_coeff$feature_coeff$Monocyte[order(gene_coeff$feature_coeff$Monocyte$coeff_clt4, decreasing = TRUE), ], n = 15)
-PlotExpression(object = pbmc_10Xassays, color.by = "LGALS2")
+order.rows <- order(coeff$feature_coeff$Monocyte$coeff_clt2, 
+                    decreasing = TRUE)
+head(coeff$feature_coeff$Monocyte[order.rows,], n = 10)
+}
 
 }
 \keyword{Majority}

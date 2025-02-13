@@ -33,23 +33,27 @@ A list of feature coefficient weights per cluster per ICP run/round.
 Get feature coefficients from ICP models.
 }
 \examples{
+\dontrun{
 # Import package
-library("SingleCellExperiment")
+suppressPackageStartupMessages(library("SingleCellExperiment"))
 
-# Prepare SCE object for analysis
-pbmc_10Xassays <- PrepareData(pbmc_10Xassays)
+# Import data from Zenodo
+data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+sce <- readRDS(file = url(data.url))
 
-# Multi-level integration - 'L = 4' just for highlighting purposes; use 'L=50' or greater
+# Multi-level integration (just for highlighting purposes; use default parameters)
 set.seed(123)
-pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 4, threads = 1) 
-
-# Run PCA 
-set.seed(125) # to ensure reproducibility for the default 'irlba' method
-pbmc_10Xassays <- RunPCA(pbmc_10Xassays, p = 10)
+sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", 
+                              k = 4, L = 10, C = 1, d = 0.5, 
+                              train.with.bnn = FALSE, use.cluster.seed = FALSE,
+                              build.train.set = FALSE, ari.cutoff = 0.1, 
+                              threads = 2)
 
 # GetFeatureCoefficients
-gene_coefficients_icp_2_4 <- GetFeatureCoefficients(object = pbmc_10Xassays, icp.run = 2, icp.round = 4)
+gene_coefficients_icp_2_4 <- GetFeatureCoefficients(object = sce, 
+                                                    icp.run = 2, icp.round = 4)
 head(gene_coefficients_icp_2_4$icp_8)
+}
 
 }
 \keyword{Feature}
