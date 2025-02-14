@@ -1,0 +1,643 @@
+---
+title: "Cell states"
+date: "Compiled: `r format(Sys.Date(), '%d/%m/%Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Cell States}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Dataset
+
+<br>
+
+The single-cell RNA sequencing dataset of peripheral blood mononuclear cells (PBMCs) from healthy versus COVID-19 infected donors published by [Wilk et al., (2020)](https://www.nature.com/articles/s41591-020-0944-y) will be used to demonstrated how cell cluster probability can be used to identify perturbed cell states and associated differential gene expression programs. In addition to the original cell type annotations, the object provided contains the cell type annotations given by [Välikangas et al., 2022](https://www.frontiersin.org/journals/genetics/articles/10.3389/fgene.2022.929887/full).
+
+The original dataset has been downsampled to 21K cells (1.5K cells per sample; from 44,721 cells) to increase the speed and reduce the computational resources required to run this vignette. To facilitate the reproduction of this vignette, the data is distributed through _Zenodo_ as a `SingleCellExperiment` object, the object (class) required by most functions in `Coralysis` (see [Chapter 4 The SingleCellExperiment class - OSCA manual](https://bioconductor.org/books/3.13/OSCA.intro/the-singlecellexperiment-class.html))
+
+```{r packages, message=FALSE, warning=FALSE}
+# Install packages 
+if (! "scater" %in% installed.packages()) pak::pkg_install("scater")
+if (! "ComplexHeatmap" %in% installed.packages()) pak::pkg_install("ComplexHeatmap")
+
+# Import packages
+library("dplyr")
+library("scater")
+library("ggplot2")
+library("Coralysis")
+library("SingleCellExperiment")
+```
+
+```{r echo=FALSE}
+# Import object already processed 
+data.url <- "https://zenodo.org/records/14871436/files/covid_Wilk_et_al.rds?download=1"
+sce <- readRDS(file = url(data.url))
+```
+
+```{r data, eval = FALSE, message=FALSE, warning=FALSE}
+# Import data 
+data.url <- "https://zenodo.org/records/14845751/files/covid_Wilk_et_al.rds?download=1"
+sce <- readRDS(file = url(data.url))
+
+# Downsample every sample to 1.5K cells: 21K cells in total
+cells.by.donor <- split(x = colnames(sce), f = sce$Donor_full)
+ncells <- 1.5e3
+set.seed(123)
+down.cells <- lapply(X = cells.by.donor, FUN = function(x) {
+    sample(x = x, size = ncells, replace = FALSE)
+})
+down.cells <- unlist(down.cells)
+sce <- sce[,down.cells]
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Normalization
+
+<br>
+
+`Coralysis` requires log-normalised data as input. The dataset above has been previously normalised with the basic log-normalisation method in `Seurat`. Below is a simple custom function that can be used to perform `Seurat` (see [NormalizeData](https://satijalab.org/seurat/reference/normalizedata)). 
+
+```{r Seurat normalisation, eval=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
+## Normalize the data
+# log1p normalization
+SeuratNormalisation <- function(object) {
+  # 'SeuratNormalisation()' function applies the basic Seurat normalization to
+  #a SingleCellExperiment object with a 'counts' assay. Normalized data
+  #is saved in the 'logcounts' assay.
+  logcounts(object) <- apply(counts(object), 2, function(x) {
+    log1p(x/sum(x)*10000)
+  }) # log1p normalization w/ 10K scaling factor
+  logcounts(object) <- as(logcounts(object), "sparseMatrix")
+  return(object)
+}
+sce <- SeuratNormalisation(object = sce)
+```
+
+In alternative, `scran` normalization can be performed, which is particularly beneficial if rare cell types exist (see the following [vignette](https://bioconductor.org/packages/devel/bioc/vignettes/scran/inst/doc/scran.html)). 
+
+```{r scran normalisation, echo=TRUE, eval=FALSE}
+## scran normalisation
+ScranNormalisation <- function(object) {
+    norm_clusters <- scran::quickCluster(object)
+    object <- scran::computeSumFactors(object, clusters = norm_clusters)
+    object <- scater::logNormCounts(object)
+    return(object)
+}
+
+# Split object by batch: 'Donor_full'
+batch.levels <- levels(sce$Donor_full)
+names(batch.levels) <- batch.levels
+sce.list <- lapply(batch.levels, function(x) sce[,sce$Donor_full == x])
+
+# Apply normalisation
+set.seed(123)
+sce.list <- lapply(sce.list, ScranNormalisation)
+
+# Join 
+sce <- do.call(cbind, sce.list)
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## HVG selection
+
+<br>
+
+Highly variable genes (HVG) can be selected using the R package `scran`. The variable `Donor_full` from `colData` is used as batch label. The `SingleCellExperiment` object can comprise alternative experiments. The main experiment was called `raw` and, the alternative with HVG, `hvg`. This is important to keep a backup of all genes in the same `SingleCellExperiment` object before selecting HVGs (see [SingleCellExperiment vignette](https://www.bioconductor.org/packages/devel/bioc/vignettes/SingleCellExperiment/inst/doc/intro.html)).      
+
+```{r hvg, eval=FALSE}
+# Feature selection with 'scran' package
+nhvg <- 2000
+batch.label <- "Donor_full"
+sce[[batch.label]] <- factor(sce[[batch.label]])
+m.hvg <- scran::modelGeneVar(sce, block=sce[[batch.label]])
+hvg.ordered <- order(m.hvg[["bio"]], decreasing=TRUE)
+top.hvg <- row.names(sce)[hvg.ordered[1:nhvg]]
+rowData(sce) <- cbind("highly_variable" = row.names(sce) %in% top.hvg, m.hvg)
+
+# Subset object 
+sce <- sce[top.hvg,]
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## DimRed: pre-integration
+
+<br>
+
+A PCA and UMAP representation of dataset before performing integration can be obtained with `Coralysis`. Several parameters can be provided to the functions in order to adjust the analyses to the dataset (see `?Coralysis::RunPCA()` and `?Coralysis::RunUMAP`). 
+
+```{r unintegrated dimred, eval=FALSE}
+# Dimensional reduction - unintegrated
+set.seed(123)
+sce <- RunPCA(object = sce, assay.name = "logcounts", dimred.name = "unintPCA")
+set.seed(123)
+sce <- RunUMAP(object = sce, dims = 1:30, dimred.type = "unintPCA", 
+               umap.method = "uwot", dimred.name = "unintUMAP", 
+               n_neighbors = 15, min_dist = 0.3)
+```
+
+```{r plot unintegrated dimred, fig.width=10.5, fig.height=5.5}
+# Plotting 
+batch.label <- "Donor_full"
+original.cell.label <- "cell_type"
+cell.label <- "predicted_celltype_l2"
+vars2plot <- c(batch.label, original.cell.label, cell.label)
+names(vars2plot) <- vars2plot
+unint.plts <- lapply(X = vars2plot, FUN = function(x) {
+    PlotDimRed(object = sce, color.by = x, dimred = "unintUMAP", point.size = 0.2, 
+               legend.nrow = 10, point.stroke = 0.1)
+}) # plot each variable
+all.unint.plts <- cowplot::plot_grid(plotlist = unint.plts, ncol = 3, align = "vh") # join plots together
+all.unint.plts
+```
+
+It is clear the donor effect, particularly for some cell types, such as CD14 monocytes and CD8 memory T cells.
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Multi-level integration
+
+<br>
+
+Multi-level integration can be performed with `Coralysis` by running the function `RunParallelDivisiveICP()`. Only the `batch.label` parameter is required. The `batch.label` corresponds to a variable in `colData`. In this case `Donor_full`. The `RunParallelDivisiveICP()` function can be run in parallel by providing the number of `threads` to reduce the run time (it takes around 25 min. with ICP batch size 1K cells and 4 threads). Consult the full documentation of this function with `?RunParallelDivisiveICP`.  
+
+```{r multi-level integration, eval = FALSE, message=FALSE, warning=FALSE}
+# Perform multi-level integration
+set.seed(123)
+sce <- RunParallelDivisiveICP(object = sce, batch.label = "Donor_full", 
+                              icp.batch.size = 1000, threads = 4)
+```
+
+`Coralysis` returns a list of cell cluster probabilities saved at `metadata(sce)$coralysis$joint.probability` of length equal to the number of icp runs, i.e., `L` (by default `L=50`), times the number of icp rounds, i.e., log2(`k`) (by default `k=16`, thus 4 rounds of divisive icp). 
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## ICP clusters
+
+<br>
+
+The cell cluster probability for a given icp run through its divisive rounds can be plotted with the function `PlotClusterTree()`. A `colData` variable can be provided to see its composition per cluster across divisive rounds for the respective icp run. See examples below for icp run number 16.  
+
+```{r multi-level probability, fig.width=14, fig.height=8}
+## Plot cluster tree for icp run 16
+# Probability
+prob.cluster.tree <- PlotClusterTree(object = sce, icp.run = 16)
+
+# batch label distribution
+batch.cluster.tree <- PlotClusterTree(object = sce, icp.run = 16, color.by = "Donor_full")
+
+# original cell type label distribution
+orig.cell.cluster.tree <- PlotClusterTree(object = sce, icp.run = 16, color.by = "cell_type")
+
+# Azimuth/predicted cell type label distribution
+cell.cluster.tree <- PlotClusterTree(object = sce, icp.run = 16, color.by = "predicted_celltype_l2")
+
+# Join all plots with 'cowplot'
+all.cluster.tree <- cowplot::plot_grid(cowplot::plot_grid(prob.cluster.tree, batch.cluster.tree, 
+                                                          ncol = 2, rel_widths = c(0.5, 0.5), align = "v"), 
+                                       cowplot::plot_grid(orig.cell.cluster.tree, cell.cluster.tree, 
+                                                          ncol = 2, rel_widths = c(0.5, 0.5), align = "vh"),
+                                       ncol = 1)
+all.cluster.tree
+```
+
+Some cell types formed unique clusters, but quite few remained mixed. Multi-level integration resolution might get better by running `RunParallelDivisiveICP()` with 32 cluster, i.e., `k = 32`, instead 16. 
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## DimRed: after integration
+
+<br>
+
+`Coralysis` returns a list of cell cluster probabilities saved at `metadata(sce)$coralysis$joint.probability` of length equal to the number of icp runs, i.e., `L` (by default `L=50`), times the number of icp rounds, i.e., log2(`k`) (by default `k=16`, thus 4 rounds of divisive icp). The cell cluster probability can be concatenated to compute a PCA in order to obtain an integrated embedded. By default only the cell cluster probability corresponding to the last icp round is used. The `Coralysis` integrated embedding can be used downstream for non-linear dimensional reduction, _t_-SNE or UMAP, and clustering. 
+
+```{r integrated dimred, eval = FALSE}
+# Dimensional reduction - unintegrated
+set.seed(123)
+sce <- RunPCA(object = sce, assay.name = "joint.probability", dimred.name = "intPCA")
+
+# UMAP
+set.seed(123)
+sce <- RunUMAP(object = sce, dimred.type = "intPCA", 
+               umap.method = "uwot", dimred.name = "intUMAP", 
+               dims = 1:30, n_neighbors = 15, min_dist = 0.3)
+```
+
+```{r integrated plots, fig.width=10.5, fig.height=5.5}
+# Plotting 
+int.plts <- lapply(X = vars2plot, FUN = function(x) {
+    PlotDimRed(object = sce, color.by = x, dimred = "intUMAP", point.size = 0.2, legend.nrow = 10, point.stroke = 0.1)
+}) # plot each variable
+all.int.plts <- cowplot::plot_grid(plotlist = int.plts, ncol = 3, align = "vh") # join plots together
+all.int.plts
+```
+
+`Coralysis` efficiently integrated the donor PBMC samples, identified small populations (e.g., neutrophils, Treg, MAIT, dnT, NK CD56bright), and differentiation trajectories (e.g., B naive to memory).
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Graph-based clustering
+
+<br>
+
+Graph-based clustering can be obtained by running the `scran` function `clusterCells()` using the `Coralysis` integrated embedding. In alternative, the joint cluster probabilities can be used for clustering. The advantages of using the integrated embedding instead joint probabilities are: computational efficiency; and, noise robustness. Using the joint probabilities instead PCA embedding takes considerably more time.    
+
+```{r graph-based clustering, eval = FALSE}
+### Graph-based clustering with scran
+## Coralysis integrated PCA embedding 
+reducedDim(sce, "cltPCA") <- reducedDim(sce, "intPCA")[,1:30]
+set.seed(1024)
+sce$emb_clusters <- scran::clusterCells(sce, use.dimred = "cltPCA", 
+                                        BLUSPARAM = bluster::SNNGraphParam(k = 15, cluster.fun = "louvain"))
+
+## Coralysis joint cluster probabilities
+# retrieve ICP cell cluster probability tables for every icp run, but only for the last divisive round
+probs <- GetCellClusterProbability(object = sce, icp.round = 4) 
+# dim(probs) # 21K cells x 800 clusters (16 clusters x 50 icp runs = 800 clusters) 
+probs <- t(probs)
+colnames(probs) <- colnames(sce)
+prob.sce <- SingleCellExperiment(assays = list("probability" = probs))
+set.seed(1024)
+sce$prob_clusters <- scran::clusterCells(prob.sce, 
+                                         assay.type = "probability",
+                                         BLUSPARAM = bluster::SNNGraphParam(k = 15, cluster.fun = "louvain"))
+```
+
+```{r clustering plot, fig.width=10.5, fig.height=5.5}
+# Plotting
+vars2plot2 <- c(cell.label, "emb_clusters", "prob_clusters")
+names(vars2plot2) <- vars2plot2
+clts.plts <- lapply(X = vars2plot2, FUN = function(x) {
+    PlotDimRed(object = sce, dimred = "intUMAP", color.by = x, point.size = 0.2, legend.nrow = 10, point.stroke = 0.1)
+}) # plot each variable
+all.clts.plts <- cowplot::plot_grid(plotlist = clts.plts, ncol = 3, align = "vh") # join plots together
+all.clts.plts
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Cell state identification
+
+<br>
+
+The cell cluster probability aggregated by mean or median across the icp runs can be obtained with the function `SummariseCellClusterProbability()` and plotted to infer transient and steady cell states. 
+
+```{r cell state identification, eval = FALSE}
+# Summarise cell cluster probability
+sce <- SummariseCellClusterProbability(object = sce, icp.round = 4) # save result in 'colData'
+# colData(sce) # check the colData
+```
+
+```{r plot probability, fig.width=5, fig.height=4}
+# Plot cell cluster probabilities - mean
+# possible options: "mean_probs", "median_probs", "scaled_median_probs" 
+PlotExpression(object = sce, color.by = "scaled_mean_probs", dimred = "intUMAP", color.scale = "viridis", 
+               point.size = 0.2, point.stroke = 0.1, legend.title = "Mean prob.\n(min-max)") 
+```
+
+For instance, B cell states (naive, intermediate, memory) are not well supported by `Coralysis` cell cluster probability, probably because it would require to run `Coralysis` at higher resolution, i.e., `k=32` instead `k=16`. 
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Gene coefficients
+
+<br>
+
+Gene coefficients can be obtained for a given cell label through majority voting with the function `MajorityVotingFeatures()`. The majority voting is performed by searching for the most representative cluster for a given cell label across all possible clusters (i.e., across all icp runs and rounds). The most representative cluster corresponds to the cluster with the highest majority voting score. This corresponds to the geometric mean between the proportion of cells from the given label intersected with a cluster and the proportion of cells from that same cluster that intersected with the cells from the given label. The higher the score the better. A cluster that scores 1 indicates that all its cells correspond to the assigned label, and vice versa; i.e., all the cells with the assigned label belong to this cluster. For example, `MajorityVotingFeatures()` by providing the `colData` variable `"emb_clusters"`(i.e., `label="emb_clusters"`).
+
+```{r gene coefficients - label, warning=FALSE}
+# Get label gene coefficients by majority voting
+clts.gene.coeff <- MajorityVotingFeatures(object = sce, label = "emb_clusters")
+```
+
+The function `MajorityVotingFeatures()` returns a list with two elements: 
+
+   + `feature_coeff`: a list of data frames comprising the gene coefficients and respective weights. 
+   
+   + `summary`: a data frame summarizing which ICP cluster best represents each cell label, along with the respective majority voting score.
+
+```{r show summary}
+# Print cluster gene coefficients summary
+clts.gene.coeff$summary
+```
+
+<br>
+
+<br>
+
+### Unique marker: _PRSS23_
+
+<br>
+
+One of the strengths of `Coralyis` consist of finding unique cluster markers as it was the case for cluster 2. 
+
+```{r show gene coefficients}
+# Print top 30 positive gene coefficients for cluster 2: NK + CD8 TEM 
+head(clts.gene.coeff$feature_coeff$`2`[order(clts.gene.coeff$feature_coeff$`2`[,2], decreasing = TRUE),], 30)
+```
+
+<br>
+
+```{r plot PRSS23, fig.width=5, fig.height=4}
+# Plot the expression of PRSS23
+PlotExpression(sce, color.by = "PRSS23", dimred = "intUMAP", point.size = 0.5, point.stroke = 0.5)
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Cluster markers 
+
+<br>
+
+### CD14 Mono: 1 vs 5
+
+<br>
+
+`Coralysis` identified three main clusters of CD14 monocytes: 1 (2,028 cells), 5 (1,651), and 9 (935) (considering the Louvain clustering obtained with the integrated embedding). The clusters 1 was compared against 5 below. 
+
+```{r cluster gene coefficients: 1 vs 5, fig.width=16, fig.height=4}
+# Cluster gene coefficients: 1 versus 8
+clt1 <- clts.gene.coeff$feature_coeff$`1`
+clt1 <- clt1[order(clt1[,2], decreasing = TRUE),]
+clt5 <- clts.gene.coeff$feature_coeff$`5`
+clt5 <- clt5[order(clt5[,2], decreasing = TRUE),]
+
+# Merge cluster coefficients
+clt1vs5 <- merge(clt1, clt5, all = TRUE)
+clt1vs5[is.na(clt1vs5)] <- 0
+clt1vs5.parsed <- clt1vs5 %>% 
+    mutate("coeff_variation" = abs(coeff_clt7 - coeff_clt8)) %>% 
+    arrange(desc(coeff_variation)) %>% 
+    filter(coeff_clt7!=0 & coeff_clt8!=0) %>% 
+    filter((coeff_clt7 * coeff_clt8)<0)
+top5.clt1 <- clt1vs5.parsed  %>% 
+    arrange(desc(coeff_clt8)) %>%
+    pull(feature) %>% head(5)
+top5.clt5 <- clt1vs5.parsed %>% 
+    arrange(desc(coeff_clt7)) %>% 
+    pull(feature) %>% head(5)
+
+# Top 5 positive coefficients in each cluster
+top5.genes <- c(top5.clt1, top5.clt5)
+names(top5.genes) <- top5.genes
+
+# Plot
+top5.gexp.mono.clts.plts <- lapply(X = top5.genes, FUN = function(x) {
+    PlotExpression(object = sce, color.by = x, dimred = "intUMAP", 
+                   scale.values = TRUE, point.size = 0.25, point.stroke = 0.25)
+})
+all.top5.gexp.mono.clts.plts <- cowplot::plot_grid(plotlist = top5.gexp.mono.clts.plts, ncol = 5, align = "vh")
+all.top5.gexp.mono.clts.plts
+```
+
+<br>
+
+The expression level of CYP1B1 in cluster 1 is slightly higher in COVID-19 infected donor cells than healthy donors, particularly, for ventilated versus healthy donors.  
+
+```{r violin plot: CYP1B1, fig.width=3, fig.height=2}
+scater::plotExpression(object = sce[,sce$emb_clusters=="1"], features = "CYP1B1", 
+                       color_by = "Ventilated", x = "Ventilated")
+```
+
+<br>
+
+The previous plots suggest that clusters 1 and 5 are phenotypically different. In addition, low expression of HLA-DR (HLA-DRA, HLA-DRB1) genes has been associated with severe inflammatory conditions like COVID-19 (see plots below) as well as high expression of S100A9. These results suggest that cluster 1 corresponds to strongly activated or possibly dysregulated monocytes, which are more common in severe COVID-19 than in cluster 5. Indeed, 40% the cells in cluster 1 are from COVID-19 infected donors that required ventilation, whereas this percentage was around to 25% for cluster 5.   
+
+```{r plot HLA-DR genes, fig.width=8, fig.height=3.25}
+genes2plot <- c("HLA-DRA", "HLA-DRB1")
+gexp.hla.plots <- lapply(genes2plot, function(x) {
+    PlotExpression(object = sce, color.by = x, dimred = "intUMAP",  
+                   scale.values = TRUE, point.size = 0.25, point.stroke = 0.25)
+})
+cowplot::plot_grid(plotlist = gexp.hla.plots, ncol = 2, align = "vh")
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Perturbed cell states
+
+<br>
+
+### CD16 Monocytes
+
+<br>
+
+The cell cluster probability can be used to search for altered cell states, e.g., associated with COVID-19. The distribution of cell cluster probability per cluster (integrated embedding) per `ventilated` group is shown below after running the function `CellClusterProbabilityDistribution()`. Cluster 14, roughly corresponding to CD16 monocytes, shows a difference between healthy and COVID associated cells (non-ventilated and ventilated donor cells).  
+
+```{r disease-associated cell states, fig.width=20, fig.height=3}
+## Disease associated cell state 
+# Search for diseased affected cell states
+prob.dist <- CellClusterProbabilityDistribution(object = sce, 
+                                                label = "emb_clusters", 
+                                                group = "Ventilated", 
+                                                probability = "scaled_mean_probs")
+prob.dist
+```
+
+<br>
+
+Cell cluster probability bins per cluster `label` can be obtained by running `BinCellClusterProbability()`, which returns a `SingleCellExperiment` object with `logcounts` average per `label` per cell probability bin. The number of probability bins can be provided to the parameter `bins`. The cell frequency per cell bin per group of interest can be obtained with the function `TabulateCellBinsByGroup()`. The heatmap below shows the cell frequency across ventilated groups per bins for cluster 14 (corresponding to CD16 monocytes). The cell frequency represented below corresponds to the cell proportions per group (healthy, non-ventilated and ventilated) scaled by bins, i.e., columns. Cell states with higher probabilities tend to be more "healthier" than states with lower probabilities. 
+
+```{r tabulate cell bins by group, fig.width=5, fig.height=2.5}
+# cell states SCE object 
+cellstate.sce <- BinCellClusterProbability(object = sce, label = "emb_clusters", icp.round = 4, bins = 20) 
+
+# Tabulate cell bins by group 
+cellbins.tables <- TabulateCellBinsByGroup(object = cellstate.sce, group = "Ventilated", relative = TRUE, margin = 1)
+
+# Heatmap of cell bins distribution by group for cluster 20 - CD16 Monocytes
+cluster <- "14"
+col.fun <- circlize::colorRamp2(c(-1.5, 0, 1.5), viridis::inferno(3))
+heat.plot <- ComplexHeatmap::Heatmap(matrix = scale(cellbins.tables[[cluster]]), 
+                                     name = "Col. Z-score", 
+                                     cluster_rows = FALSE, 
+                                     cluster_columns = FALSE, 
+                                     row_names_side = "left", 
+                                     col = col.fun, 
+                                     column_title = "Distribution of cells per cell cluster probability bin", 
+                                     heatmap_legend_param = list(legend_direction = "horizontal", 
+                                                                 title_position = "topcenter"))
+ComplexHeatmap::draw(heat.plot, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+```
+
+The correlation between cell cluster probability bins from cluster 18 and averaged gene expression can be obtained with the function `CellBinsFeatureCorrelation()`. Among the several positively and negatively correlated genes, the expression of C1QB seems to be enriched in diseased cells, with a negative Pearson coefficient close to 0.7. This gene was selected as an example due to its expression being relatively limited to cluster 14. 
+
+<br>
+
+```{r differential expression programs, fig.width=4, fig.height=3}
+# Pearson correlated features with cluster 24
+cor.features.clt14 <- CellBinsFeatureCorrelation(object = cellstate.sce, labels = cluster)
+cor.features.clt14 <- cor.features.clt14 %>%
+    filter(!is.na(`14`)) %>% 
+    arrange(`14`) # C1QB
+exp.C1QB.umap <- PlotExpression(sce, color.by = "C1QB", dimred = "intUMAP", 
+                                scale.values = TRUE, point.size = 0.75, point.stroke = 0.25)
+exp.C1QB.violin <- scater::plotExpression(sce[,sce$emb_clusters == cluster], features = "C1QB",
+                                          x = "Ventilated", color_by = "Ventilated")
+exp.C1QB.umap
+```
+
+<br>
+
+```{r print violin, fig.height=2}
+exp.C1QB.violin
+```
+
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## R session
+
+<br>
+
+```{r rsession}
+# R session
+sessionInfo()
+```
+
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## References
+
+<br>
+
+Amezquita R, Lun A, Becht E, Carey V, Carpp L, Geistlinger L, Marini F, Rue-Albrecht K, Risso D, Soneson C, Waldron L, Pages H, Smith M, Huber W, Morgan M, Gottardo R, Hicks S (2020). "Orchestrating single-cell analysis with Bioconductor." _Nature Methods_, *17*, 137-145. [https://www.nature.com/articles/s41592-019-0654-x](https://www.nature.com/articles/s41592-019-0654-x).
+
+Gu, Z. (2022) "Complex heatmap visualization." _iMeta_. 1(3):e43. [doi: 10.1002/imt2.43](https://doi.org/10.1002/imt2.43).
+
+Lun ATL, McCarthy DJ, Marioni JC (2016). "A step-by-step workflow for low-level analysis of single-cell RNA-seq data with Bioconductor." _F1000Res._, *5*, 2122. [doi:10.12688/f1000research.9501.2](https://doi.org/10.12688/f1000research.9501.2).
+
+McCarthy DJ, Campbell KR, Lun ATL, Willis QF (2017). "Scater: pre-processing, quality control, normalisation and visualisation of single-cell RNA-seq data in R." _Bioinformatics_, *33*, 1179-1186. [doi:10.1093/bioinformatics/btw777](https://doi.org/10.1093/bioinformatics/btw777).
+  
+Sousa A, Smolander J, Junttila S, Elo L (2025). "Coralysis enables sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration." _bioRxiv_. [doi:10.1101/2025.02.07.637023](https://doi.org/10.1101/2025.02.07.637023)
+
+Wickham H (2016). "ggplot2: Elegant Graphics for Data Analysis." _Springer-Verlag New York_.
+
+<br>
+
+<br>
+
+<br>
+
+<br>
