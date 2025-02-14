@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 
 <br>
 
----
+___
 
 <br>
 
@@ -69,7 +69,7 @@ sce <- sce[,down.cells]
 
 <br>
 
----
+___
 
 <br>
 
@@ -125,7 +125,7 @@ sce <- do.call(cbind, sce.list)
 
 <br>
 
----
+___
 
 <br>
 
@@ -155,7 +155,7 @@ sce <- sce[top.hvg,]
 
 <br>
 
----
+___
 
 <br>
 
@@ -198,7 +198,7 @@ It is clear the donor effect, particularly for some cell types, such as CD14 mon
 
 <br>
 
----
+___
 
 <br>
 
@@ -223,7 +223,7 @@ sce <- RunParallelDivisiveICP(object = sce, batch.label = "Donor_full",
 
 <br>
 
----
+___
 
 <br>
 
@@ -264,7 +264,7 @@ Some cell types formed unique clusters, but quite few remained mixed. Multi-leve
 
 <br>
 
----
+___
 
 <br>
 
@@ -303,7 +303,7 @@ all.int.plts
 
 <br>
 
----
+___
 
 <br>
 
@@ -351,7 +351,7 @@ all.clts.plts
 
 <br>
 
----
+___
 
 <br>
 
@@ -382,7 +382,7 @@ For instance, B cell states (naive, intermediate, memory) are not well supported
 
 <br>
 
----
+___
 
 <br>
 
@@ -436,7 +436,7 @@ PlotExpression(sce, color.by = "PRSS23", dimred = "intUMAP", point.size = 0.5, p
 
 <br>
 
----
+___
 
 <br>
 
@@ -513,7 +513,7 @@ cowplot::plot_grid(plotlist = gexp.hla.plots, ncol = 2, align = "vh")
 
 <br>
 
----
+___
 
 <br>
 
@@ -593,7 +593,7 @@ exp.C1QB.violin
 
 <br>
 
----
+___
 
 <br>
 
@@ -612,7 +612,7 @@ sessionInfo()
 
 <br>
 
----
+___
 
 <br>
 

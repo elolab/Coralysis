@@ -33,7 +33,7 @@ Frequency of cells per cell cluster probability bin by group for each label.
 The label has to be specified beforehand to the function \code{BinCellClusterProbability()}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Packages
 suppressPackageStartupMessages(library("SingleCellExperiment"))
 

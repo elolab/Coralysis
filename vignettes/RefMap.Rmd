@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 
 <br>
 
----
+___
 
 <br>
 
@@ -59,7 +59,7 @@ query <- pbmc_10Xassays[,pbmc_10Xassays$batch=="V1"] # let V1 be the query (unkn
 
 <br>
 
----
+___
 
 <br>
 
@@ -103,7 +103,7 @@ ref.celltype.plot
 
 <br>
 
----
+___
 
 <br>
 
@@ -126,7 +126,7 @@ map <- ReferenceMapping(ref = ref, query = query, ref.label = "cell_type",
 
 <br>
 
----
+___
 
 <br>
 
@@ -218,7 +218,7 @@ cowplot::plot_grid(ref.celltype.plot, query.ground_truth.plot,
 
 <br>
 
----
+___
 
 <br>
 
@@ -237,7 +237,7 @@ sessionInfo()
 
 <br>
 
----
+___
 
 <br>
 

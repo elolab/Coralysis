@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 
 <br>
 
----
+___
 
 <br>
 
@@ -55,7 +55,7 @@ pbmc_10Xassays <- readRDS(file = url(data.url))
 
 <br>
 
----
+___
 
 <br>
 
@@ -98,7 +98,7 @@ cowplot::plot_grid(unint.batch.plot, unint.cell.plot, ncol = 2, align = "vh")
 
 <br>
 
----
+___
 
 <br>
 
@@ -126,7 +126,7 @@ pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays,
 
 <br>
 
----
+___
 
 <br>
 
@@ -170,7 +170,7 @@ cowplot::plot_grid(int.batch.plot, int.cell.plot,
 
 <br>
 
----
+___
 
 <br>
 
@@ -205,7 +205,7 @@ cowplot::plot_grid(int.batch.plot, int.cell.plot,
 
 <br>
 
----
+___
 
 <br>
 
@@ -239,7 +239,7 @@ HeatmapFeatures(object = pbmc_10Xassays,
 
 <br>
 
----
+___
 
 <br>
 
@@ -271,7 +271,7 @@ cowplot::plot_grid(plotlist = exp.plots, align = "vh", ncol = 3)
 
 <br>
 
----
+___
 
 <br>
 
@@ -290,7 +290,7 @@ sessionInfo()
 
 <br>
 
----
+___
 
 <br>
 

@@ -1194,27 +1194,34 @@ setMethod("SummariseCellClusterProbability", signature(object = "SingleCellExper
 #' @importFrom dplyr %>%
 #' 
 #' @examples 
-#' \dontrun{
 #' # Import package
 #' suppressPackageStartupMessages(library("SingleCellExperiment"))
 #' 
-#' # Import data from Zenodo
-#' data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
-#' sce <- readRDS(file = url(data.url))
+#' # Create toy SCE data
+#' batches <- c("b1", "b2")
+#' set.seed(239)
+#' batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+#' sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+#'                             colData = DataFrame("Species" = iris$Species, 
+#'                                                 "Batch" = batch))
+#' colnames(sce) <- paste0("samp", 1:ncol(sce))
+#' 
+#' # Prepare SCE object for analysis
+#' sce <- PrepareData(sce)
 #' 
 #' # Multi-level integration (just for highlighting purposes; use default parameters)
 #' set.seed(123)
-#' sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", 
-#'                               k = 4, L = 10, C = 1, d = 0.5, 
-#'                               train.with.bnn = FALSE, use.cluster.seed = FALSE,
+#' sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", 
+#'                               k = 4, L = 25, C = 1, d = 0.5, 
+#'                               train.with.bnn = FALSE, 
+#'                               use.cluster.seed = FALSE,
 #'                               build.train.set = FALSE, ari.cutoff = 0.1, 
 #'                               threads = 2)
 #' 
+#' 
 #' # GetFeatureCoefficients
-#' gene_coefficients_icp_2_4 <- GetFeatureCoefficients(object = sce, 
-#'                                                     icp.run = 2, icp.round = 4)
-#' head(gene_coefficients_icp_2_4$icp_8)
-#' }
+#' gene_coefficients_icp_7_1 <- GetFeatureCoefficients(object = sce, icp.run = 7, icp.round = 1)
+#' head(gene_coefficients_icp_7_1$icp_13)
 #' 
 GetFeatureCoefficients.SingleCellExperiment <- function(object, icp.run = NULL, icp.round = NULL) {
     

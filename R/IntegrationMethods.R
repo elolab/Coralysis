@@ -504,12 +504,11 @@ setMethod("RunParallelDivisiveICP", signature(object = "SingleCellExperiment"),
 #' @importFrom irlba prcomp_irlba
 #' 
 #' @examples
-#' \dontrun{
 #' # Import package
 #' suppressPackageStartupMessages(library("SingleCellExperiment"))
 #' 
 #' # Import data from Zenodo
-#' data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+#' data.url <- "https://zenodo.org/records/14871436/files/pbmc_10Xassays.rds?download=1"
 #' sce <- readRDS(file = url(data.url))
 #' 
 #' # Run with a batch
@@ -523,7 +522,6 @@ setMethod("RunParallelDivisiveICP", signature(object = "SingleCellExperiment"),
 #' sce <- AggregateDataByBatch(object = sce, batch.label = NULL)
 #' logcounts(sce)[1:10,1:10]
 #' head(metadata(sce)$clusters)
-#' } 
 #' 
 AggregateDataByBatch.SingleCellExperiment <- function(object, batch.label, 
                                                       nhvg, p, ...) {

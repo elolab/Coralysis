@@ -30,7 +30,7 @@ across labels (columns).
 Correlation between cell bins for the given labels and features.
 }
 \examples{
-\dontrun{
+\donttest{
 # Packages
 suppressPackageStartupMessages(library("SingleCellExperiment"))
 

@@ -47,32 +47,39 @@ A plot of class \code{ggplot}.
 Plot cell cluster probability distribution per label by group.
 }
 \examples{
-\dontrun{
-# Packages
+# Import package
 suppressPackageStartupMessages(library("SingleCellExperiment"))
 
-# Import data from Zenodo
-data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
-sce <- readRDS(file = url(data.url))
+# Create toy SCE data
+batches <- c("b1", "b2")
+set.seed(239)
+batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
+sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
+                            colData = DataFrame("Species" = iris$Species, 
+                                                "Batch" = batch))
+colnames(sce) <- paste0("samp", 1:ncol(sce))
 
-# Prepare data
-sce <- PrepareData(object = sce)
+# Prepare SCE object for analysis
+sce <- PrepareData(sce)
 
-# Multi-level integration - 'L = 4' just for highlighting purposes
+# Multi-level integration (just for highlighting purposes; use default parameters)
 set.seed(123)
-sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", L = 4, 
+sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", 
+                              k = 4, L = 25, C = 1, d = 0.5, 
+                              train.with.bnn = FALSE, 
+                              use.cluster.seed = FALSE,
+                              build.train.set = FALSE, ari.cutoff = 0.1, 
                               threads = 2)
 
 # Summarise cell cluster probability
-sce <- SummariseCellClusterProbability(object = sce, icp.round = 4) # saved in 'colData'
+sce <- SummariseCellClusterProbability(object = sce, icp.round = 2) # saved in 'colData'
 
 # Search for differences in probabilities across group(s) 
 # give an interesting variable to the "group" parameter
-prob.dist <- CellClusterProbabilityDistribution(object = sce, label = "cell_type", 
-                                                group = "batch", 
+prob.dist <- CellClusterProbabilityDistribution(object = sce, label = "Species", 
+                                                group = "Batch", 
                                                 probability = "scaled_mean_probs")
 prob.dist # print plot
-}
 
 }
 \keyword{Distribution}

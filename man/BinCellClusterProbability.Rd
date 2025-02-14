@@ -66,7 +66,7 @@ cell \code{label} probability bins.
 Bin cell cluster probability by a given cell label.
 }
 \examples{
-\dontrun{
+\donttest{
 # Packages
 suppressPackageStartupMessages(library("SingleCellExperiment"))
 

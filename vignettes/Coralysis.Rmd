@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 
 <br>
 
----
+___
 
 <br>
 
@@ -55,7 +55,7 @@ pbmc_10Xassays # print SCE object
 
 <br>
 
----
+___
 
 <br>
 
@@ -77,7 +77,7 @@ pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
 
 <br>
 
----
+___
 
 <br>
 
@@ -107,7 +107,7 @@ pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays,
 
 <br>
 
----
+___
 
 <br>
 
@@ -129,7 +129,7 @@ pbmc_10Xassays <- RunPCA(object = pbmc_10Xassays)
 
 <br>
 
----
+___
 
 <br>
 
@@ -151,7 +151,7 @@ pbmc_10Xassays <- RunUMAP(object = pbmc_10Xassays)
 
 <br>
 
----
+___
 
 <br>
 
@@ -178,7 +178,7 @@ cowplot::plot_grid(plotlist = plots, ncol = 2, align = "vh") # join plots togeth
 
 <br>
 
----
+___
 
 <br>
 
@@ -197,7 +197,7 @@ sessionInfo()
 
 <br>
 
----
+___
 
 <br>
 
