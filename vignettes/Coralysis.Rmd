@@ -1,11 +1,11 @@
 ---
-title: "Getting started"
+title: "Get started"
 date: "Compiled: `r format(Sys.Date(), '%d/%m/%Y')`"
-output: 
-   html_document:
-      toc: false
-      toc_float: false
-      code_folding: show
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Get started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
@@ -22,38 +22,154 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 
 <br>
 
-## QuickStart
+## Dataset
 
 <br>
 
-```{r quickstart}
-# Packages
+To quickly illustrate the multi-level integration algorithm, we will use in this vignette two 10X PBMCs (Peripheral Blood Mononuclear Cells) 3' assays: **V1** and **V2**. The datasets have been downloaded from 10X website. The PBMC dataset **V1** corresponds to sample _pbmc6k_ and **V2** to `pbmc8k`: 
+
+   + **V1**: [pbmc6k](https://support.10xgenomics.com/single-cell-gene-expression/datasets/1.1.0/pbmc6k)
+   
+   + **V2**: [pbmc8k](https://support.10xgenomics.com/single-cell-gene-expression/datasets/2.1.0/pbmc8k)
+
+<br>
+
+Cells were annotated using the annotations provided by [Korsunsky et al., 2019](https://www.nature.com/articles/s41592-019-0619-0) (Source Data Figure 4 file). The overall data was downsampled to 2K cells (1K per assay) and 2K highly variable genes selected with `scran` R package. To facilitate the reproduction of this vignette, the data is distributed through _Zenodo_ as a `SingleCellExperiment` object, the object (class) required by most functions in `Coralysis` (see [Chapter 4 The SingleCellExperiment class - OSCA manual](https://bioconductor.org/books/3.13/OSCA.intro/the-singlecellexperiment-class.html)). The `SCE` object provided comprises `counts` (raw count data), `logcounts` (log-normalized data) and cell `colData` (which includes batch and cell labels, designated as `batch` and `cell_type`, respectively).   
+
+Run the code below to import the `R` packages and data required to reproduce this vignette.  
+
+```{r packages, message=FALSE, warning=FALSE}
+# Import packages
 library("Coralysis")
-suppressPackageStartupMessages(library("SingleCellExperiment"))
+library("SingleCellExperiment")
+```
 
+```{r data}
 # Import data from Zenodo
-data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+data.url <- "https://zenodo.org/records/14871436/files/pbmc_10Xassays.rds?download=1"
 pbmc_10Xassays <- readRDS(file = url(data.url))
+pbmc_10Xassays # print SCE object
+```
 
-# Prepare data: checks 'logcounts' format & removes non-expressed genes
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Preprocess
+
+<br>
+
+The `PrepareData()` function checks whether a sparse matrix is available in the `logcounts` assay (which corresponds to log-normalized data) and removes non-expressed features.
+
+```{r preprocess}
+# Prepare data: 
+#checks 'logcounts' format & removes non-expressed genes
 pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+```
 
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Multi-level integration
+
+<br>
+
+The multi-level integration algorithm is implemented in the `RunParallelDivisiveICP()` function, the main function in `Coralysis`. It only requires a `SingleCellExperiment` object, which in this case is `pbmc_10Xassays`. 
+
+To perform integration across a batch, a `batch.label` available in `colData(pbmc_10Xassays)` must be provided. In this case, it is `"batch"`. The ensemble algorithm runs 50 times by default, but for illustrative purposes, this has been reduced to 10 (`L=10`). 
+
+Two threads are allocated to speed up the process (`threads=2`), though by default, the function uses all available system threads. Specify one thread if you prefer not to use any additional threads.
+
+The result consists of a set of models and their respective probability matrices (n = 40; log2(`k`) * `L`), stored in `metadata(pbmc_10Xassays)$coralysis$models` and `metadata(pbmc_10Xassays)$coralysis$joint.probability`, respectively.
+
+```{r integration}
 # Multi-level integration
 set.seed(123)
-pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, batch.label = "batch", L = 10, threads = 2) 
+pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, 
+                                         batch.label = "batch", 
+                                         L = 10, threads = 2) 
+```
 
-# Compute integrated PCA from joint probability
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## Integrated embedding
+
+<br>
+
+The integrated result of `Coralysis` consist of an integrated embedding which can be obtained by running the function `RunPCA`. This integrated PCA can, in turn, be used downstream for clustering or non-linear dimensional reduction techniques, such as `RunTSNE` or `RunUMAP`. The function `RunPCA` runs by default the PCA method implemented the `R` package `irlba` (`pca.method="irlba"`), which requires a seed to ensure the same PCA result.
+
+```{r integrated emb}
+# Integrated embedding
 set.seed(125)
 pbmc_10Xassays <- RunPCA(object = pbmc_10Xassays)
+```
 
-# Run UMAP
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+## UMAP
+
+<br>
+
+Compute UMAP by running the function `RunUMAP()`.
+
+```{r umap}
+# UMAP
 set.seed(1204)
-pbmc_10Xassays <- RunUMAP(object = pbmc_10Xassays, umap.method = "uwot", n_neighbors = 20, min_dist = 0.3)
+pbmc_10Xassays <- RunUMAP(object = pbmc_10Xassays)
+```
 
-# Visualize integrated data 
+<br>
+
+<br>
+
+---
+
+<br>
+
+<br>
+
+### Visualize batch & cell types
+
+<br>
+
+Finally, the integration can be visually inspected by highlighting the batch and cell type labels into the UMAP projection. 
+
+```{r viz categorical vars, fig.width=5, fig.height=3.5}
+# Visualize categorical variables integrated emb. 
 vars <- c("batch", "cell_type")
 plots <- lapply(X = vars, FUN = function(x) {
-    PlotDimRed(object = pbmc_10Xassays, color.by = x, point.size = 0.5, point.stroke = 0.5, legend.nrow = 3)
+    PlotDimRed(object = pbmc_10Xassays, color.by = x, 
+               point.size = 0.25, point.stroke = 0.5, 
+               legend.nrow = 3)
 }) 
 cowplot::plot_grid(plotlist = plots, ncol = 2, align = "vh") # join plots together
 ```

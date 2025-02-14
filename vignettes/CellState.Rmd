@@ -135,7 +135,7 @@ sce <- do.call(cbind, sce.list)
 
 <br>
 
-Highly variable genes (HVG) can be selected using the R package `scran`. The variable `Donor_full` from `colData` is used as batch label. The `SingleCellExperiment` object can comprise alternative experiments. The main experiment was called `raw` and, the alternative with HVG, `hvg`. This is important to keep a backup of all genes in the same `SingleCellExperiment` object before selecting HVGs (see [SingleCellExperiment vignette](https://www.bioconductor.org/packages/devel/bioc/vignettes/SingleCellExperiment/inst/doc/intro.html)).      
+Highly variable genes (HVG) can be selected using the R package `scran`. The variable `Donor_full` from `colData` is used as batch label. The `SingleCellExperiment` object allows alternative experiments to the main experiment. This is important to keep a backup of all genes in the same `SingleCellExperiment` object before selecting HVGs (see [SingleCellExperiment vignette](https://www.bioconductor.org/packages/devel/bioc/vignettes/SingleCellExperiment/inst/doc/intro.html)).       
 
 ```{r hvg, eval=FALSE}
 # Feature selection with 'scran' package
