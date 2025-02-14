@@ -55,9 +55,17 @@ Imports:
     RSpectra
 Depends: 
     R (>= 4.0.0)
+Suggests: 
+    knitr, 
+    rmarkdown,
+    bluster,
+    ComplexHeatmap, 
+    circlize, 
+    pak, 
+    scater, 
+    viridis
 Encoding: UTF-8
 RoxygenNote: 7.3.2
-Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 biocViews: 
     SingleCell, 
