@@ -3,4 +3,8 @@
 .RData
 .Ruserdata
 docs
-inst/doc
+inst/doccoralysis.Rproj
+_pkgdown.yml
+.git
+.github
+.Rbuildignore
