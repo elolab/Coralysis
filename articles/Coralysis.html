@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Getting started • Coralysis</title>
+<title>Get started • Coralysis</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Getting started">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Get started">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -34,8 +34,9 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/01_Integration.html">Integration</a></li>
-    <li><a class="dropdown-item" href="../articles/02_RefMap.html">Reference-mapping</a></li>
+<li><a class="dropdown-item" href="../articles/CellState.html">Cell states</a></li>
+    <li><a class="dropdown-item" href="../articles/Integration.html">Integration</a></li>
+    <li><a class="dropdown-item" href="../articles/RefMap.html">Reference-mapping</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -58,9 +59,9 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>Getting started</h1>
+      <h1>Get started</h1>
             
-            <h4 data-toc-skip class="date">Compiled: 13/02/2025</h4>
+            <h4 data-toc-skip class="date">Compiled: 14/02/2025</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/elolab/Coralysis/blob/main/vignettes/Coralysis.Rmd" class="external-link"><code>vignettes/Coralysis.Rmd</code></a></small>
       <div class="d-none name"><code>Coralysis.Rmd</code></div>
@@ -74,29 +75,111 @@
 <p><br></p>
 <p><br></p>
 <div class="section level2">
-<h2 id="quickstart">QuickStart<a class="anchor" aria-label="anchor" href="#quickstart"></a>
+<h2 id="dataset">Dataset<a class="anchor" aria-label="anchor" href="#dataset"></a>
 </h2>
 <p><br></p>
+<p>To quickly illustrate the multi-level integration algorithm, we will
+use in this vignette two 10X PBMCs (Peripheral Blood Mononuclear Cells)
+3’ assays: <strong>V1</strong> and <strong>V2</strong>. The datasets
+have been downloaded from 10X website. The PBMC dataset
+<strong>V1</strong> corresponds to sample <em>pbmc6k</em> and
+<strong>V2</strong> to <code>pbmc8k</code>:</p>
+<ul>
+<li><p><strong>V1</strong>: <a href="https://support.10xgenomics.com/single-cell-gene-expression/datasets/1.1.0/pbmc6k" class="external-link">pbmc6k</a></p></li>
+<li><p><strong>V2</strong>: <a href="https://support.10xgenomics.com/single-cell-gene-expression/datasets/2.1.0/pbmc8k" class="external-link">pbmc8k</a></p></li>
+</ul>
+<p><br></p>
+<p>Cells were annotated using the annotations provided by <a href="https://www.nature.com/articles/s41592-019-0619-0" class="external-link">Korsunsky et
+al., 2019</a> (Source Data Figure 4 file). The overall data was
+downsampled to 2K cells (1K per assay) and 2K highly variable genes
+selected with <code>scran</code> R package. To facilitate the
+reproduction of this vignette, the data is distributed through
+<em>Zenodo</em> as a <code>SingleCellExperiment</code> object, the
+object (class) required by most functions in <code>Coralysis</code> (see
+<a href="https://bioconductor.org/books/3.13/OSCA.intro/the-singlecellexperiment-class.html" class="external-link">Chapter
+4 The SingleCellExperiment class - OSCA manual</a>). The
+<code>SCE</code> object provided comprises <code>counts</code> (raw
+count data), <code>logcounts</code> (log-normalized data) and cell
+<code>colData</code> (which includes batch and cell labels, designated
+as <code>batch</code> and <code>cell_type</code>, respectively).</p>
+<p>Run the code below to import the <code>R</code> packages and data
+required to reproduce this vignette.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Packages</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://github.com/elolab/Coralysis" class="external-link">"Coralysis"</a></span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Warning: replacing previous import 'Matrix::det' by 'SparseM::det' when loading</span></span>
-<span><span class="co">## 'Coralysis'</span></span></code></pre>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressPackageStartupMessages</a></span><span class="op">(</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st">"SingleCellExperiment"</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Import data from Zenodo</span></span>
-<span><span class="va">data.url</span> <span class="op">&lt;-</span> <span class="st">"https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"</span></span>
+<code class="sourceCode R"><span><span class="co"># Import packages</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://github.com/elolab/Coralysis" class="external-link">"Coralysis"</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st">"SingleCellExperiment"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Import data from Zenodo</span></span>
+<span><span class="va">data.url</span> <span class="op">&lt;-</span> <span class="st">"https://zenodo.org/records/14871436/files/pbmc_10Xassays.rds?download=1"</span></span>
 <span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span>file <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/connections.html" class="external-link">url</a></span><span class="op">(</span><span class="va">data.url</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Prepare data: checks 'logcounts' format &amp; removes non-expressed genes</span></span>
+<span><span class="va">pbmc_10Xassays</span> <span class="co"># print SCE object</span></span></code></pre></div>
+<pre><code><span><span class="co">## class: SingleCellExperiment </span></span>
+<span><span class="co">## dim: 2000 2000 </span></span>
+<span><span class="co">## metadata(0):</span></span>
+<span><span class="co">## assays(2): counts logcounts</span></span>
+<span><span class="co">## rownames(2000): LYZ S100A9 ... IGSF8 KIR2DL1</span></span>
+<span><span class="co">## rowData names(8): highly_variable mean ... FDR per.block</span></span>
+<span><span class="co">## colnames(2000): ACATACCTGTCAAC ATTGAAACTCGTAG ... AGAGTGGCAGGGTTAG</span></span>
+<span><span class="co">##   GACTGCGAGCGTTCCG</span></span>
+<span><span class="co">## colData names(3): barcode batch cell_type</span></span>
+<span><span class="co">## reducedDimNames(0):</span></span>
+<span><span class="co">## mainExpName: NULL</span></span>
+<span><span class="co">## altExpNames(0):</span></span></code></pre>
+<p><br></p>
+<p><br></p>
+<hr>
+<p><br></p>
+<p><br></p>
+</div>
+<div class="section level2">
+<h2 id="preprocess">Preprocess<a class="anchor" aria-label="anchor" href="#preprocess"></a>
+</h2>
+<p><br></p>
+<p>The <code><a href="../reference/PrepareData.html">PrepareData()</a></code> function checks whether a sparse
+matrix is available in the <code>logcounts</code> assay (which
+corresponds to log-normalized data) and removes non-expressed
+features.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Prepare data: </span></span>
+<span><span class="co">#checks 'logcounts' format &amp; removes non-expressed genes</span></span>
 <span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/PrepareData.html">PrepareData</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Data in `logcounts` slot already of `dgCMatrix` class...</span></span></code></pre>
 <pre><code><span><span class="co">## 2000/2000 features remain after filtering features with only zero values.</span></span></code></pre>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<p><br></p>
+<p><br></p>
+<hr>
+<p><br></p>
+<p><br></p>
+</div>
+<div class="section level2">
+<h2 id="multi-level-integration">Multi-level integration<a class="anchor" aria-label="anchor" href="#multi-level-integration"></a>
+</h2>
+<p><br></p>
+<p>The multi-level integration algorithm is implemented in the
+<code><a href="../reference/RunParallelDivisiveICP.html">RunParallelDivisiveICP()</a></code> function, the main function in
+<code>Coralysis</code>. It only requires a
+<code>SingleCellExperiment</code> object, which in this case is
+<code>pbmc_10Xassays</code>.</p>
+<p>To perform integration across a batch, a <code>batch.label</code>
+available in <code>colData(pbmc_10Xassays)</code> must be provided. In
+this case, it is <code>"batch"</code>. The ensemble algorithm runs 50
+times by default, but for illustrative purposes, this has been reduced
+to 10 (<code>L=10</code>).</p>
+<p>Two threads are allocated to speed up the process
+(<code>threads=2</code>), though by default, the function uses all
+available system threads. Specify one thread if you prefer not to use
+any additional threads.</p>
+<p>The result consists of a set of models and their respective
+probability matrices (n = 40; log2(<code>k</code>) * <code>L</code>),
+stored in <code>metadata(pbmc_10Xassays)$coralysis$models</code> and
+<code>metadata(pbmc_10Xassays)$coralysis$joint.probability</code>,
+respectively.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Multi-level integration</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
-<span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/RunParallelDivisiveICP.html">RunParallelDivisiveICP</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span>, batch.label <span class="op">=</span> <span class="st">"batch"</span>, L <span class="op">=</span> <span class="fl">10</span>, threads <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> </span></code></pre></div>
+<span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/RunParallelDivisiveICP.html">RunParallelDivisiveICP</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span>, </span>
+<span>                                         batch.label <span class="op">=</span> <span class="st">"batch"</span>, </span>
+<span>                                         L <span class="op">=</span> <span class="fl">10</span>, threads <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> </span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Building training set...</span></span></code></pre>
 <pre><code><span><span class="co">## Training set successfully built.</span></span></code></pre>
@@ -112,23 +195,6 @@
 <pre><code><span><span class="co">## Prediction of cell cluster probabilities completed successfully.</span></span></code></pre>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Multi-level integration completed successfully.</span></span></code></pre>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Compute integrated PCA from joint probability</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">125</span><span class="op">)</span></span>
-<span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/RunPCA.html">RunPCA</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Divisive ICP: selecting ICP tables multiple of 4</span></span></code></pre>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Run UMAP</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1204</span><span class="op">)</span></span>
-<span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/RunUMAP.html">RunUMAP</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span>, umap.method <span class="op">=</span> <span class="st">"uwot"</span>, n_neighbors <span class="op">=</span> <span class="fl">20</span>, min_dist <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Visualize integrated data </span></span>
-<span><span class="va">vars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"batch"</span>, <span class="st">"cell_type"</span><span class="op">)</span></span>
-<span><span class="va">plots</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span>X <span class="op">=</span> <span class="va">vars</span>, FUN <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="fu"><a href="../reference/PlotDimRed.html">PlotDimRed</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span>, color.by <span class="op">=</span> <span class="va">x</span>, point.size <span class="op">=</span> <span class="fl">0.5</span>, point.stroke <span class="op">=</span> <span class="fl">0.5</span>, legend.nrow <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span> </span>
-<span><span class="fu">cowplot</span><span class="fu">::</span><span class="fu"><a href="https://wilkelab.org/cowplot/reference/plot_grid.html" class="external-link">plot_grid</a></span><span class="op">(</span>plotlist <span class="op">=</span> <span class="va">plots</span>, ncol <span class="op">=</span> <span class="fl">2</span>, align <span class="op">=</span> <span class="st">"vh"</span><span class="op">)</span> <span class="co"># join plots together</span></span></code></pre></div>
-<p><img src="Coralysis_files/figure-html/quickstart-1.png" width="700" style="display: block; margin: auto;"></p>
 <p><br></p>
 <p><br></p>
 <hr>
@@ -136,10 +202,71 @@
 <p><br></p>
 </div>
 <div class="section level2">
+<h2 id="integrated-embedding">Integrated embedding<a class="anchor" aria-label="anchor" href="#integrated-embedding"></a>
+</h2>
+<p><br></p>
+<p>The integrated result of <code>Coralysis</code> consist of an
+integrated embedding which can be obtained by running the function
+<code>RunPCA</code>. This integrated PCA can, in turn, be used
+downstream for clustering or non-linear dimensional reduction
+techniques, such as <code>RunTSNE</code> or <code>RunUMAP</code>. The
+function <code>RunPCA</code> runs by default the PCA method implemented
+the <code>R</code> package <code>irlba</code>
+(<code>pca.method="irlba"</code>), which requires a seed to ensure the
+same PCA result.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Integrated embedding</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">125</span><span class="op">)</span></span>
+<span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/RunPCA.html">RunPCA</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## Divisive ICP: selecting ICP tables multiple of 4</span></span></code></pre>
+<p><br></p>
+<p><br></p>
+<hr>
+<p><br></p>
+<p><br></p>
+</div>
+<div class="section level2">
+<h2 id="umap">UMAP<a class="anchor" aria-label="anchor" href="#umap"></a>
+</h2>
+<p><br></p>
+<p>Compute UMAP by running the function <code><a href="../reference/RunUMAP.html">RunUMAP()</a></code>.</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># UMAP</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1204</span><span class="op">)</span></span>
+<span><span class="va">pbmc_10Xassays</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/RunUMAP.html">RunUMAP</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span><span class="op">)</span></span></code></pre></div>
+<p><br></p>
+<p><br></p>
+<hr>
+<p><br></p>
+<p><br></p>
+<div class="section level3">
+<h3 id="visualize-batch-cell-types">Visualize batch &amp; cell types<a class="anchor" aria-label="anchor" href="#visualize-batch-cell-types"></a>
+</h3>
+<p><br></p>
+<p>Finally, the integration can be visually inspected by highlighting
+the batch and cell type labels into the UMAP projection.</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Visualize categorical variables integrated emb. </span></span>
+<span><span class="va">vars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"batch"</span>, <span class="st">"cell_type"</span><span class="op">)</span></span>
+<span><span class="va">plots</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span>X <span class="op">=</span> <span class="va">vars</span>, FUN <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="../reference/PlotDimRed.html">PlotDimRed</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">pbmc_10Xassays</span>, color.by <span class="op">=</span> <span class="va">x</span>, </span>
+<span>               point.size <span class="op">=</span> <span class="fl">0.25</span>, point.stroke <span class="op">=</span> <span class="fl">0.5</span>, </span>
+<span>               legend.nrow <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span> </span>
+<span><span class="fu">cowplot</span><span class="fu">::</span><span class="fu"><a href="https://wilkelab.org/cowplot/reference/plot_grid.html" class="external-link">plot_grid</a></span><span class="op">(</span>plotlist <span class="op">=</span> <span class="va">plots</span>, ncol <span class="op">=</span> <span class="fl">2</span>, align <span class="op">=</span> <span class="st">"vh"</span><span class="op">)</span> <span class="co"># join plots together</span></span></code></pre></div>
+<p><img src="Coralysis_files/figure-html/viz%20categorical%20vars-1.png" width="480" style="display: block; margin: auto;"></p>
+<p><br></p>
+<p><br></p>
+<hr>
+<p><br></p>
+<p><br></p>
+</div>
+</div>
+<div class="section level2">
 <h2 id="r-session">R session<a class="anchor" aria-label="anchor" href="#r-session"></a>
 </h2>
 <p><br></p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># R session</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## R version 4.4.2 (2024-10-31)</span></span>
@@ -173,40 +300,41 @@
 <span><span class="co">## </span></span>
 <span><span class="co">## loaded via a namespace (and not attached):</span></span>
 <span><span class="co">##   [1] rlang_1.1.5              magrittr_2.0.3           flexclust_1.4-2         </span></span>
-<span><span class="co">##   [4] compiler_4.4.2           systemfonts_1.2.1        vctrs_0.6.5             </span></span>
-<span><span class="co">##   [7] reshape2_1.4.4           stringr_1.5.1            pkgconfig_2.0.3         </span></span>
-<span><span class="co">##  [10] crayon_1.5.3             fastmap_1.2.0            XVector_0.46.0          </span></span>
-<span><span class="co">##  [13] labeling_0.4.3           scuttle_1.16.0           rmarkdown_2.29          </span></span>
-<span><span class="co">##  [16] ggbeeswarm_0.7.2         UCSC.utils_1.2.0         ragg_1.3.3              </span></span>
-<span><span class="co">##  [19] xfun_0.50                modeltools_0.2-23        bluster_1.16.0          </span></span>
-<span><span class="co">##  [22] zlibbioc_1.52.0          cachem_1.1.0             beachmat_2.22.0         </span></span>
-<span><span class="co">##  [25] jsonlite_1.8.9           DelayedArray_0.32.0      BiocParallel_1.40.0     </span></span>
-<span><span class="co">##  [28] irlba_2.3.5.1            parallel_4.4.2           aricode_1.0.3           </span></span>
-<span><span class="co">##  [31] cluster_2.1.6            R6_2.6.0                 bslib_0.9.0             </span></span>
-<span><span class="co">##  [34] stringi_1.8.4            RColorBrewer_1.1-3       limma_3.62.2            </span></span>
-<span><span class="co">##  [37] jquerylib_0.1.4          Rcpp_1.0.14              iterators_1.0.14        </span></span>
-<span><span class="co">##  [40] knitr_1.49               snow_0.4-4               FNN_1.1.4.1             </span></span>
-<span><span class="co">##  [43] Matrix_1.7-1             igraph_2.1.4             tidyselect_1.2.1        </span></span>
-<span><span class="co">##  [46] abind_1.4-8              yaml_2.3.10              codetools_0.2-20        </span></span>
-<span><span class="co">##  [49] doRNG_1.8.6.1            lattice_0.22-6           tibble_3.2.1            </span></span>
-<span><span class="co">##  [52] plyr_1.8.9               withr_3.0.2              ggrastr_1.0.2           </span></span>
-<span><span class="co">##  [55] evaluate_1.0.3           desc_1.4.3               pillar_1.10.1           </span></span>
-<span><span class="co">##  [58] rngtools_1.5.2           foreach_1.5.2            generics_0.1.3          </span></span>
-<span><span class="co">##  [61] ggplot2_3.5.1            sparseMatrixStats_1.18.0 munsell_0.5.1           </span></span>
-<span><span class="co">##  [64] scales_1.3.0             class_7.3-22             glue_1.8.0              </span></span>
-<span><span class="co">##  [67] metapod_1.14.0           pheatmap_1.0.12          LiblineaR_2.10-24       </span></span>
-<span><span class="co">##  [70] tools_4.4.2              BiocNeighbors_2.0.1      ScaledMatrix_1.14.0     </span></span>
-<span><span class="co">##  [73] SparseM_1.84-2           RSpectra_0.16-2          locfit_1.5-9.11         </span></span>
-<span><span class="co">##  [76] RANN_2.6.2               fs_1.6.5                 scran_1.34.0            </span></span>
-<span><span class="co">##  [79] Cairo_1.6-2              cowplot_1.1.3            grid_4.4.2              </span></span>
-<span><span class="co">##  [82] edgeR_4.4.2              colorspace_2.1-1         GenomeInfoDbData_1.2.13 </span></span>
-<span><span class="co">##  [85] beeswarm_0.4.0           BiocSingular_1.22.0      vipor_0.4.7             </span></span>
-<span><span class="co">##  [88] cli_3.6.3                rsvd_1.0.5               textshaping_1.0.0       </span></span>
-<span><span class="co">##  [91] S4Arrays_1.6.0           dplyr_1.1.4              uwot_0.2.2              </span></span>
-<span><span class="co">##  [94] doSNOW_1.0.20            gtable_0.3.6             sass_0.4.9              </span></span>
-<span><span class="co">##  [97] digest_0.6.37            SparseArray_1.6.1        dqrng_0.4.1             </span></span>
-<span><span class="co">## [100] farver_2.1.2             htmltools_0.5.8.1        pkgdown_2.1.1           </span></span>
-<span><span class="co">## [103] lifecycle_1.0.4          httr_1.4.7               statmod_1.5.0</span></span></code></pre>
+<span><span class="co">##   [4] compiler_4.4.2           png_0.1-8                systemfonts_1.2.1       </span></span>
+<span><span class="co">##   [7] vctrs_0.6.5              reshape2_1.4.4           stringr_1.5.1           </span></span>
+<span><span class="co">##  [10] pkgconfig_2.0.3          crayon_1.5.3             fastmap_1.2.0           </span></span>
+<span><span class="co">##  [13] XVector_0.46.0           labeling_0.4.3           scuttle_1.16.0          </span></span>
+<span><span class="co">##  [16] rmarkdown_2.29           ggbeeswarm_0.7.2         UCSC.utils_1.2.0        </span></span>
+<span><span class="co">##  [19] ragg_1.3.3               xfun_0.50                modeltools_0.2-23       </span></span>
+<span><span class="co">##  [22] bluster_1.16.0           zlibbioc_1.52.0          cachem_1.1.0            </span></span>
+<span><span class="co">##  [25] beachmat_2.22.0          jsonlite_1.8.9           DelayedArray_0.32.0     </span></span>
+<span><span class="co">##  [28] BiocParallel_1.40.0      irlba_2.3.5.1            parallel_4.4.2          </span></span>
+<span><span class="co">##  [31] aricode_1.0.3            cluster_2.1.6            R6_2.6.0                </span></span>
+<span><span class="co">##  [34] bslib_0.9.0              stringi_1.8.4            RColorBrewer_1.1-3      </span></span>
+<span><span class="co">##  [37] reticulate_1.40.0        limma_3.62.2             jquerylib_0.1.4         </span></span>
+<span><span class="co">##  [40] Rcpp_1.0.14              iterators_1.0.14         knitr_1.49              </span></span>
+<span><span class="co">##  [43] snow_0.4-4               Matrix_1.7-1             igraph_2.1.4            </span></span>
+<span><span class="co">##  [46] tidyselect_1.2.1         abind_1.4-8              yaml_2.3.10             </span></span>
+<span><span class="co">##  [49] codetools_0.2-20         doRNG_1.8.6.1            lattice_0.22-6          </span></span>
+<span><span class="co">##  [52] tibble_3.2.1             plyr_1.8.9               withr_3.0.2             </span></span>
+<span><span class="co">##  [55] askpass_1.2.1            ggrastr_1.0.2            evaluate_1.0.3          </span></span>
+<span><span class="co">##  [58] desc_1.4.3               pillar_1.10.1            rngtools_1.5.2          </span></span>
+<span><span class="co">##  [61] foreach_1.5.2            generics_0.1.3           ggplot2_3.5.1           </span></span>
+<span><span class="co">##  [64] sparseMatrixStats_1.18.0 munsell_0.5.1            scales_1.3.0            </span></span>
+<span><span class="co">##  [67] class_7.3-22             glue_1.8.0               metapod_1.14.0          </span></span>
+<span><span class="co">##  [70] pheatmap_1.0.12          LiblineaR_2.10-24        tools_4.4.2             </span></span>
+<span><span class="co">##  [73] BiocNeighbors_2.0.1      ScaledMatrix_1.14.0      SparseM_1.84-2          </span></span>
+<span><span class="co">##  [76] RSpectra_0.16-2          locfit_1.5-9.11          RANN_2.6.2              </span></span>
+<span><span class="co">##  [79] fs_1.6.5                 scran_1.34.0             Cairo_1.6-2             </span></span>
+<span><span class="co">##  [82] cowplot_1.1.3            grid_4.4.2               umap_0.2.10.0           </span></span>
+<span><span class="co">##  [85] edgeR_4.4.2              colorspace_2.1-1         GenomeInfoDbData_1.2.13 </span></span>
+<span><span class="co">##  [88] beeswarm_0.4.0           BiocSingular_1.22.0      vipor_0.4.7             </span></span>
+<span><span class="co">##  [91] cli_3.6.4                rsvd_1.0.5               textshaping_1.0.0       </span></span>
+<span><span class="co">##  [94] S4Arrays_1.6.0           dplyr_1.1.4              doSNOW_1.0.20           </span></span>
+<span><span class="co">##  [97] gtable_0.3.6             sass_0.4.9               digest_0.6.37           </span></span>
+<span><span class="co">## [100] SparseArray_1.6.1        dqrng_0.4.1              farver_2.1.2            </span></span>
+<span><span class="co">## [103] htmltools_0.5.8.1        pkgdown_2.1.1            lifecycle_1.0.4         </span></span>
+<span><span class="co">## [106] httr_1.4.7               statmod_1.5.0            openssl_2.3.2</span></span></code></pre>
 <p><br></p>
 <p><br></p>
 <hr>
