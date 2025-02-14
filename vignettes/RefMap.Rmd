@@ -1,11 +1,11 @@
 ---
 title: "Reference-mapping"
 date: "Compiled: `r format(Sys.Date(), '%d/%m/%Y')`"
-output: 
-   html_document:
-      toc: false 
-      toc_float: false
-      code_folding: show
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Reference-mapping}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
@@ -47,7 +47,7 @@ library("SingleCellExperiment")
 
 ```{r data}
 # Import data from Zenodo
-data.url <- "https://zenodo.org/records/14845751/files/pbmc_10Xassays.rds?download=1"
+data.url <- "https://zenodo.org/records/14871436/files/pbmc_10Xassays.rds?download=1"
 pbmc_10Xassays <- readRDS(file = url(data.url))
 
 # Split the SCE object by assay 
@@ -248,6 +248,8 @@ sessionInfo()
 <br>
 
 Amezquita R, Lun A, Becht E, Carey V, Carpp L, Geistlinger L, Marini F, Rue-Albrecht K, Risso D, Soneson C, Waldron L, Pages H, Smith M, Huber W, Morgan M, Gottardo R, Hicks S (2020). "Orchestrating single-cell analysis with Bioconductor." _Nature Methods_, *17*, 137-145. [https://www.nature.com/articles/s41592-019-0654-x](https://www.nature.com/articles/s41592-019-0654-x).
+
+Korsunsky I, Millard N, Fan J, Slowikowski K, Zhang F, Wei K, Baglaenko Y, Brenner M, Loh P, Raychaudhuri S. (2019). "Fast, sensitive and accurate integration of single-cell data with Harmony." _Nature Methods_. 16(12):1289-1296. [10.1038/s41592-019-0619-0](https://doi.org/10.1038/s41592-019-0619-0)
 
 Sousa A, Smolander J, Junttila S, Elo L (2025). "Coralysis enables sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration." _bioRxiv_. [doi:10.1101/2025.02.07.637023](https://doi.org/10.1101/2025.02.07.637023)
 
