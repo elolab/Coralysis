@@ -102,8 +102,8 @@ BinCellClusterProbability.SingleCellExperiment <- function(object, label, icp.ru
     # SCE object
     col.data <- bins.by.label[,c("label", "probability_bins", "aggregated_probability_bins", "aggregated_label_bins")] %>% 
         distinct() %>% 
-        as.data.frame() %>% 
-        `row.names<-`(.data$aggregated_label_bins)
+        as.data.frame() 
+    row.names(col.data) <- col.data$aggregated_label_bins
     col.data <- col.data[colnames(gexp.bins),]
     bins.by.label <- as.data.frame(cbind(colData(object), bins.by.label))
     sce <- SingleCellExperiment(assays = list("exp" = gexp.bins), 

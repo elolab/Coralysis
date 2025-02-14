@@ -1253,9 +1253,10 @@ GetFeatureCoefficients.SingleCellExperiment <- function(object, icp.run = NULL, 
         })
     }) 
     df.feature.coeffs <- lapply(X = feature.coeffs, FUN = function(x) {
-        Reduce(function(y1, y2) merge(y1, y2, by = "feature", all.x = TRUE, all.y = TRUE), x) %>% 
-            `colnames<-`(c("feature", paste0("coeff_clt", names(x)))) %>% 
-            replace(is.na(.data$.), 0)
+        df <- Reduce(function(y1, y2) merge(y1, y2, by = "feature", all.x = TRUE, all.y = TRUE), x)
+        colnames(df) <- c("feature", paste0("coeff_clt", names(x)))
+        df[is.na(df)] <- 0
+        return(df)
     })
     names(df.feature.coeffs) <- paste0("icp_", pick.icp)
     
