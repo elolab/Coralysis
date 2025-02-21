@@ -1,10 +1,10 @@
 note <- sprintf("R package version %s", meta$Version)
 
 bibentry(bibtype = "Article",
-         author = c(person("António G.G.", "Sousa"), 
+         author = c(person("Antonio G.G.", "Sousa"), 
                     person("Johannes", "Smolander"),
                     person("Sini", "Junttila"),
-                    person("Laura L.", "Elo")),,
+                    person("Laura L.", "Elo")),
          title = "Coralysis enables sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration",
          year = 2025,
          doi = "10.1101/2025.02.07.637023",
