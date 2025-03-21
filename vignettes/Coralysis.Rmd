@@ -26,29 +26,51 @@ ___
 
 <br>
 
-To quickly illustrate the multi-level integration algorithm, we will use in this vignette two 10X PBMCs (Peripheral Blood Mononuclear Cells) 3' assays: **V1** and **V2**. The datasets have been downloaded from 10X website. The PBMC dataset **V1** corresponds to sample _pbmc6k_ and **V2** to `pbmc8k`: 
+To quickly illustrate the multi-level integration algorithm, this vignette highlights the integration of two brain datasets: **zeisel** (Zeisel et al., 2018) and **romanov** (Romanov et al., 2017). These datasets have been imported as `SingleCellExperiment` objects via the `scRNAseq` `R` package using the functions `ZeiselBrainData()` and `RomanovBrainData()`. Additionally, both datasets were normalized with the `scater` function `logNormCounts()`. The datasets were first merged based on shared genes and later subset to 2,000 highly variable genes with the `scran` function `getTopHVGs()`. Cell type labels correspond to level 1 class annotations provided in both `SingleCellExperiment` objects.  
 
-   + **V1**: [pbmc6k](https://support.10xgenomics.com/single-cell-gene-expression/datasets/1.1.0/pbmc6k)
-   
-   + **V2**: [pbmc8k](https://support.10xgenomics.com/single-cell-gene-expression/datasets/2.1.0/pbmc8k)
-
-<br>
-
-Cells were annotated using the annotations provided by [Korsunsky et al., 2019](https://www.nature.com/articles/s41592-019-0619-0) (Source Data Figure 4 file). The overall data was downsampled to 2K cells (1K per assay) and 2K highly variable genes selected with `scran` R package. To facilitate the reproduction of this vignette, the data is distributed through _Zenodo_ as a `SingleCellExperiment` object, the object (class) required by most functions in `Coralysis` (see [Chapter 4 The SingleCellExperiment class - OSCA manual](https://bioconductor.org/books/3.13/OSCA.intro/the-singlecellexperiment-class.html)). The `SCE` object provided comprises `counts` (raw count data), `logcounts` (log-normalized data) and cell `colData` (which includes batch and cell labels, designated as `batch` and `cell_type`, respectively).   
-
-Run the code below to import the `R` packages and data required to reproduce this vignette.  
+Run the code below to import the required `R` packages, load the data, and preprocess it to reproduce this vignette.  
 
 ```{r packages, message=FALSE, warning=FALSE}
 # Import packages
+library("scRNAseq")
 library("Coralysis")
 library("SingleCellExperiment")
 ```
 
 ```{r data}
-# Import data from Zenodo
-data.url <- "https://zenodo.org/records/14871436/files/pbmc_10Xassays.rds?download=1"
-pbmc_10Xassays <- readRDS(file = url(data.url))
-pbmc_10Xassays # print SCE object
+# Import data
+zeisel <- ZeiselBrainData()
+romanov <- RomanovBrainData()
+
+# Normalize
+zeisel <- scater::logNormCounts(zeisel)
+counts(zeisel) <- NULL
+altExps(zeisel) <- list()
+romanov <- scater::logNormCounts(romanov)
+counts(romanov) <- NULL
+
+# Intersected genes
+genes <- intersect(row.names(zeisel), row.names(romanov))
+zeisel <- zeisel[genes, ]
+romanov <- romanov[genes, ]
+
+# Remove colData
+colData(zeisel) <- colData(zeisel)[, "level1class", drop = FALSE]
+colnames(colData(zeisel)) <- "cell_type"
+colData(romanov) <- colData(romanov)[, "level1 class", drop = FALSE]
+colnames(colData(romanov)) <- "cell_type"
+
+# Batch
+zeisel[["batch"]] <- "Zeisel et al."
+romanov[["batch"]] <- "Romanov et al."
+
+# Merge cells
+sce <- cbind(zeisel, romanov)
+rm(list = c("zeisel", "romanov"))
+
+# HVG
+hvg <- scran::getTopHVGs(sce, n = 2000)
+sce <- sce[hvg, ]
 ```
 
 <br>
@@ -68,9 +90,9 @@ ___
 The `PrepareData()` function checks whether a sparse matrix is available in the `logcounts` assay (which corresponds to log-normalized data) and removes non-expressed features.
 
 ```{r preprocess}
-# Prepare data: 
-#checks 'logcounts' format & removes non-expressed genes
-pbmc_10Xassays <- PrepareData(object = pbmc_10Xassays)
+# Prepare data:
+# checks 'logcounts' format & removes non-expressed genes
+sce <- PrepareData(object = sce)
 ```
 
 <br>
@@ -87,20 +109,23 @@ ___
 
 <br>
 
-The multi-level integration algorithm is implemented in the `RunParallelDivisiveICP()` function, the main function in `Coralysis`. It only requires a `SingleCellExperiment` object, which in this case is `pbmc_10Xassays`. 
+The multi-level integration algorithm is implemented in the `RunParallelDivisiveICP()` function, the main function in `Coralysis`. It only requires a `SingleCellExperiment` object, which in this case is `sce`. 
 
-To perform integration across a batch, a `batch.label` available in `colData(pbmc_10Xassays)` must be provided. In this case, it is `"batch"`. The ensemble algorithm runs 50 times by default, but for illustrative purposes, this has been reduced to 10 (`L=10`). 
+To perform integration across a batch, a `batch.label` available in `colData(sce)` must be provided. In this case, it is `"batch"`, created above to hold the information about the brain dataset origin, i.e., _Zeisel et al._ or _Romanov et al._. The ensemble algorithm runs 50 times by default, but for illustrative purposes, this has been reduced to 10 (`L=10`). 
 
-Two threads are allocated to speed up the process (`threads=2`), though by default, the function uses all available system threads. Specify one thread if you prefer not to use any additional threads.
+Two threads are allocated to speed up the process (`threads=2`), though by default, the function uses all available system threads. Specify one thread if you prefer not to use any additional threads. In addition, the cells are downsampled to 1,000 cells per batch to speed up the process (`icp.batch.size = 1000`). 
 
-The result consists of a set of models and their respective probability matrices (n = 40; log2(`k`) * `L`), stored in `metadata(pbmc_10Xassays)$coralysis$models` and `metadata(pbmc_10Xassays)$coralysis$joint.probability`, respectively.
+The result consists of a set of models and their respective probability matrices (n = 40; log2(`k`) * `L`), stored in `metadata(sce)$coralysis$models` and `metadata(sce)$coralysis$joint.probability`, respectively.
 
 ```{r integration}
 # Multi-level integration
 set.seed(123)
-pbmc_10Xassays <- RunParallelDivisiveICP(object = pbmc_10Xassays, 
-                                         batch.label = "batch", 
-                                         L = 10, threads = 2) 
+sce <- RunParallelDivisiveICP(
+    object = sce,
+    batch.label = "batch",
+    icp.batch.size = 1000,
+    L = 10, threads = 2
+)
 ```
 
 <br>
@@ -122,7 +147,7 @@ The integrated result of `Coralysis` consist of an integrated embedding which ca
 ```{r integrated emb}
 # Integrated embedding
 set.seed(125)
-pbmc_10Xassays <- RunPCA(object = pbmc_10Xassays)
+sce <- RunPCA(object = sce)
 ```
 
 <br>
@@ -144,7 +169,7 @@ Compute UMAP by running the function `RunUMAP()`.
 ```{r umap}
 # UMAP
 set.seed(1204)
-pbmc_10Xassays <- RunUMAP(object = pbmc_10Xassays)
+sce <- RunUMAP(object = sce, min_dist = 0.5, n_neighbors = 15)
 ```
 
 <br>
@@ -161,17 +186,132 @@ ___
 
 <br>
 
-Finally, the integration can be visually inspected by highlighting the batch and cell type labels into the UMAP projection. 
+Finally, the integration can be visually inspected by highlighting the batch and cell type labels into the UMAP projection. `Coralysis` is sensitive enough to integrate cell types shared across datasets such as oligodendrocytes, microglia and endothelial cells, but not ependymal or pyramidal cells. This difference arises because Romanov et al., 2017 focused specifically on the hypothalamus, whereas Zeisel et al., 2018 provided a broader characterization of the entire mouse nervous system, including multiple brain regions.
 
-```{r viz categorical vars, fig.width=5, fig.height=3.5}
-# Visualize categorical variables integrated emb. 
+```{r viz categorical vars, fig.width=10, fig.height=5.5}
+# Visualize categorical variables integrated emb.
 vars <- c("batch", "cell_type")
 plots <- lapply(X = vars, FUN = function(x) {
-    PlotDimRed(object = pbmc_10Xassays, color.by = x, 
-               point.size = 0.25, point.stroke = 0.5, 
-               legend.nrow = 3)
-}) 
+    PlotDimRed(
+        object = sce, color.by = x,
+        point.size = 0.25, point.stroke = 0.5,
+        legend.nrow = 4
+    )
+})
 cowplot::plot_grid(plotlist = plots, ncol = 2, align = "vh") # join plots together
+```
+
+<br>
+
+<br>
+
+To allow a better distinction between batches, plot cell types by batch below.
+
+```{r viz categorical vars by batch, fig.width=10, fig.height=5.5}
+plots[[2]] + ggplot2::facet_grid(~batch)
+```
+
+<br>
+
+<br>
+
+Interestingly, `Coralysis` integrated VSM (Vascular Smooth Muscle) cells from Romanov et al., 2017 with a subset of endothelial mural cells from Zeisel et al., 2018. Gene expression visualization of cell type markers for VSM ( _Acta2_, _Myh11_, _Tagln_ ) and endothelial ( _Cdh5_, _Pecam1_ ) cells support this integration. 
+
+```{r viz gene exp markers, fig.width=15, fig.height=5}
+# Visualization of gene expression markers
+markers <- c("Acta2", "Myh11", "Tagln", "Cdh5", "Pecam1")
+plot.markers <- lapply(markers, function(x) {
+    PlotExpression(sce, color.by = x, point.size = 0.5, point.stroke = 0.5) +
+        ggplot2::facet_grid(~batch)
+})
+cowplot::plot_grid(plotlist = plot.markers, ncol = 3)
+```
+
+<br>
+
+<br>
+
+___
+
+<br>
+
+<br>
+
+### Graph-based clustering
+
+<br>
+
+Graph-based clustering can be obtained by running the `scran` function `clusterCells()` using the `Coralysis` integrated embedding. The clustering result can be saved directly into the `SingleCellExperiment` object (`sce$cluster`).
+
+```{r clustering, fig.width=5, fig.height=5.5}
+# Graph-based clustering
+set.seed(123)
+sce$cluster <- scran::clusterCells(sce,
+    use.dimred = "PCA",
+    BLUSPARAM = bluster::SNNGraphParam(k = 30, cluster.fun = "louvain")
+)
+
+# Plot the clustering result
+plots[[3]] <- PlotDimRed(
+    object = sce, color.by = "cluster",
+    point.size = 0.25, point.stroke = 0.5,
+    legend.nrow = 4
+)
+plots[[3]]
+```
+
+<br>
+
+<br>
+
+Compare the cell type annotations with the clustering result by batch. 
+
+```{r viz clustering by batch, fig.width=8, fig.height=10.5}
+cowplot::plot_grid(
+    plots[[2]] + ggplot2::facet_grid(~batch),
+    plots[[3]] + ggplot2::facet_grid(~batch),
+    ncol = 1
+)
+```
+
+<br>
+
+<br>
+
+___
+
+<br>
+
+<br>
+
+### Gene coefficients
+
+<br>
+
+Gene coefficients can be obtained for a given cell label through majority voting with the function `MajorityVotingFeatures()`. The majority voting is performed by searching for the most representative cluster for a given cell label across all possible clusters (i.e., across all icp runs and rounds). The most representative cluster corresponds to the cluster with the highest majority voting score. This corresponds to the geometric mean between the proportion of cells from the given label intersected with a cluster and the proportion of cells from that same cluster that intersected with the cells from the given label. The higher the score the better. A cluster that scores 1 indicates that all its cells correspond to the assigned label, and vice versa; i.e., all the cells with the assigned label belong to this cluster. For example, `MajorityVotingFeatures()` by providing the `colData` variable `"cluster"` (i.e., `label="cluster"`).
+
+```{r gene coefficients, message=FALSE, warning=FALSE}
+# Get label gene coefficients by majority voting
+clts.gene.coeff <- MajorityVotingFeatures(object = sce, label = "cluster")
+
+# Print summary
+clts.gene.coeff$summary
+```
+
+<br>
+
+Visualize below the expression for the top positive coefficients of cluster 9 corresponding to a population of oligodendrocytes shared between datasets.  
+
+```{r viz top coefficients clt9, fig.width=15, fig.height=5}
+## Visualize top coefficients for cluster 9
+top.markers <- clts.gene.coeff$feature_coeff$`9`
+top.markers <- top.markers[order(top.markers$coeff_clt7, decreasing = TRUE), ]
+top.markers <- top.markers[1:5, "feature"]
+plot.coeff.markers <- lapply(top.markers, function(x) {
+    PlotExpression(sce, color.by = x, point.size = 0.5, point.stroke = 0.5) +
+        ggplot2::facet_grid(~batch)
+})
+cowplot::plot_grid(plotlist = plot.coeff.markers, ncol = 3)
 ```
 
 <br>
@@ -209,7 +349,17 @@ ___
 
 Amezquita R, Lun A, Becht E, Carey V, Carpp L, Geistlinger L, Marini F, Rue-Albrecht K, Risso D, Soneson C, Waldron L, Pages H, Smith M, Huber W, Morgan M, Gottardo R, Hicks S (2020). "Orchestrating single-cell analysis with Bioconductor." _Nature Methods_, *17*, 137-145. [https://www.nature.com/articles/s41592-019-0654-x](https://www.nature.com/articles/s41592-019-0654-x).
 
+Lun ATL, McCarthy DJ, Marioni JC (2016). "A step-by-step workflow for low-level analysis of single-cell RNA-seq data with Bioconductor." _F1000Res._, *5*, 2122. [doi:10.12688/f1000research.9501.2](https://doi.org/10.12688/f1000research.9501.2).
+
+McCarthy DJ, Campbell KR, Lun ATL, Willis QF (2017). "Scater: pre-processing, quality control, normalisation and visualisation of single-cell RNA-seq data in R." _Bioinformatics_, *33*, 1179-1186. [doi:10.1093/bioinformatics/btw777](https://doi.org/10.1093/bioinformatics/btw777).
+
+Romanov RA, Zeisel A, Bakker J, Girach F, Hellysaz A, Tomer R, Alpár A, Mulder J, Clotman F, Keimpema E, Hsueh B, Crow AK, Martens H, Schwindling C, Calvigioni D, Bains JS, Máté Z, Szabó G, Yanagawa Y, Zhang M, Rendeiro A, Farlik M, Uhlén M, Wulff P, Bock C, Broberger C, Deisseroth K, Hökfelt T, Linnarsson S, Horvath TL, Harkany T (2017). "A novel organizing principle of the hypothalamus reveals molecularly segregated periventricular dopamine neurons." _Nature neuroscience_, *20(2)*, 176. [https://doi.org/10.1038/nn.4462](https://doi.org/10.1038/nn.4462)
+
 Sousa A, Smolander J, Junttila S, Elo L (2025). "Coralysis enables sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration." _bioRxiv_. [doi:10.1101/2025.02.07.637023](https://doi.org/10.1101/2025.02.07.637023)
+
+Wickham H (2016). "ggplot2: Elegant Graphics for Data Analysis." _Springer-Verlag New York_.
+
+Zeisel A, Hochgerner H, Lönnerberg P, Johnsson A, Memic F, Van Der Zwan J, Häring M, Braun E, Borm LE, La Manno G, Codeluppi S, Furlan A, Lee K, Skene N, Harris KD, Hjerling-Leffler J, Arenas E, Ernfors P, Marklund U, Linnarsson S (2018). "Molecular architecture of the mouse nervous system." _Cell_, *174(4)*, 999-1014. [https://doi.org/10.1016/j.cell.2018.06.021](https://doi.org/10.1016/j.cell.2018.06.021)
 
 <br>
 

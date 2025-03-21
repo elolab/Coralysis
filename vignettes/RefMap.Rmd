@@ -26,33 +26,74 @@ ___
 
 <br>
 
-To illustrate the `Coralysis` reference-mapping method, we will use in this vignette two 10X PBMCs (Peripheral Blood Mononuclear Cells) 3' assays: **V1** and **V2**. The assay **V2** will be the _reference_ and **V1** the _query_, i.e., the dataset that will be mapped against the reference. The datasets have been downloaded from 10X website. The PBMC dataset **V1** corresponds to sample _pbmc6k_ and **V2** to `pbmc8k`: 
-
-   + **V1**: [pbmc6k](https://support.10xgenomics.com/single-cell-gene-expression/datasets/1.1.0/pbmc6k)
+To illustrate the `Coralysis` reference-mapping method, we will use in this vignette two pancreatic islet datasets distributed through the `scRNAseq` `R` package: **MuraroPancreasData** (Muraro et al., 2016)  and **GrunPancreasData** (Grun et al., 2016). The former dataset will be the _reference_ and latter the _query_, i.e., the dataset that will be mapped against the reference.
    
-   + **V2**: [pbmc8k](https://support.10xgenomics.com/single-cell-gene-expression/datasets/2.1.0/pbmc8k)
+   + **MuraroPancreasData** (reference): 2,122 cells with cell type labels
+   
+   + **GrunPancreasData** (query): 1,064 cells without cell type labels
 
 <br>
 
-Cells were annotated using the annotations provided by [Korsunsky et al., 2019](https://www.nature.com/articles/s41592-019-0619-0) (Source Data Figure 4 file). The overall data was downsampled to 2K cells (1K per assay) and 2K highly variable genes selected with `scran` R package. To facilitate the reproduction of this vignette, the data is distributed through _Zenodo_ as a `SingleCellExperiment` object, the object (class) required by most functions in `Coralysis` (see [Chapter 4 The SingleCellExperiment class - OSCA manual](https://bioconductor.org/books/3.13/OSCA.intro/the-singlecellexperiment-class.html)). The `SCE` object provided comprises `counts` (raw count data), `logcounts` (log-normalized data) and cell `colData` (which includes batch and cell labels, designated as `batch` and `cell_type`, respectively).   
+The datasets were imported below with the function `MuraroPancreasData()` from `GrunPancreasData()` package as a `SingleCellExperiment` object, the object (class) required by most functions in `Coralysis` (see [Chapter 4 The SingleCellExperiment class - OSCA manual](https://bioconductor.org/books/3.13/OSCA.intro/the-singlecellexperiment-class.html)). The `SCE` object provided comprises `counts` (raw count data), cell `colData` (cell metadata), among other data layers. Both datasets were normalised and subsetted to 500 variable genes with the `scuttle`/`scran` functions `logNormCounts` and `getTopHVGs`, respectively (other preprocessing steps, such as removing unlabeled cells or applying quality control, were carried out following [Chapter 3 Using single-cell references - OSCA manual](https://bioconductor.org/books/release/SingleRBook/sc-mode.html)).     
 
 Run the code below to import the `R` packages and data required to reproduce this vignette.  
 
 ```{r packages, message=FALSE, warning=FALSE}
 # Packages
+library("scran")
+library("SingleR")
 library("ggplot2")
+library("scRNAseq")
 library("Coralysis")
 library("SingleCellExperiment")
 ```
 
-```{r data}
-# Import data from Zenodo
-data.url <- "https://zenodo.org/records/14871436/files/pbmc_10Xassays.rds?download=1"
-pbmc_10Xassays <- readRDS(file = url(data.url))
+```{r data preprocessing, message=FALSE, warning=FALSE}
+### Objects used and QC steps from SingleR book:
+# https://bioconductor.org/books/release/SingleRBook/sc-mode.html
 
-# Split the SCE object by assay 
-ref <- pbmc_10Xassays[,pbmc_10Xassays$batch=="V2"] # let V2 assay batch be the reference data set
-query <- pbmc_10Xassays[,pbmc_10Xassays$batch=="V1"] # let V1 be the query (unknown annotations)
+## Reference: muraro-pancreas-2016
+# Import data
+ref <- MuraroPancreasData()
+
+# Remove unnecessary data & labels
+altExps(ref) <- NULL
+ref <- ref[, !is.na(ref$label) & ref$label != "unclear"]
+
+# Normalise
+ref <- logNormCounts(ref)
+counts(ref) <- NULL
+
+
+## Query: grun-pancreas-2016
+# Import data
+query <- GrunPancreasData()
+
+# Remove unnecessary data & labels
+query <- addPerCellQC(query)
+qc <- quickPerCellQC(colData(query),
+    percent_subsets = "altexps_ERCC_percent",
+    batch = query$donor,
+    subset = query$donor %in% c("D17", "D7", "D2")
+)
+query <- query[, !qc$discard]
+altExps(query) <- NULL
+
+# Normalise
+query <- logNormCounts(query)
+counts(query) <- NULL
+
+# Feature selection with 'scran' package for reference
+nhvg <- 500
+set.seed(123)
+top.hvg <- getTopHVGs(ref, n = nhvg)
+
+# Subset object
+ref <- ref[top.hvg, ]
+
+# Filter out genes for query:
+# not required, only done to reduce query size object
+query <- query[top.hvg, ]
 ```
 
 <br>
@@ -69,32 +110,42 @@ ___
 
 <br>
 
-The first step in performing reference mapping with `Coralysis` is training a dataset that is representative of the biological system under study. In this example, `ref` and `query` correspond to the `SingleCellExperiment` objects of the reference and query PBMC samples, *V2* and *V1* 3' assays, respectively. The reference `ref` is trained through `RunParallelDivisiveICP` function without providing a `batch.label`. In case the reference requires integration, a `batch.label` should be provided. An higher number of `threads` can be provided to speed up computing time depending on the number of cores available. For this example, the algorithm was run 10 times (`L = 10`), but generally, this number should be higher (with the default being `L = 50`). Next, run the function `RunPCA` to obtain the main result required for cell type prediction later on. In addition to cell type prediction, the query dataset(s) can be projected onto UMAP. To allow this, the argument `return.model` should be set to `TRUE` in both functions `RunPCA` and `RunUMAP`.  
+The first step in performing reference mapping with `Coralysis` is training a dataset that is representative of the biological system under study. In this example, `ref` and `query` correspond to the `SingleCellExperiment` objects of the reference and query pancreatic islet datasets, **MuraroPancreasData**  and **GrunPancreasData**, respectively. The reference `ref` is trained through `RunParallelDivisiveICP` function without providing a `batch.label`. In case the reference requires integration, a `batch.label` should be provided. An higher number of `threads` can be provided to speed up computing time depending on the number of cores available. For this example, the algorithm was run 10 times (`L = 10`), but generally, this number should be higher (with the default being `L = 50`). A train set can be built to improve the modeling step in `Coralysis` (by default, `build.train.set=TRUE`), with the respective named `list` of parameters provided to `build.train.params`. In this case, the number of variable genes was set to 500, as this was the number selected above (`nhvg = 500`). Next, run the function `RunPCA` to obtain the main result required for cell type prediction later on. In addition to cell type prediction, the query dataset(s) can be projected onto UMAP. To allow this, the argument `return.model` should be set to `TRUE` in both functions `RunPCA` and `RunUMAP`.  
 
 ```{r train reference, message=TRUE, warning=FALSE}
-# Train the reference 
+# Train the reference
 set.seed(123)
-ref <- RunParallelDivisiveICP(object = ref, L = 10, threads = 2) # runs without 'batch.label' 
+ref <- RunParallelDivisiveICP(
+    object = ref, L = 10, k = 8,
+    build.train.params = list(nhvg = 500), # default 2000
+    threads = 2
+) # runs without 'batch.label'
 
 # Compute reference PCA
 ref <- RunPCA(ref, return.model = TRUE, pca.method = "stats")
 
 # Compute reference UMAP
 set.seed(123)
-ref <- RunUMAP(ref, return.model = TRUE)
+ref <- RunUMAP(ref,
+    return.model = TRUE,
+    umap.method = "uwot", dims = 1:15,
+    n_neighbors = 30, min_dist = 0.3
+)
 ```
 
 Below is the UMAP plot for the reference sample with cell type annotations. In this example, we are using the annotations provided in the object. Ideally, the sample should be annotated after training by performing clustering and manual cluster annotation. Only the resulting manual cell type annotations should be used for prediction. For simplicity, we will use the annotations provided in the object.
 
-```{r viz reference, fig.width=3, fig.height=4.5}
+```{r viz reference, fig.width=6, fig.height=7}
 # Vizualize reference
-ref.celltype.plot <- PlotDimRed(object = ref, 
-                                color.by = "cell_type", 
-                                dimred = "UMAP", 
-                                point.size = 0.01, 
-                                legend.nrow = 6, 
-                                seed.color = 7) + 
-    ggtitle("reference (ground-truth)")
+ref.celltype.plot <- PlotDimRed(
+    object = ref,
+    color.by = "label",
+    dimred = "UMAP",
+    point.size = 0.01,
+    legend.nrow = 3,
+    seed.color = 17
+) +
+    ggtitle("Reference: ground-truth labels")
 ref.celltype.plot
 ```
 
@@ -113,13 +164,16 @@ ___
 
 <br>
 
-Perform reference-mapping with `Coralysis` by running the function `ReferenceMapping`. This requires to provide the trained reference (`ref`) with cell type annotations intended for the prediction (`ref.label = "cell_type"`) and the query dataset (`query`). The label in the reference aimed to be used for prediction needs to be available on `colData(ref)`. In this case, we are providing the cell type labels from the column `cell_type` available in the reference `ref`. Since we want to project the query onto the reference UMAP, set `project.umap` as `TRUE`. The argument `dimred.name.prefix` just sets the name given as prefix of the low dimensional embeddings stored in `reducedDimNames(map)`. The `SingleCellExperiment` object `map` will contain the same information as `query`, with the predictions and embeddings mapped onto the reference. The predictions consist in `coral_labels` and `coral_probability` stored in `colData(map)`. The `coral_labels` correspond to the cell type predictions obtained against the reference. The `coral_probability` represents the proportion of _K_ neighbors from the winning class (`k.nn` equal 10 by default); the higher the value, the better.   
+Perform reference-mapping with `Coralysis` by running the function `ReferenceMapping`. This requires to provide the trained reference (`ref`) with cell type annotations intended for the prediction (`ref.label = "label"`) and the query dataset (`query`). The label in the reference aimed to be used for prediction needs to be available on `colData(ref)`. In this case, we are providing the cell type labels from the column `label` available in the reference `ref`. Since we want to project the query onto the reference UMAP, set `project.umap` as `TRUE`. The argument `dimred.name.prefix` just sets the name given as prefix of the low dimensional embeddings stored in `reducedDimNames(map)`. The `SingleCellExperiment` object `query` will contain the same information as `query`, with the predictions and embeddings mapped onto the reference. The predictions consist in `coral_labels` and `coral_probability` stored in `colData(query)`. The `coral_labels` correspond to the cell type predictions obtained against the reference. The `coral_probability` represents the proportion of _K_ neighbors from the winning class (`k.nn` was set to 5 - default 10); the higher the value, the better.   
 
-```{r reference-mapping, fig.width=12, fig.height=3.25}
-## Reference-mapping
+```{r reference-mapping}
+# Reference-mapping
 set.seed(1024)
-map <- ReferenceMapping(ref = ref, query = query, ref.label = "cell_type", 
-                        project.umap = TRUE, dimred.name.prefix = "ref")
+query <- ReferenceMapping(
+    ref = ref, query = query, ref.label = "label",
+    project.umap = TRUE, dimred.name.prefix = "ref",
+    k.nn = 5
+)
 ```
 
 <br>
@@ -136,7 +190,7 @@ ___
 
 <br>
 
-The accuracy of `Coralysis` reference-mapping method is presented below together with a confusion matrix between the predicted (rows) versus ground-truth cell type labels (columns). 
+Below, `SingleR` is run with the `ref`erence to predict the cell type labels for the `query`, in order to compare with the `Coralysis` predictions, since the `query` dataset used does not provide cell type labels. The accuracy of `Coralysis` reference-mapping method is presented below together with a confusion matrix between the predicted (rows) versus ground-truth cell type labels (columns). 
 
 <br>
 
@@ -147,13 +201,15 @@ The accuracy of `Coralysis` reference-mapping method is presented below together
 <br>
 
 ```{r prediction accuracy scores}
+# Compare against SingleR
+preds.singler <- SingleR(test = query, ref = ref, labels = ref$label, de.method = "wilcox")
+colData(query) <- cbind(colData(query), preds.singler)
+
 # Confusion matrix
-preds_x_truth <- table(map$coral_labels, map$cell_type)
-stopifnot(all(row.names(preds_x_truth)==colnames(preds_x_truth)))
+preds_x_truth <- table(query$coral_labels, query$labels)
 
 # Accuracy
 acc <- sum(diag(preds_x_truth)) / sum(preds_x_truth)
-#print(paste0("Prediction accuracy: ", acc*100, "%"))
 
 # Print confusion matrix
 preds_x_truth
@@ -161,7 +217,7 @@ preds_x_truth
 
 <br>
 
-The accuracy of `Coralysis` reference-mapping method was `r acc*100`%.
+The accuracy of `Coralysis` reference-mapping method was `r round(acc*100, 1)`%.
 
 <br>
 
@@ -173,45 +229,42 @@ The accuracy of `Coralysis` reference-mapping method was `r acc*100`%.
 
 Visualize below the query cells projected onto reference UMAP and how well the predictions match the query ground-truth. The `coral_probability` is a prediction confidence score. Predictions with low scores (<0.5) should be carefully inspected.   
 
-```{r prediction viz, fig.width=7.25, fig.height=8}
-# Plot query and reference UMAP side-by-side 
-#with ground-truth & predicted cell labels
-use.color <- c("aDC" = "#E6F5C9", 
-               "B mem" = "#CCEBC5", 
-               "B naive" = "#FB8072", 
-               "CD4 mem" = "#A6761D", 
-               "CD4 naive" = "#666666", 
-               "CD8 eff" = "#80B1D3",
-               "CD8 T" = "#CBD5E8", 
-               "HSC" = "#E31A1C", 
-               "Megakaryocyte" = "#377EB8", 
-               "Monocyte" = "#FCCDE5", 
-               "CD16+ monocyte" = "#A6D854", 
-               "NK" = "#6A3D9A",
-               "pDC" = "#E7298A", 
-               "Treg" = "#FFFF33")
-query.ground_truth.plot <- PlotDimRed(object = map, 
-                                      color.by = "cell_type", 
-                                      dimred = "refUMAP", 
-                                      point.size = 0.01, 
-                                      legend.nrow = 6, 
-                                      seed.color = 7) + 
-    ggtitle("query (ground-truth)")
-query.predicted.plot <-PlotDimRed(object = map, 
-                                  color.by = "coral_labels", 
-                                  dimred = "refUMAP", point.size = 0.01, 
-                                  legend.nrow = 6, 
-                                  use.color = use.color) + 
-    ggtitle("query (predicted)")
-query.confidence.plot <- PlotExpression(object = map, 
-                                        color.by = "coral_probability", 
-                                        dimred = "refUMAP", 
-                                        point.size = 0.01, 
-                                        color.scale = "viridis") + 
-    ggtitle("query (confidence)")
-cowplot::plot_grid(ref.celltype.plot, query.ground_truth.plot, 
-                   query.predicted.plot, query.confidence.plot, 
-                   ncol = 2, align = "vh")
+```{r prediction viz, fig.width=7.5, fig.height=7.25}
+# Plot query and reference UMAP side-by-side
+# with ground-truth & predicted cell labels
+query.singler.plot <- PlotDimRed(
+    object = query,
+    color.by = "labels",
+    dimred = "refUMAP",
+    point.size = 0.25,
+    point.stroke = 0.25,
+    legend.nrow = 3,
+    seed.color = 17
+) +
+    ggtitle("Query: SingleR predictions")
+query.predicted.plot <- PlotDimRed(
+    object = query,
+    color.by = "coral_labels",
+    dimred = "refUMAP",
+    point.size = 0.25,
+    point.stroke = 0.25,
+    legend.nrow = 3,
+    seed.color = 17
+) +
+    ggtitle("Query: Coralysis predictions")
+query.confidence.plot <- PlotExpression(
+    object = query,
+    color.by = "coral_probability",
+    dimred = "refUMAP",
+    point.size = 0.25,
+    point.stroke = 0.1,
+    color.scale = "viridis"
+) +
+    ggtitle("Query: Coralysis confidence")
+cowplot::plot_grid(ref.celltype.plot, query.singler.plot,
+    query.predicted.plot, query.confidence.plot,
+    ncol = 2, align = "vh"
+)
 ```
 
 <br>
@@ -247,9 +300,13 @@ ___
 
 <br>
 
-Amezquita R, Lun A, Becht E, Carey V, Carpp L, Geistlinger L, Marini F, Rue-Albrecht K, Risso D, Soneson C, Waldron L, Pages H, Smith M, Huber W, Morgan M, Gottardo R, Hicks S (2020). "Orchestrating single-cell analysis with Bioconductor." _Nature Methods_, *17*, 137-145. [https://www.nature.com/articles/s41592-019-0654-x](https://www.nature.com/articles/s41592-019-0654-x).
+Amezquita R, Lun A, Becht E, Carey V, Carpp L, Geistlinger L, Marini F, Rue-Albrecht K, Risso D, Soneson C, Waldron L, Pages H, Smith M, Huber W, Morgan M, Gottardo R, Hicks S (2020). "Orchestrating single-cell analysis with Bioconductor." _Nature Methods_, *17*, 137-145. [doi:10.1038/s41592-019-0654-x](https://doi.org/10.1038/s41592-019-0654-x).
 
-Korsunsky I, Millard N, Fan J, Slowikowski K, Zhang F, Wei K, Baglaenko Y, Brenner M, Loh P, Raychaudhuri S. (2019). "Fast, sensitive and accurate integration of single-cell data with Harmony." _Nature Methods_. 16(12):1289-1296. [10.1038/s41592-019-0619-0](https://doi.org/10.1038/s41592-019-0619-0)
+Aran D, Looney AP, Liu L, Wu E, Fong V, Hsu A, Chak S, Naikawadi RP, Wolters PJ, Abate AR, Butte AJ, Bhattacharya M (2019). "Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage." _Nat. Immunol._, 20:163-172. [doi:10.1038/s41590-018-0276-y](https://doi.org/10.1038/s41590-018-0276-y).
+  
+Grun D, Muraro MJ, Boisset JC, Wiebrands K, Lyubimova A, Dharmadhikari G, van den Born M, van Es J, Jansen E, Clevers H, de Koning EJP, van Oudenaarden EJP (2016). "De Novo Prediction of Stem Cell Identity using Single-Cell Transcriptome Data." _Cell Stem Cell_, 19(2):266–77. [doi.org/10.1016/j.stem.2016.05.010](https://doi.org/10.1016/j.stem.2016.05.010)
+
+Muraro MJ, Dharmadhikari G, Grun D, Groen N, Dielen T, Jansen E, van Gurp L, Engelse MA, Carlotti F, de Koning EJP, van Oudenaarden A (2016). "A Single-Cell Transcriptome Atlas of the Human Pancreas." _Cell Systems_, 3(4):385–94. [doi.org/10.1016/j.cels.2016.09.002](https://doi.org/10.1016/j.cels.2016.09.002)
 
 Sousa A, Smolander J, Junttila S, Elo L (2025). "Coralysis enables sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration." _bioRxiv_. [doi:10.1101/2025.02.07.637023](https://doi.org/10.1101/2025.02.07.637023)
 
