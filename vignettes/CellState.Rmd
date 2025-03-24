@@ -43,7 +43,7 @@ library("SingleCellExperiment")
 
 ```{r import data, message=FALSE, warning=FALSE}
 # Import object
-sce <- scRNAseq::BachMammaryData()
+sce <- BachMammaryData()
 colnames(sce) <- paste0("cell", 1:ncol(sce)) # create cell names
 ```
 
@@ -88,7 +88,7 @@ Highly variable genes (HVG) can be selected using the R package `scran`.
 
 ```{r hvg}
 # Feature selection with 'scran' package
-nhvg <- 2000
+nhvg <- 500
 hvg <- scran::getTopHVGs(sce, n = nhvg)
 hvg.idx <- which(row.names(sce) %in% hvg)
 sce <- sce[hvg.idx, ]
@@ -109,12 +109,18 @@ ___
 
 <br>
 
-Multi-level integration can be performed with `Coralysis` by running the function `RunParallelDivisiveICP()`. Since there is not a batch, the function `RunParallelDivisiveICP()` is run with `batch.label=NULL`. The `RunParallelDivisiveICP()` function can be run in parallel by providing the number of `threads` to reduce the run time. Consult the full documentation of this function with `?RunParallelDivisiveICP`.  
+Multi-level integration can be performed with `Coralysis` by running the function `RunParallelDivisiveICP()`. Since there is not a batch, the function `RunParallelDivisiveICP()` is run with `batch.label=NULL`. The `RunParallelDivisiveICP()` function can be run in parallel by providing the number of `threads` to reduce the run time. Consult the full documentation of this function with `?RunParallelDivisiveICP`. For this example, the algorithm was run 10 times (`L = 25`), but generally, this number should be higher (with the default being `L = 50`). A train set can be built to improve the modeling step in `Coralysis` (by default, `build.train.set=TRUE`), with the respective named `list` of parameters provided to `build.train.params`. In this case, no training set was built; instead, the entire dataset was downsampled to 1,000 cells before each ICP run (`icp.batch.size=1000`).
 
 ```{r multi-level integration, warning=FALSE}
 # Perform multi-level integration
+start <- Sys.time()
 set.seed(123)
-sce <- RunParallelDivisiveICP(object = sce, L = 20, threads = 2)
+sce <- RunParallelDivisiveICP(object = sce, L = 25, 
+                              icp.batch.size = 1000,
+                              build.train.set = FALSE,
+                              threads = 2)
+stop <- Sys.time()
+stop - start
 ```
 
 `Coralysis` returns a list of cell cluster probabilities saved at `metadata(sce)$coralysis$joint.probability` of length equal to the number of icp runs, i.e., `L` (by default `L=20`), times the number of icp rounds, i.e., log2(`k`) (by default `k=16`, thus 4 rounds of divisive icp). 
@@ -214,7 +220,7 @@ ___
 
 <br>
 
-The ICP clusters corresponding to the ICP probability table with the highest standard deviation (i.e., 5) for the last clustering round (i.e., 4) was obtained below (`"icp_run_round_5_4_clusters"`) and the respective clusters highlighted in UMAP plot. 
+The ICP clusters corresponding to the ICP probability table with the highest standard deviation (i.e., 7) for the last clustering round (i.e., 4) was obtained below (`"icp_run_round_7_4_clusters"`) and the respective clusters highlighted in UMAP plot. 
 
 ```{r icp clusters, fig.width=5, fig.height=6}
 # ICP clusters: identify the ICP probability table with the highest standard deviation
@@ -222,7 +228,7 @@ probs <- GetCellClusterProbability(object = sce, icp.round = 4, concatenate = FA
 probs.sd <- lapply(X = probs, FUN = function(x) {
     sd(x)
 })
-icp.run <- which.max(probs.sd) # 5
+icp.run <- which.max(probs.sd) # 7
 clt <- paste0("icp_run_round_", icp.run, "_4_clusters")
 sce[[clt]] <- factor(sce[[clt]], levels = as.character(1:16))
 PlotDimRed(sce,
@@ -235,21 +241,21 @@ PlotDimRed(sce,
 
 <br>
 
-The gene coefficients for the above ICP clusters corresponding to the ICP run no. 5 and clustering round 4 can be retrieved with the function `GetFeatureCoefficients()`. The positive coefficients at least for one of the clusters were represented in the heatmap plot below.  
+The gene coefficients for the above ICP clusters corresponding to the ICP run no. 7 and clustering round 4 can be retrieved with the function `GetFeatureCoefficients()`. The positive coefficients at least for one of the clusters were represented in the heatmap plot below.  
 
 ```{r gene coefficients, message=FALSE, warning=FALSE, fig.width = 5.5, fig.height=14}
 # Get gene coefficients
 gene.coeff <- GetFeatureCoefficients(sce, icp.run = icp.run, icp.round = 4)
-row.names(gene.coeff$icp_20) <- gene.coeff$icp_20$feature
-gene.coeff$icp_20 <- gene.coeff$icp_20[, -1]
+row.names(gene.coeff$icp_28) <- gene.coeff$icp_28$feature
+gene.coeff$icp_28 <- gene.coeff$icp_28[, -1]
 
 # Plot top positive coefficients in heatmap
-positive.coeff <- (rowSums(gene.coeff$icp_20 > 0) > 0)
+positive.coeff <- (rowSums(gene.coeff$icp_28 > 0) > 0)
 heat <- ComplexHeatmap::Heatmap(
-    matrix = as.matrix(gene.coeff$icp_20)[positive.coeff, ],
+    matrix = as.matrix(gene.coeff$icp_28)[positive.coeff, ],
     name = "Gene coef.",
     cluster_columns = FALSE, show_row_dend = F, show_row_names = T,
-    row_names_gp = grid::gpar(fontsize = 8)
+    row_names_gp = grid::gpar(fontsize = 7)
 )
 print(heat)
 ```
@@ -258,29 +264,28 @@ print(heat)
 
 <br>
 
-Since the largest population of basal cells is constituted by three ICP clusters (12, 13, 14), one could check below the main coefficients for each one of these clusters. 
+One of the largest population of luminal cells is constituted by three ICP clusters (2, 6, 11), one could check below the main coefficients for each one of these clusters. 
 
-```{r gene coefficients per basal cluster, fig.width=20, fig.height=10}
+```{r gene coefficients per luminal cluster, fig.width=20, fig.height=10}
 # Check top gene coefficients per basal cluster: 12-14
-gene.coeff.basal <- gene.coeff$icp_20[positive.coeff, ] %>%
-    mutate("gene" = row.names(.)) %>%
-    dplyr::select(gene, coeff_clt12:coeff_clt14)
-top5.basal <- top5.basal.plts <- list()
-for (i in as.character(12:14)) {
+gene.coeff.basal <- gene.coeff$icp_28[positive.coeff, ] %>%
+    mutate("gene" = row.names(.)) 
+top5.luminal <- top5.luminal.plts <- list()
+for (i in as.character(c(2, 6, 11))) {
     clt.no <- paste0("clt", i)
-    top5.basal[[clt.no]] <- gene.coeff.basal %>%
+    top5.luminal[[clt.no]] <- gene.coeff.basal %>%
         dplyr::select(all_of(c("gene", paste0("coeff_", clt.no)))) %>%
         arrange(desc(.data[[paste0("coeff_", clt.no)]])) %>%
         head(5) %>%
         pull(gene)
-    top5.basal.plts[[clt.no]] <- cowplot::plot_grid(plotlist = lapply(top5.basal[[clt.no]], function(x) {
+    top5.luminal.plts[[clt.no]] <- cowplot::plot_grid(plotlist = lapply(top5.luminal[[clt.no]], function(x) {
         PlotExpression(sce,
             color.by = x, point.size = 0.1, point.stroke = 0.1,
             scale.values = TRUE
         ) + ggplot2::ggtitle(gsub("clt", "cluster: ", clt.no))
     }), ncol = 5, align = "vh")
 }
-cowplot::plot_grid(plotlist = top5.basal.plts, nrow = 3, align = "vh")
+cowplot::plot_grid(plotlist = top5.luminal.plts, nrow = 3, align = "vh")
 ```
 
 <br>
@@ -297,14 +302,14 @@ ___
 
 <br>
 
-Graph-based clustering can be obtained by running the `scran` function `clusterCells()` using the `Coralysis` integrated embedding. The community detection algorithm used was Louvain with a resolution value of 0.7.
+Graph-based clustering can be obtained by running the `scran` function `clusterCells()` using the `Coralysis` integrated embedding. The community detection algorithm used was Louvain with a resolution value of 0.8.
 
 ```{r graph-based clustering, fig.width=5, fig.height=6}
 ### Graph-based clustering with scran
 ## Coralysis integrated PCA embedding
 bluster.params <- bluster::SNNGraphParam(
     k = 30, cluster.fun = "louvain",
-    cluster.args = list(resolution = 0.7)
+    cluster.args = list(resolution = 0.8)
 )
 set.seed(1024)
 sce$Cluster <- scran::clusterCells(sce,
@@ -389,27 +394,27 @@ ___
 
 <br>
 
-The correlation between cell cluster probability bins from cluster 5 and averaged gene expression can be obtained with the function `CellBinsFeatureCorrelation()`. The 30 genes with the highest absolute Pearson correlation were represented in the heatmap below. 
+The correlation between cell cluster probability bins from cluster 10 and averaged gene expression can be obtained with the function `CellBinsFeatureCorrelation()`. The 30 genes with the highest absolute Pearson correlation were represented in the heatmap below. 
 
 ```{r differential expression, fig.width=10, fig.height=6}
 # Differential expression programs
-corr.features <- CellBinsFeatureCorrelation(object = sce.bins, labels = "5")
-top30.corr.clt5 <- corr.features %>%
-    arrange(desc(abs(`5`))) %>%
+corr.features <- CellBinsFeatureCorrelation(object = sce.bins, labels = "10")
+top30.corr.clt10 <- corr.features %>%
+    arrange(desc(abs(`10`))) %>%
     head(30) # Cited1    0.9090848
 
 # Heatmap of top 30 genes with the highest absolute Pearson correlation
-pick.genes <- row.names(top30.corr.clt5)
-mtx <- as.matrix(logcounts(sce.bins[pick.genes, paste0("5_bin", 1:30)]))
+pick.genes <- row.names(top30.corr.clt10)
+mtx <- as.matrix(logcounts(sce.bins[pick.genes, paste0("10_bin", 1:30)]))
 mtx <- t(scale(t(mtx)))
-col_fun2 <- circlize::colorRamp2(c(0.7, 0.8, 0.9), scales::viridis_pal()(3))
+col_fun2 <- circlize::colorRamp2(c(0.8, 0.9, 1.0), scales::viridis_pal()(3))
 heat.diff.exp <- Heatmap(
     matrix = mtx, name = "Row Z-score\n(normalized data)",
     cluster_rows = TRUE, cluster_columns = FALSE,
     show_column_dend = FALSE, show_row_dend = FALSE,
     use_raster = TRUE, show_column_names = TRUE,
     top_annotation = HeatmapAnnotation(
-        "Probability" = colData(sce.bins[, paste0("5_bin", 1:30)])$aggregated_probability_bins,
+        "Probability" = colData(sce.bins[, paste0("10_bin", 1:30)])$aggregated_probability_bins,
         simple_anno_size = unit(0.25, "cm"),
         col = list("Probability" = col_fun2), show_annotation_name = FALSE,
         show_legend = TRUE,
@@ -426,17 +431,18 @@ print(heat.diff.exp)
 
 <br>
 
-For example, the gene _Cited1_ exhibits a gradient of expression correlated with the transient and steady states of cells in cluster 5. The gene _Cited1_ is well known for its role in mammary gland development and differentiation.
+For example, the expression of the gene _Glycam1_ (glycosylation-dependent cell adhesion molecule 1) is almost restricted to cluster 10, and it exhibits a gradient that correlates with both transient and steady-state cells. 
 
 ```{r cited1 expression, fig.width=12, fig.height=5}
 # Look into Cited1 expression
+gene <- "Glycam1"
 cowplot::plot_grid(
     PlotExpression(sce,
-        color.by = "Cited1", point.size = 0.5,
+        color.by = gene, point.size = 0.5,
         point.stroke = 0.5, scale.values = T
     ),
     PlotExpression(sce.bins,
-        color.by = "Cited1", point.size = 1,
+        color.by = gene, point.size = 1,
         point.stroke = 1, scale.values = T
     ),
     ncol = 2
