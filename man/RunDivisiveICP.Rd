@@ -30,12 +30,12 @@ Default is \code{NULL}.}
 
 \item{batch.label}{A character vector with batch labels corresponding to the cells
 given in \code{normalized.data}. The character batch labels need to be named
-with the cells names given in the rows of \code{normalized.data}. 
+with the cells names given in the rows of \code{normalized.data}.
 By default \code{NULL}, i.e., cells are sampled evenly regardless their batch.}
 
 \item{k}{A positive integer power of two, i.e., \code{2**n}, where \code{n>0},
 specifying the number of clusters in the last Iterative Clustering Projection (ICP)
-round. Decreasing \code{k} leads to smaller cell populations diversity and vice versa. 
+round. Decreasing \code{k} leads to smaller cell populations diversity and vice versa.
 Default is \code{16}, i.e., the divisive clustering 2 -> 4 -> 8 -> 16 is performed.}
 
 \item{d}{A numeric that defines how many cells per cluster should be
@@ -54,42 +54,42 @@ Default is \code{0.3}.}
 \item{max.iter}{A positive integer that denotes the maximum number of
 iterations performed until the algorithm ends. Default is \code{200}.}
 
-\item{icp.batch.size}{A positive integer that specifies how many cells 
-to randomly select for each ICP run from the complete data set. 
+\item{icp.batch.size}{A positive integer that specifies how many cells
+to randomly select for each ICP run from the complete data set.
 This is a new feature intended to speed up the process
 with larger data sets. Default is \code{Inf}, which means using all cells.}
 
-\item{train.with.bnn}{Train data with batch nearest neighbors. Default is 
+\item{train.with.bnn}{Train data with batch nearest neighbors. Default is
 \code{TRUE}. Only used if \code{batch.label} is given.}
 
-\item{train.k.nn}{Train data with batch nearest neighbors using \code{k} 
-nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
+\item{train.k.nn}{Train data with batch nearest neighbors using \code{k}
+nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn}
 is \code{TRUE}.}
 
-\item{train.k.nn.prop}{A numeric (higher than 0 and lower than 1) corresponding 
-to the fraction of cells per cluster to use as \code{train.k.nn} nearest 
-neighbors. Default is \code{NULL} meaning that the number of \code{train.k.nn} 
-nearest neighbors is equal to \code{train.k.nn}. If given, \code{train.k.nn} 
-parameter is ignored and \code{train.k.nn} is calculated based on 
+\item{train.k.nn.prop}{A numeric (higher than 0 and lower than 1) corresponding
+to the fraction of cells per cluster to use as \code{train.k.nn} nearest
+neighbors. Default is \code{NULL} meaning that the number of \code{train.k.nn}
+nearest neighbors is equal to \code{train.k.nn}. If given, \code{train.k.nn}
+parameter is ignored and \code{train.k.nn} is calculated based on
 \code{train.k.nn.prop}. A vector with different proportions for the different
-divisive clustering rounds can be given, otherwise the same value is given for 
+divisive clustering rounds can be given, otherwise the same value is given for
 all.}
 
-\item{cluster.seed}{A cluster seed to start and guide the clustering to more 
-reproducible clusterings across runs (factor). Default is \code{NULL}. Otherwise, 
+\item{cluster.seed}{A cluster seed to start and guide the clustering to more
+reproducible clusterings across runs (factor). Default is \code{NULL}. Otherwise,
 a random clustering takes place to start divisive clustering with ICP.}
 
-\item{divisive.method}{Divisive method (character). One of \code{"random"} 
+\item{divisive.method}{Divisive method (character). One of \code{"random"}
 (randomly sample two clusters out of every cluster previously found),
-\code{"cluster"} or \code{"cluster.batch"} (sample two clusters out of every 
+\code{"cluster"} or \code{"cluster.batch"} (sample two clusters out of every
 cluster previously found based on the cluster probability distribution across
 batches or per batch). By default \code{"random"}.}
 
-\item{allow.free.k}{Allow free \code{k} (logical). Allow ICP algorithm to 
-decrease the \code{k} given in case it does not find \code{k} target clusters. 
+\item{allow.free.k}{Allow free \code{k} (logical). Allow ICP algorithm to
+decrease the \code{k} given in case it does not find \code{k} target clusters.
 By default \code{FALSE}.}
 
-\item{ari.cutoff}{Include ICP models and probability tables with an Adjusted 
+\item{ari.cutoff}{Include ICP models and probability tables with an Adjusted
 Rand Index higher than \code{ari.cutoff} (numeric). By default \code{0.5}. A
 value that can range between 0 (include all) and lower than 1.}
 }
@@ -98,9 +98,9 @@ A list that includes the probability matrix and the clustering
 similarity measures: ARI, NMI, etc.
 }
 \description{
-The function implements divisive Iterative Clustering Projection (ICP) clustering: 
+The function implements divisive Iterative Clustering Projection (ICP) clustering:
 a supervised learning-based clustering, which maximizes clustering similarity
-between the clustering and its projection by logistic regression, doing it in 
+between the clustering and its projection by logistic regression, doing it in
 a divisive clustering manner.
 }
 \keyword{internal}

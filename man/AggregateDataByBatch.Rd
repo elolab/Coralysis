@@ -13,10 +13,10 @@ AggregateDataByBatch.SingleCellExperiment(object, batch.label, nhvg, p, ...)
 \arguments{
 \item{object}{An object of \code{SingleCellExperiment} class.}
 
-\item{batch.label}{Cluster identities vector corresponding to the cells in 
+\item{batch.label}{Cluster identities vector corresponding to the cells in
 \code{mtx}.}
 
-\item{nhvg}{Integer of the number of highly variable features to select. By default 
+\item{nhvg}{Integer of the number of highly variable features to select. By default
 \code{2000}.}
 
 \item{p}{Integer. By default \code{30}.}
@@ -27,7 +27,7 @@ AggregateDataByBatch.SingleCellExperiment(object, batch.label, nhvg, p, ...)
 A SingleCellExperiment object with feature expression aggregated by clusters.
 }
 \description{
-The function aggregates feature expression by cell clusters, per 
+The function aggregates feature expression by cell clusters, per
 batch if provided.
 }
 \examples{
@@ -41,13 +41,13 @@ sce <- readRDS(file = url(data.url))
 # Run with a batch
 set.seed(1204)
 sce <- AggregateDataByBatch(object = sce, batch.label = "batch")
-logcounts(sce)[1:10,1:10]
+logcounts(sce)[1:10, 1:10]
 head(metadata(sce)$clusters)
 
 # Run without a batch
 set.seed(1204)
 sce <- AggregateDataByBatch(object = sce, batch.label = NULL)
-logcounts(sce)[1:10,1:10]
+logcounts(sce)[1:10, 1:10]
 head(metadata(sce)$clusters)
 
 }

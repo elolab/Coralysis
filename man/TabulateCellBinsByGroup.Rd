@@ -11,25 +11,25 @@ TabulateCellBinsByGroup.SingleCellExperiment(object, group, relative, margin)
 \S4method{TabulateCellBinsByGroup}{SingleCellExperiment}(object, group, relative = FALSE, margin = 1)
 }
 \arguments{
-\item{object}{An object of \code{SingleCellExperiment} class obtained with the 
+\item{object}{An object of \code{SingleCellExperiment} class obtained with the
 function \code{BinCellClusterProbability()}.}
 
-\item{group}{Character specifying the \code{colData} variable from the \code{SingleCellExperiment} 
-object provided to the function \code{BinCellClusterProbability()} to use as 
+\item{group}{Character specifying the \code{colData} variable from the \code{SingleCellExperiment}
+object provided to the function \code{BinCellClusterProbability()} to use as
 categorical group variable.}
 
-\item{relative}{Logical specifying if relative proportions of cell bins per 
+\item{relative}{Logical specifying if relative proportions of cell bins per
 \code{group} should be returned. By default \code{FALSE}, i.e., absolute values
 are returned.}
 
-\item{margin}{If \code{relative} is \code{TRUE}, proportions should be calculated 
+\item{margin}{If \code{relative} is \code{TRUE}, proportions should be calculated
 by: rows (\code{1}, the default); columns (\code{2}); or overall (\code{NULL}).}
 }
 \value{
 A list of tables with the frequency of cells per bin of cell cluster probability by group for each label.
 }
 \description{
-Frequency of cells per cell cluster probability bin by group for each label. 
+Frequency of cells per cell cluster probability bin by group for each label.
 The label has to be specified beforehand to the function \code{BinCellClusterProbability()}.
 }
 \examples{
@@ -46,20 +46,26 @@ sce <- PrepareData(object = sce)
 
 # Multi-level integration - 'L = 4' just for highlighting purposes
 set.seed(123)
-sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", L = 4, 
-                              threads = 2)
+sce <- RunParallelDivisiveICP(
+    object = sce, batch.label = "batch", L = 4,
+    threads = 2
+)
 
 # Cell states SCE object for a given cell type annotation or clustering
-cellstate.sce <- BinCellClusterProbability(object = sce, label = "cell_type", 
-                                           icp.round = 4, bins = 20) 
+cellstate.sce <- BinCellClusterProbability(
+    object = sce, label = "cell_type",
+    icp.round = 4, bins = 20
+)
 cellstate.sce
 
-# Tabulate cell bins by group 
+# Tabulate cell bins by group
 # give an interesting variable to the "group" parameter
-cellbins.tables <- TabulateCellBinsByGroup(object = cellstate.sce, 
-                                           group = "batch", 
-                                           relative = TRUE, 
-                                           margin = 1)
+cellbins.tables <- TabulateCellBinsByGroup(
+    object = cellstate.sce,
+    group = "batch",
+    relative = TRUE,
+    margin = 1
+)
 }
 
 }

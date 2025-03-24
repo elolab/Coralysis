@@ -7,16 +7,16 @@
 AggregateClusterExpression(mtx, cluster, select.features = NULL, fun = "mean")
 }
 \arguments{
-\item{mtx}{Matrix with features vs cells (rows vs cols) with feature expression to 
+\item{mtx}{Matrix with features vs cells (rows vs cols) with feature expression to
 aggregate.}
 
-\item{cluster}{Cluster identities vector corresponding to the cells in 
+\item{cluster}{Cluster identities vector corresponding to the cells in
 \code{mtx}.}
 
-\item{select.features}{Should features be selected. By default \code{NULL}, 
+\item{select.features}{Should features be selected. By default \code{NULL},
 all features used.}
 
-\item{fun}{Character specifying if feature expression should be aggregated by 
+\item{fun}{Character specifying if feature expression should be aggregated by
 \code{mean} or \code{sum}. By default \code{"mean"}.}
 }
 \value{

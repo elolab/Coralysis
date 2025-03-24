@@ -35,8 +35,8 @@ FindAllClusterMarkers.SingleCellExperiment(
 \arguments{
 \item{object}{A \code{SingleCellExperiment} object.}
 
-\item{clustering.label}{A variable name (of class \code{character}) available 
-in the cell metadata \code{colData(object)} with the clustering labels 
+\item{clustering.label}{A variable name (of class \code{character}) available
+in the cell metadata \code{colData(object)} with the clustering labels
 (\code{character} or \code{factor}) to use.}
 
 \item{test}{Which test to use. Only "wilcox" (the Wilcoxon rank-sum test,
@@ -46,7 +46,7 @@ AKA Mann-Whitney U test) is supported at the moment.}
 averaged feature expression values below this threshold. Default is \code{0.25}.}
 
 \item{min.pct}{Filters out features that have dropout rate (fraction of cells
-expressing a feature) below this threshold in both comparison groups. Default is 
+expressing a feature) below this threshold in both comparison groups. Default is
 \code{0.1}.}
 
 \item{min.diff.pct}{Filters out features that do not have this minimum
@@ -58,7 +58,7 @@ groups to perform the DE analysis. If the number of cells is below the
 threshold, then the DE analysis of this cluster is skipped. Default is \code{3}.}
 
 \item{max.cells.per.cluster}{The maximum number of cells per cluster if
-downsampling is performed to speed up the DE analysis. Default is \code{NULL}, 
+downsampling is performed to speed up the DE analysis. Default is \code{NULL},
 i.e., no downsampling.}
 
 \item{return.thresh}{If \code{only.pos=TRUE}, then return only features that have the
@@ -66,17 +66,17 @@ adjusted p-value (adjusted by the Bonferroni method) below or equal to this
 threshold. Default is \code{0.01}.}
 
 \item{only.pos}{Whether to return only features that have an adjusted p-value
-(adjusted by the Bonferroni method) below or equal to the threshold. Default 
+(adjusted by the Bonferroni method) below or equal to the threshold. Default
 is \code{FALSE}.}
 }
 \value{
 A data frame of the results if positive results were found, else \code{NULL}.
 }
 \description{
-\code{FindAllClusterMarkers} enables identifying feature markers for all 
-clusters at once. This is done by differential expresission analysis where 
-cells from one cluster are compared against the cells from the rest of the 
-clusters. Feature and cell filters can be applied to accelerate the analysis, 
+\code{FindAllClusterMarkers} enables identifying feature markers for all
+clusters at once. This is done by differential expresission analysis where
+cells from one cluster are compared against the cells from the rest of the
+clusters. Feature and cell filters can be applied to accelerate the analysis,
 but this might lead to missing weak signals.
 }
 \examples{
@@ -87,9 +87,13 @@ suppressPackageStartupMessages(library("SingleCellExperiment"))
 batches <- c("b1", "b2")
 set.seed(239)
 batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
-sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
-                            colData = DataFrame("Species" = iris$Species, 
-                                               "Batch" = batch))
+sce <- SingleCellExperiment(
+    assays = list(logcounts = t(iris[, 1:4])),
+    colData = DataFrame(
+        "Species" = iris$Species,
+        "Batch" = batch
+    )
+)
 colnames(sce) <- paste0("samp", 1:ncol(sce))
 
 # Markers

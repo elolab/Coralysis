@@ -25,24 +25,24 @@ VlnPlot.SingleCellExperiment(
 \arguments{
 \item{object}{of \code{SingleCellExperiment} class}
 
-\item{clustering.label}{A variable name (of class \code{character}) available 
-in the cell metadata \code{colData(object)} with the clustering labels 
+\item{clustering.label}{A variable name (of class \code{character}) available
+in the cell metadata \code{colData(object)} with the clustering labels
 (\code{character} or \code{factor}) to use.}
 
-\item{features}{Feature names to plot by cluster (\code{character}) matching 
+\item{features}{Feature names to plot by cluster (\code{character}) matching
 \code{row.names(object)}.}
 
-\item{return.plot}{return.plot whether to return the \code{ggplot2} object. 
+\item{return.plot}{return.plot whether to return the \code{ggplot2} object.
 Default is \code{FALSE}.}
 
-\item{rotate.x.axis.labels}{a logical denoting whether the x-axis labels should 
+\item{rotate.x.axis.labels}{a logical denoting whether the x-axis labels should
 be rotated 90 degrees or just draw it. Default is \code{FALSE}.}
 }
 \value{
 A \code{ggplot2} object if \code{return.plot=TRUE}.
 }
 \description{
-The \code{VlnPlot} function enables visualizing expression levels 
+The \code{VlnPlot} function enables visualizing expression levels
 of feature(s), across clusters using violin plots.
 }
 \examples{
@@ -53,15 +53,21 @@ suppressPackageStartupMessages(library("SingleCellExperiment"))
 batches <- c("b1", "b2")
 set.seed(239)
 batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
-sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
-                          colData = DataFrame("Species" = iris$Species, 
-                                             "Batch" = batch))
+sce <- SingleCellExperiment(
+    assays = list(logcounts = t(iris[, 1:4])),
+    colData = DataFrame(
+        "Species" = iris$Species,
+        "Batch" = batch
+    )
+)
 colnames(sce) <- paste0("samp", 1:ncol(sce))
 
 # Plot features by clustering/grouping variable
-VlnPlot(sce, clustering.label = "Species", 
-      features = row.names(sce)[1:4], 
-     rotate.x.axis.labels = TRUE)
+VlnPlot(sce,
+    clustering.label = "Species",
+    features = row.names(sce)[1:4],
+    rotate.x.axis.labels = TRUE
+)
 
 }
 \keyword{plot}

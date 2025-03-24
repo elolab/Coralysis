@@ -39,8 +39,8 @@ FindClusterMarkers.SingleCellExperiment(
 \arguments{
 \item{object}{A \code{SingleCellExperiment} object.}
 
-\item{clustering.label}{A variable name (of class \code{character}) available 
-in the cell metadata \code{colData(object)} with the clustering labels 
+\item{clustering.label}{A variable name (of class \code{character}) available
+in the cell metadata \code{colData(object)} with the clustering labels
 (\code{character} or \code{factor}) to use.}
 
 \item{clusters.1}{a character or numeric vector denoting which clusters
@@ -85,9 +85,9 @@ threshold. Default is \code{FALSE}.}
 a data frame of the results if positive results were found, else NULL
 }
 \description{
-\code{FindClusterMarkers} enables identifying feature markers for one 
-cluster or two arbitrary combinations of clusters, e.g. 1_2 vs. 3_4_5. Feature 
-and cell filters can be applied to accelerate the analysis, but this might 
+\code{FindClusterMarkers} enables identifying feature markers for one
+cluster or two arbitrary combinations of clusters, e.g. 1_2 vs. 3_4_5. Feature
+and cell filters can be applied to accelerate the analysis, but this might
 lead to missing weak signals.
 }
 \examples{
@@ -98,15 +98,21 @@ suppressPackageStartupMessages(library("SingleCellExperiment"))
 batches <- c("b1", "b2")
 set.seed(239)
 batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
-sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
-                            colData = DataFrame("Species" = iris$Species, 
-                                               "Batch" = batch))
+sce <- SingleCellExperiment(
+    assays = list(logcounts = t(iris[, 1:4])),
+    colData = DataFrame(
+        "Species" = iris$Species,
+        "Batch" = batch
+    )
+)
 colnames(sce) <- paste0("samp", 1:ncol(sce))
 
 # Markers between versicolor vs virginica
-dge <- FindClusterMarkers(sce, clustering.label = "Species", 
-                          clusters.1 = "versicolor", 
-                          clusters.2 = "virginica")
+dge <- FindClusterMarkers(sce,
+    clustering.label = "Species",
+    clusters.1 = "versicolor",
+    clusters.2 = "virginica"
+)
 dge
 
 }

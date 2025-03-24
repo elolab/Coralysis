@@ -11,19 +11,19 @@ CellBinsFeatureCorrelation.SingleCellExperiment(object, labels, method)
 \S4method{CellBinsFeatureCorrelation}{SingleCellExperiment}(object, labels = NULL, method = "pearson")
 }
 \arguments{
-\item{object}{An object of \code{SingleCellExperiment} class obtained with the 
+\item{object}{An object of \code{SingleCellExperiment} class obtained with the
 function \code{BinCellClusterProbability()}.}
 
-\item{labels}{Character of label(s) from the label provided to the function 
+\item{labels}{Character of label(s) from the label provided to the function
 \code{BinCellClusterProbability()}. By default \code{NULL}, i.e., all labels
 are used.}
 
-\item{method}{Character specifying the correlation method to use. One of 
+\item{method}{Character specifying the correlation method to use. One of
 \code{"pearson"}, \code{"kendall"} or \code{"spearman"}. By default \code{"pearson"}
 is used.}
 }
 \value{
-A data frame with the correlation coefficient for each feature (rows) 
+A data frame with the correlation coefficient for each feature (rows)
 across labels (columns).
 }
 \description{
@@ -43,17 +43,23 @@ sce <- PrepareData(object = sce)
 
 # Multi-level integration - 'L = 4' just for highlighting purposes
 set.seed(123)
-sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", L = 4, 
-                              threads = 2)
+sce <- RunParallelDivisiveICP(
+    object = sce, batch.label = "batch", L = 4,
+    threads = 2
+)
 
 # Cell states SCE object for a given cell type annotation or clustering
-cellstate.sce <- BinCellClusterProbability(object = sce, label = "cell_type", 
-                                           icp.round = 4, bins = 20) 
+cellstate.sce <- BinCellClusterProbability(
+    object = sce, label = "cell_type",
+    icp.round = 4, bins = 20
+)
 cellstate.sce
 
 # Pearson correlated features with "Monocyte"
-cor.features.mono <- CellBinsFeatureCorrelation(object = cellstate.sce, 
-                                                labels = "Monocyte")
+cor.features.mono <- CellBinsFeatureCorrelation(
+    object = cellstate.sce,
+    labels = "Monocyte"
+)
 }
 
 }

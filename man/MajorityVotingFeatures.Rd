@@ -11,8 +11,8 @@ MajorityVotingFeatures.SingleCellExperiment(object, label)
 \S4method{MajorityVotingFeatures}{SingleCellExperiment}(object, label)
 }
 \arguments{
-\item{object}{An object of \code{SingleCellExperiment} class with ICP cell 
-cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
+\item{object}{An object of \code{SingleCellExperiment} class with ICP cell
+cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}.
 After running \code{RunParallelDivisiveICP}.}
 
 \item{label}{Label of interest available in \code{colData(object)}.}
@@ -34,18 +34,21 @@ sce <- readRDS(file = url(data.url))
 
 # Multi-level integration (just for highlighting purposes; use default parameters)
 set.seed(123)
-sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", 
-                              k = 4, L = 10, C = 1, d = 0.5, 
-                              train.with.bnn = FALSE, use.cluster.seed = FALSE,
-                              build.train.set = FALSE, ari.cutoff = 0.1, 
-                              threads = 2)
+sce <- RunParallelDivisiveICP(
+    object = sce, batch.label = "batch",
+    k = 4, L = 10, C = 1, d = 0.5,
+    train.with.bnn = FALSE, use.cluster.seed = FALSE,
+    build.train.set = FALSE, ari.cutoff = 0.1,
+    threads = 2
+)
 
 # Get coefficients by majority voting for a given categorical variable
 coeff <- MajorityVotingFeatures(object = sce, label = "cell_type")
 gene_coeff$summary
-order.rows <- order(coeff$feature_coeff$Monocyte$coeff_clt2, 
-                    decreasing = TRUE)
-head(coeff$feature_coeff$Monocyte[order.rows,], n = 10)
+order.rows <- order(coeff$feature_coeff$Monocyte$coeff_clt2,
+    decreasing = TRUE
+)
+head(coeff$feature_coeff$Monocyte[order.rows, ], n = 10)
 }
 
 }

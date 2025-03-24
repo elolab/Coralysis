@@ -21,23 +21,23 @@ CellClusterProbabilityDistribution.SingleCellExperiment(
 )
 }
 \arguments{
-\item{object}{An object of \code{SingleCellExperiment} class with aggregated 
-cell cluster probability available in \code{colData(object)}, which can be 
+\item{object}{An object of \code{SingleCellExperiment} class with aggregated
+cell cluster probability available in \code{colData(object)}, which can be
 obtained after running \code{SummariseCellClusterProbability()}.}
 
-\item{label}{Character specifying the \code{colData} variable to use as cell 
+\item{label}{Character specifying the \code{colData} variable to use as cell
 type/cluster label.}
 
-\item{group}{Character specifying the \code{colData} variable to use as 
+\item{group}{Character specifying the \code{colData} variable to use as
 categorical group variable.}
 
-\item{probability}{Character specifying the aggregated cell cluster probability 
-variable available in \code{colData}, used to plot its distribution. One of 
-\code{"mean_probs"}, \code{"scaled_mean_probs"}, \code{"median_probs"}, 
-\code{"scaled_median_probs"}. The availability of these variables in \code{colData} 
-depends on the parameters given to the function \code{SummariseCellClusterProbability()} 
+\item{probability}{Character specifying the aggregated cell cluster probability
+variable available in \code{colData}, used to plot its distribution. One of
+\code{"mean_probs"}, \code{"scaled_mean_probs"}, \code{"median_probs"},
+\code{"scaled_median_probs"}. The availability of these variables in \code{colData}
+depends on the parameters given to the function \code{SummariseCellClusterProbability()}
 beforehand. By default assumes that \code{"scaled_mean_probs"} is available in
-\code{colData}, which is only true if \code{SummariseCellClusterProbability()} 
+\code{colData}, which is only true if \code{SummariseCellClusterProbability()}
 function was run with \code{funs = "mean"} and \code{scale.funs = TRUE}.}
 }
 \value{
@@ -54,9 +54,13 @@ suppressPackageStartupMessages(library("SingleCellExperiment"))
 batches <- c("b1", "b2")
 set.seed(239)
 batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
-sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
-                            colData = DataFrame("Species" = iris$Species, 
-                                                "Batch" = batch))
+sce <- SingleCellExperiment(
+    assays = list(logcounts = t(iris[, 1:4])),
+    colData = DataFrame(
+        "Species" = iris$Species,
+        "Batch" = batch
+    )
+)
 colnames(sce) <- paste0("samp", 1:ncol(sce))
 
 # Prepare SCE object for analysis
@@ -64,21 +68,25 @@ sce <- PrepareData(sce)
 
 # Multi-level integration (just for highlighting purposes; use default parameters)
 set.seed(123)
-sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", 
-                              k = 4, L = 25, C = 1, d = 0.5, 
-                              train.with.bnn = FALSE, 
-                              use.cluster.seed = FALSE,
-                              build.train.set = FALSE, ari.cutoff = 0.1, 
-                              threads = 2)
+sce <- RunParallelDivisiveICP(
+    object = sce, batch.label = "Batch",
+    k = 4, L = 25, C = 1, d = 0.5,
+    train.with.bnn = FALSE,
+    use.cluster.seed = FALSE,
+    build.train.set = FALSE, ari.cutoff = 0.1,
+    threads = 2
+)
 
 # Summarise cell cluster probability
 sce <- SummariseCellClusterProbability(object = sce, icp.round = 2) # saved in 'colData'
 
-# Search for differences in probabilities across group(s) 
+# Search for differences in probabilities across group(s)
 # give an interesting variable to the "group" parameter
-prob.dist <- CellClusterProbabilityDistribution(object = sce, label = "Species", 
-                                                group = "Batch", 
-                                                probability = "scaled_mean_probs")
+prob.dist <- CellClusterProbabilityDistribution(
+    object = sce, label = "Species",
+    group = "Batch",
+    probability = "scaled_mean_probs"
+)
 prob.dist # print plot
 
 }

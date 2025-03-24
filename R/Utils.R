@@ -509,7 +509,7 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
             if (first_round) {
                 if (k == 2) {
                     if (!is.null(cluster.seed) & is.factor(cluster.seed)) {
-                        ident_1 <- cluster.seed
+                        ident_1 <- cluster.seed[row.names(normalized.data)]
                     } else {
                         ident_1 <- factor(sample(seq_len(k), nrow(normalized.data), replace = TRUE))
                     }
@@ -642,29 +642,11 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
         return(list(probabilities = probs, metrics = res_metrics, model = res_model))
     } else {
         cat("projecting the whole data set...")
-        res <- LogisticRegression(
-            training.sparse.matrix = normalized.data,
-            training.ident = ident_1, C = C,
-            reg.type = reg.type,
-            test.sparse.matrix = normalized_data_whole, d = d,
-            batch.label = batch.label,
-            training_ident_subset = training_ident_subset
-        )
-
-        res_prediction <- res$prediction
-        res_model <- res$model
-
-        names(res_prediction$predictions) <- row.names(normalized_data_whole)
-        rownames(res_prediction$probabilities) <- row.names(normalized_data_whole)
-
-        # Projected cluster probabilities
-        probs <- res_prediction$probabilities
-
-        message(" success!")
-
-        message(paste(dim(probs), collapse = " "))
-
-        return(list(probabilities = probs, metrics = metrics, model = res_model))
+        colnames(normalized_data_whole) <- paste0("W", 1:ncol(normalized_data_whole))
+        probs <- lapply(res_model, function(x) {
+          predict(x, normalized_data_whole, proba = TRUE)$probabilities
+        })
+        return(list(probabilities = probs, metrics = res_metrics, model = res_model))
     }
 }
 

@@ -7,17 +7,17 @@
 RandomlyDivisiveClustering(cluster, k, cluster.names = NULL)
 }
 \arguments{
-\item{cluster}{A clustering result in which each cluster will be divided 
+\item{cluster}{A clustering result in which each cluster will be divided
 randomly into \code{k} clusters.}
 
-\item{k}{The number of clusters that each cluster given in \code{cluster} 
+\item{k}{The number of clusters that each cluster given in \code{cluster}
 should be randomly divided into.}
 
-\item{cluster.names}{Names to name the \code{cluster} result given. By 
+\item{cluster.names}{Names to name the \code{cluster} result given. By
 default \code{NULL}.}
 }
 \value{
-A clustering result where every cluster given was split randomly 
+A clustering result where every cluster given was split randomly
 into \code{k} clusters.
 }
 \description{

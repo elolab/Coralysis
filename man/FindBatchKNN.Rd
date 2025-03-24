@@ -19,7 +19,7 @@ FindBatchKNN(idx, group, prob, k = 10)
 a list containing the k nearest neighbors for every cell queried
 }
 \description{
-The function finds batch k nearest neighbors for the cell with the highest 
+The function finds batch k nearest neighbors for the cell with the highest
 probability for every batch.
 }
 \keyword{internal}

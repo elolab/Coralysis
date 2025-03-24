@@ -40,10 +40,10 @@ and k the number of clusters. Default is \code{0.3}.}
 
 \item{batch.label}{A character vector with batch labels corresponding to the cells
 given in \code{training.ident}. The character batch labels need to be named
-with the cells names given in \code{training.ident}. By default \code{NULL}, 
+with the cells names given in \code{training.ident}. By default \code{NULL},
 i.e., cells are sampled evenly regardless their batch.}
 
-\item{training_ident_subset}{A character or numeric vector with cell ids to 
+\item{training_ident_subset}{A character or numeric vector with cell ids to
 use as train set. By default \code{NULL}. If given, the down- and oversampled
 parameters are ignored.}
 }

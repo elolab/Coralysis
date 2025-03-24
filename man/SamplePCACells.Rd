@@ -15,18 +15,18 @@ SamplePCACells(
 )
 }
 \arguments{
-\item{data}{Data to compute PCA and sample cells from. Rows and columns 
+\item{data}{Data to compute PCA and sample cells from. Rows and columns
 should represent cells and features, respectively.}
 
-\item{batch}{Batch cell label identity (character) matching cells giving in 
-\code{data}. Use \code{NULL} in the absence of batches. If the batch is given 
-the cells are sampled in a batch wise manner, otherwise the cells are sampled 
+\item{batch}{Batch cell label identity (character) matching cells giving in
+\code{data}. Use \code{NULL} in the absence of batches. If the batch is given
+the cells are sampled in a batch wise manner, otherwise the cells are sampled
 without any grouping factor. By default is \code{NULL}.}
 
-\item{q.split}{Split (cell) batch principal component distribution by this 
+\item{q.split}{Split (cell) batch principal component distribution by this
 quantile (numeric). By default {0.5}, i.e., median.}
 
-\item{p}{Number of principal components to compute (integer). By default 
+\item{p}{Number of principal components to compute (integer). By default
 \code{30}.}
 
 \item{use.pc}{Which principal component should be used for sampling cells per

@@ -21,23 +21,23 @@ GetCellClusterProbability.SingleCellExperiment(
 )
 }
 \arguments{
-\item{object}{An object of \code{SingleCellExperiment} class with ICP cell 
-cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
+\item{object}{An object of \code{SingleCellExperiment} class with ICP cell
+cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}.
 After running \code{RunParallelDivisiveICP}.}
 
-\item{icp.run}{ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
-By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
+\item{icp.run}{ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}.
+By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to
 retrieve a specific set of tables.}
 
-\item{icp.round}{ICP round(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
+\item{icp.round}{ICP round(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}.
 By default \code{NULL}, i.e., all are retrieved.}
 
-\item{concatenate}{Concatenate list of ICP cell cluster probability tables retrieved. 
+\item{concatenate}{Concatenate list of ICP cell cluster probability tables retrieved.
 By default \code{TRUE}, i.e., the list of ICP cell cluster probability tables is
 concatenated.}
 }
 \value{
-A list with ICP cell cluster probability tables or a matrix with 
+A list with ICP cell cluster probability tables or a matrix with
 concatenated tables.
 }
 \description{
@@ -51,9 +51,13 @@ suppressPackageStartupMessages(library("SingleCellExperiment"))
 batches <- c("b1", "b2")
 set.seed(239)
 batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
-sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
-                            colData = DataFrame("Species" = iris$Species, 
-                                               "Batch" = batch))
+sce <- SingleCellExperiment(
+    assays = list(logcounts = t(iris[, 1:4])),
+    colData = DataFrame(
+        "Species" = iris$Species,
+        "Batch" = batch
+    )
+)
 colnames(sce) <- paste0("samp", 1:ncol(sce))
 
 # Prepare SCE object for analysis
@@ -61,14 +65,16 @@ sce <- PrepareData(sce)
 
 # Multi-level integration (just for highlighting purposes; use default parameters)
 set.seed(123)
-sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", 
-                              k = 2, L = 25, C = 1, train.k.nn = 10, 
-                              train.k.nn.prop = NULL, use.cluster.seed = FALSE,
-                              build.train.set = FALSE, ari.cutoff = 0.1, 
-                             threads = 2)
+sce <- RunParallelDivisiveICP(
+    object = sce, batch.label = "Batch",
+    k = 2, L = 25, C = 1, train.k.nn = 10,
+    train.k.nn.prop = NULL, use.cluster.seed = FALSE,
+    build.train.set = FALSE, ari.cutoff = 0.1,
+    threads = 2
+)
 
-# Get cluster probability for all ICP runs 
-probs <- GetCellClusterProbability(object = sce, icp.round = 1, concatenate = TRUE) 
+# Get cluster probability for all ICP runs
+probs <- GetCellClusterProbability(object = sce, icp.round = 1, concatenate = TRUE)
 probs[1:10, 1:5]
 
 }

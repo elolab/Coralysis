@@ -17,8 +17,8 @@ PrepareData.SingleCellExperiment(object)
 An object of \code{SingleCellExperiment} class.
 }
 \description{
-This function prepares the \code{SingleCellExperiment} object 
-for analysis. The only required input is an object of class \code{SingleCellExperiment} 
+This function prepares the \code{SingleCellExperiment} object
+for analysis. The only required input is an object of class \code{SingleCellExperiment}
 with at least data in the \code{logcounts} slot.
 }
 \examples{
@@ -29,9 +29,13 @@ suppressPackageStartupMessages(library("SingleCellExperiment"))
 batches <- c("b1", "b2")
 set.seed(239)
 batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
-sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
-                            colData = DataFrame("Species" = iris$Species, 
-                                               "Batch" = batch))
+sce <- SingleCellExperiment(
+    assays = list(logcounts = t(iris[, 1:4])),
+    colData = DataFrame(
+        "Species" = iris$Species,
+        "Batch" = batch
+    )
+)
 colnames(sce) <- paste0("samp", 1:ncol(sce))
 sce <- PrepareData(sce)
 

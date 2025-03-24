@@ -4,7 +4,7 @@
 \alias{RunTSNE}
 \alias{RunTSNE.SingleCellExperiment}
 \alias{RunTSNE,SingleCellExperiment-method}
-\title{Barnes-Hut implementation of t-Distributed Stochastic Neighbor Embedding 
+\title{Barnes-Hut implementation of t-Distributed Stochastic Neighbor Embedding
 (t-SNE)}
 \usage{
 RunTSNE.SingleCellExperiment(
@@ -28,26 +28,26 @@ RunTSNE.SingleCellExperiment(
 \arguments{
 \item{object}{Object of \code{SingleCellExperiment} class.}
 
-\item{dims}{Dimensions to select from \code{dimred.type}. By default \code{NULL}, 
-i.e., all the dimensions are selected. Provide a numeric vector to select a 
+\item{dims}{Dimensions to select from \code{dimred.type}. By default \code{NULL},
+i.e., all the dimensions are selected. Provide a numeric vector to select a
 specific range, e.g., \code{dims = 1:10} to select the first 10 dimensions.}
 
 \item{dimred.type}{Dimensional reduction type to use. By default \code{"PCA"}.}
 
 \item{perplexity}{Perplexity of t-SNE.}
 
-\item{dimred.name}{Dimensional reduction name given to the returned t-SNE. 
+\item{dimred.name}{Dimensional reduction name given to the returned t-SNE.
 By default \code{"TSNE"}.}
 
-\item{...}{Parameters to be passed to the \code{Rtsne} function. The parameters 
-given should match the parameters accepted by the \code{Rtsne} function. Check 
+\item{...}{Parameters to be passed to the \code{Rtsne} function. The parameters
+given should match the parameters accepted by the \code{Rtsne} function. Check
 possible parameters with \code{?Rtsne::Rtsne}.}
 }
 \value{
 A \code{SingleCellExperiment} object.
 }
 \description{
-Run nonlinear dimensionality reduction using t-SNE with the 
+Run nonlinear dimensionality reduction using t-SNE with the
 PCA-transformed consensus matrix as input.
 }
 \examples{
@@ -58,26 +58,39 @@ suppressPackageStartupMessages(library("SingleCellExperiment"))
 batches <- c("b1", "b2")
 set.seed(239)
 batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
-sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
-                            colData = DataFrame("Species" = iris$Species, 
-                                               "Batch" = batch))
+sce <- SingleCellExperiment(
+    assays = list(logcounts = t(iris[, 1:4])),
+    colData = DataFrame(
+        "Species" = iris$Species,
+        "Batch" = batch
+    )
+)
 colnames(sce) <- paste0("samp", 1:ncol(sce))
 
 # Run PCA
 set.seed(125) # to ensure reproducibility for the default 'irlba' method
-sce <- RunPCA(object = sce, assay.name = "logcounts", 
-              pca.method = "stats", p = nrow(sce))
+sce <- RunPCA(
+    object = sce, assay.name = "logcounts",
+    pca.method = "stats", p = nrow(sce)
+)
 
 # Run t-SNE
 set.seed(125) # to ensure reproducibility for the default 'irlba' method
 sce <- RunTSNE(object = sce, dimred.type = "PCA", check_duplicates = FALSE)
 
-# Plot result 
-cowplot::plot_grid(PlotDimRed(object = sce, color.by = "Batch", 
-                              legend.nrow = 1),
-                   PlotDimRed(object = sce, color.by = "Species", 
-                             legend.nrow = 1), ncol = 2)
-                   
+# Plot result
+cowplot::plot_grid(
+    PlotDimRed(
+        object = sce, color.by = "Batch",
+        legend.nrow = 1
+    ),
+    PlotDimRed(
+        object = sce, color.by = "Species",
+        legend.nrow = 1
+    ),
+    ncol = 2
+)
+
 }
 \keyword{Barnes-Hut}
 \keyword{Embedding}

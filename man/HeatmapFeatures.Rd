@@ -27,20 +27,20 @@ HeatmapFeatures.SingleCellExperiment(
 \arguments{
 \item{object}{of \code{SingleCellExperiment} class}
 
-\item{clustering.label}{A variable name (of class \code{character}) available 
-in the cell metadata \code{colData(object)} with the clustering labels 
+\item{clustering.label}{A variable name (of class \code{character}) available
+in the cell metadata \code{colData(object)} with the clustering labels
 (\code{character} or \code{factor}) to use.}
 
-\item{features}{Feature names to plot by cluster (\code{character}) matching 
+\item{features}{Feature names to plot by cluster (\code{character}) matching
 \code{row.names(object)}.}
 
-\item{use.color}{Character specifying the colors for the clusters. By default 
-\code{NULL}, i.e., colors are randomly chosen based on the seed given at 
-\code{seed.color}. It is overwritten in case the argument \code{annotation_colors} 
+\item{use.color}{Character specifying the colors for the clusters. By default
+\code{NULL}, i.e., colors are randomly chosen based on the seed given at
+\code{seed.color}. It is overwritten in case the argument \code{annotation_colors}
 is provided.}
 
-\item{seed.color}{Seed to randomly select colors for the clusters. By default 
-\code{123}. It is overwritten in case the argument \code{annotation_colors} 
+\item{seed.color}{Seed to randomly select colors for the clusters. By default
+\code{123}. It is overwritten in case the argument \code{annotation_colors}
 is provided.}
 
 \item{...}{Parameters to pass to \code{pheatmap::pheatmap} function.}
@@ -49,7 +49,7 @@ is provided.}
 nothing
 }
 \description{
-The \code{HeatmapFeatures} function draws a heatmap of features 
+The \code{HeatmapFeatures} function draws a heatmap of features
 by cluster identity.
 }
 \examples{
@@ -60,19 +60,27 @@ suppressPackageStartupMessages(library("SingleCellExperiment"))
 batches <- c("b1", "b2")
 set.seed(239)
 batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
-sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
-                            colData = DataFrame("Species" = iris$Species, 
-                                                "Batch" = batch))
+sce <- SingleCellExperiment(
+    assays = list(logcounts = t(iris[, 1:4])),
+    colData = DataFrame(
+        "Species" = iris$Species,
+        "Batch" = batch
+    )
+)
 colnames(sce) <- paste0("samp", 1:ncol(sce))
 
 # Plot features by clustering, i.e., grouping variable
-# without scaling rows (using 'logcounts' expression): 
-HeatmapFeatures(object = sce, clustering.label = "Species", 
-                features = row.names(sce)[1:4])
+# without scaling rows (using 'logcounts' expression):
+HeatmapFeatures(
+    object = sce, clustering.label = "Species",
+    features = row.names(sce)[1:4]
+)
 
-# scaling rows: 
-HeatmapFeatures(object = sce, clustering.label = "Species", 
-                features = row.names(sce)[1:4], scale = "row") # scale
+# scaling rows:
+HeatmapFeatures(
+    object = sce, clustering.label = "Species",
+    features = row.names(sce)[1:4], scale = "row"
+) # scale
 
 }
 \keyword{feature}

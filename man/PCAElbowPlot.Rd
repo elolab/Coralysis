@@ -11,10 +11,10 @@ PCAElbowPlot.SingleCellExperiment(object, dimred.name, return.plot)
 \S4method{PCAElbowPlot}{SingleCellExperiment}(object, dimred.name = "PCA", return.plot = FALSE)
 }
 \arguments{
-\item{object}{A \code{SingleCellExperiment} object obtained after running 
+\item{object}{A \code{SingleCellExperiment} object obtained after running
 \code{RunParallelDivisiveICP}.}
 
-\item{dimred.name}{Dimensional reduction name of the PCA to select from 
+\item{dimred.name}{Dimensional reduction name of the PCA to select from
 \code{reducedDimNames(object)}. By default \code{"PCA"}.}
 
 \item{return.plot}{logical indicating if the ggplot2 object should be returned.
@@ -24,7 +24,7 @@ By default \code{FALSE}.}
 A ggplot2 object, if \code{return.plot=TRUE}.
 }
 \description{
-Draw an elbow plot of the standard deviations of the principal 
+Draw an elbow plot of the standard deviations of the principal
 components to deduce an appropriate value for \code{p}.
 }
 \examples{
@@ -35,9 +35,13 @@ suppressPackageStartupMessages(library("SingleCellExperiment"))
 batches <- c("b1", "b2")
 set.seed(239)
 batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
-sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
-                            colData = DataFrame("Species" = iris$Species, 
-                                               "Batch" = batch))
+sce <- SingleCellExperiment(
+    assays = list(logcounts = t(iris[, 1:4])),
+    colData = DataFrame(
+        "Species" = iris$Species,
+        "Batch" = batch
+    )
+)
 colnames(sce) <- paste0("samp", 1:ncol(sce))
 
 # Prepare SCE object for analysis
@@ -45,21 +49,30 @@ sce <- PrepareData(sce)
 
 # Multi-level integration (just for highlighting purposes; use default parameters)
 set.seed(123)
-sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", 
-                              k = 2, L = 25, C = 1, train.k.nn = 10, 
-                              train.k.nn.prop = NULL, use.cluster.seed = FALSE,
-                              build.train.set = FALSE, ari.cutoff = 0.1, 
-                             threads = 2)
+sce <- RunParallelDivisiveICP(
+    object = sce, batch.label = "Batch",
+    k = 2, L = 25, C = 1, train.k.nn = 10,
+    train.k.nn.prop = NULL, use.cluster.seed = FALSE,
+    build.train.set = FALSE, ari.cutoff = 0.1,
+    threads = 2
+)
 
 # Integrated PCA
 set.seed(125) # to ensure reproducibility for the default 'irlba' method
 sce <- RunPCA(object = sce, assay.name = "joint.probability", p = 10)
 
-# Plot result 
-cowplot::plot_grid(PlotDimRed(object = sce, color.by = "Batch", 
-                              legend.nrow = 1),
-                   PlotDimRed(object = sce, color.by = "Species", 
-                             legend.nrow = 1), ncol = 2)
+# Plot result
+cowplot::plot_grid(
+    PlotDimRed(
+        object = sce, color.by = "Batch",
+        legend.nrow = 1
+    ),
+    PlotDimRed(
+        object = sce, color.by = "Species",
+        legend.nrow = 1
+    ),
+    ncol = 2
+)
 
 # Plot Elbow
 PCAElbowPlot(sce)

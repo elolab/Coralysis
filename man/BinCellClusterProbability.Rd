@@ -29,37 +29,37 @@ BinCellClusterProbability.SingleCellExperiment(
 )
 }
 \arguments{
-\item{object}{An object of \code{SingleCellExperiment} class with ICP cell 
-cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}. 
+\item{object}{An object of \code{SingleCellExperiment} class with ICP cell
+cluster probability tables saved in \code{metadata(object)$coralysis$joint.probability}.
 After running one of \code{RunParallelICP} or \code{RunParallelDivisiveICP}.}
 
-\item{label}{Label of interest available in \code{colData(object)} to group by the 
+\item{label}{Label of interest available in \code{colData(object)} to group by the
 bins of cell cluster probability.}
 
-\item{icp.run}{ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
-By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
+\item{icp.run}{ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}.
+By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to
 retrieve a specific set of tables.}
 
-\item{icp.round}{ICP round(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
+\item{icp.round}{ICP round(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}.
 By default \code{NULL}, i.e., all are retrieved. Only relevant if probabilities
 were obtained with the function \code{RunParallelDivisiveICP}, i.e., divisive ICP
-was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1}, 
+was performed. Otherwise it is ignored and internally assumed as \code{icp.round = 1},
 i.e., only one round.}
 
-\item{funs}{One function to summarise ICP cell cluster probability. One of \code{"mean"} 
+\item{funs}{One function to summarise ICP cell cluster probability. One of \code{"mean"}
 or \code{"median"}. By default \code{"mean"}.}
 
-\item{bins}{Number of bins to bin cell cluster probability by cell \code{label} given. 
+\item{bins}{Number of bins to bin cell cluster probability by cell \code{label} given.
 By default \code{20}.}
 
-\item{aggregate.bins.by}{One function to aggregate One of \code{"mean"} or 
+\item{aggregate.bins.by}{One function to aggregate One of \code{"mean"} or
 \code{"median"}. By default \code{"mean"}.}
 
-\item{use.assay}{Name of the assay that should be used to obtain the average expression 
+\item{use.assay}{Name of the assay that should be used to obtain the average expression
 of features across cell \code{label} probability bins.}
 }
 \value{
-A \code{SingleCellExperiment} class object with feature average expression by 
+A \code{SingleCellExperiment} class object with feature average expression by
 cell \code{label} probability bins.
 }
 \description{
@@ -79,12 +79,16 @@ sce <- PrepareData(object = sce)
 
 # Multi-level integration - 'L = 4' just for highlighting purposes
 set.seed(123)
-sce <- RunParallelDivisiveICP(object = sce, batch.label = "batch", L = 4, 
-                              threads = 2)
+sce <- RunParallelDivisiveICP(
+    object = sce, batch.label = "batch", L = 4,
+    threads = 2
+)
 
 # Cell states SCE object for a given cell type annotation or clustering
-cellstate.sce <- BinCellClusterProbability(object = sce, label = "cell_type", 
-                                           icp.round = 4, bins = 20) 
+cellstate.sce <- BinCellClusterProbability(
+    object = sce, label = "cell_type",
+    icp.round = 4, bins = 20
+)
 cellstate.sce
 }
 

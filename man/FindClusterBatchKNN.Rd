@@ -15,8 +15,8 @@ FindClusterBatchKNN(preds, probs, batch, k = 10, k.prop = NULL)
 
 \item{k}{The number of nearest neighbors to search for. Default is \code{10}.}
 
-\item{k.prop}{A numeric (higher than 0 and lower than 1) corresponding to the 
-fraction of cells per cluster to use as \code{k} nearest neighbors. Default 
+\item{k.prop}{A numeric (higher than 0 and lower than 1) corresponding to the
+fraction of cells per cluster to use as \code{k} nearest neighbors. Default
 is \code{NULL} meaning that the number of \code{k} nearest neighbors is equal
 to \code{k}. If given, \code{k} parameter is ignored and \code{k} is calculated
 based on \code{k.prop}.}
@@ -25,7 +25,7 @@ based on \code{k.prop}.}
 a list containing the k nearest neighbors for every cluster
 }
 \description{
-The function finds batch k nearest neighbors for the cell with the highest 
+The function finds batch k nearest neighbors for the cell with the highest
 probability for every batch per cluster.
 }
 \keyword{internal}

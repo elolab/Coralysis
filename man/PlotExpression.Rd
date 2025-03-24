@@ -33,7 +33,7 @@ PlotExpression.SingleCellExperiment(
 \arguments{
 \item{object}{An object of \code{SingleCellExperiment} class.}
 
-\item{color.by}{Categorical variable available in \code{colData(object)} to 
+\item{color.by}{Categorical variable available in \code{colData(object)} to
 plot.}
 
 \item{dimred}{Dimensional reduction available in \code{ReducedDimNames(object)}
@@ -42,7 +42,7 @@ to plot. By default the last dimensional reduction in the object is used.}
 \item{scale.values}{Logical specifying if values should be scaled. By default
 \code{FALSE}, i.e., values are not scaled.}
 
-\item{color.scale}{Character of color scale palette to be passed to 
+\item{color.scale}{Character of color scale palette to be passed to
 \code{ggplot2::scale_color_viridis_c}. By default \code{inferno}. Other palettes
 are also available such as \code{viridis}.}
 
@@ -68,21 +68,27 @@ suppressPackageStartupMessages(library("SingleCellExperiment"))
 batches <- c("b1", "b2")
 set.seed(239)
 batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
-sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
-                           colData = DataFrame("Species" = iris$Species, 
-                                             "Batch" = batch))
+sce <- SingleCellExperiment(
+    assays = list(logcounts = t(iris[, 1:4])),
+    colData = DataFrame(
+        "Species" = iris$Species,
+        "Batch" = batch
+    )
+)
 colnames(sce) <- paste0("samp", 1:ncol(sce))
 
-# Compute dimensional reduction 
-sce <- RunPCA(object = sce, assay.name = "logcounts", p = 4, 
-           pca.method = "stats")
+# Compute dimensional reduction
+sce <- RunPCA(
+    object = sce, assay.name = "logcounts", p = 4,
+    pca.method = "stats"
+)
 
 # Plot expression level of one or more features
-## one 
+## one
 PlotExpression(object = sce, color.by = "Petal.Width")
 
 ## more than one
-features <- row.names(sce)[1:4] 
+features <- row.names(sce)[1:4]
 exp.plots <- lapply(X = features, FUN = function(x) {
     PlotExpression(object = sce, color.by = x, scale.values = TRUE)
 })

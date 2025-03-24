@@ -59,14 +59,14 @@ RunParallelDivisiveICP.SingleCellExperiment(
 \arguments{
 \item{object}{An object of \code{SingleCellExperiment} class.}
 
-\item{batch.label}{A variable name (of class \code{character}) available 
-in the cell metadata \code{colData(object)} with the batch labels (\code{character} 
+\item{batch.label}{A variable name (of class \code{character}) available
+in the cell metadata \code{colData(object)} with the batch labels (\code{character}
 or \code{factor}) to use. The variable provided must not contain \code{NAs}.
 By default \code{NULL}, i.e., cells are sampled evenly regardless their batch.}
 
 \item{k}{A positive integer power of two, i.e., \code{2**n}, where \code{n>0},
 specifying the number of clusters in the last Iterative Clustering Projection (ICP)
-round. Decreasing \code{k} leads to smaller cell populations diversity and vice versa. 
+round. Decreasing \code{k} leads to smaller cell populations diversity and vice versa.
 Default is \code{16}, i.e., the divisive clustering 2 -> 4 -> 8 -> 16 is performed.}
 
 \item{d}{A numeric greater than \code{0} and smaller than \code{1} that
@@ -109,65 +109,65 @@ Default is \code{200}.}
 Set \code{1} to disable parallelism altogether or \code{0} to use all
 available threas except one. Default is \code{0}.}
 
-\item{icp.batch.size}{A positive integer that specifies how many cells 
-to randomly select. It behaves differently depending on \code{build.train.set}. 
-If \code{build.train.set=FALSE}, it randomly samples cells for each ICP run 
-from the complete dataset. If \code{build.train.set=TRUE}, it randomly samples 
-cells once, before building the training set with the sampled cells (per batch 
-if \code{batch.label} different than \code{NULL}). Default is \code{Inf}, 
+\item{icp.batch.size}{A positive integer that specifies how many cells
+to randomly select. It behaves differently depending on \code{build.train.set}.
+If \code{build.train.set=FALSE}, it randomly samples cells for each ICP run
+from the complete dataset. If \code{build.train.set=TRUE}, it randomly samples
+cells once, before building the training set with the sampled cells (per batch
+if \code{batch.label} different than \code{NULL}). Default is \code{Inf},
 which means using all cells.}
 
-\item{train.with.bnn}{Train data with batch nearest neighbors. Default is 
+\item{train.with.bnn}{Train data with batch nearest neighbors. Default is
 \code{TRUE}. Only used if \code{batch.label} is given.}
 
-\item{train.k.nn}{Train data with batch nearest neighbors using \code{k} 
-nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn} 
+\item{train.k.nn}{Train data with batch nearest neighbors using \code{k}
+nearest neighbors. Default is \code{10}. Only used if \code{train.with.bnn}
 is \code{TRUE} and \code{train.k.nn.prop} is \code{NULL}.}
 
-\item{train.k.nn.prop}{A numeric (higher than 0 and lower than 1) corresponding 
-to the fraction of cells per cluster to use as \code{train.k.nn} nearest 
-neighbors. If \code{NULL} the number of \code{train.k.nn} nearest neighbors 
-is equal to \code{train.k.nn}. If given, \code{train.k.nn} parameter is ignored 
-and \code{train.k.nn} is calculated based on \code{train.k.nn.prop}. By default 
-\code{0.3} meaning that 30% of the cells are used. A vector with different 
-proportions for the different divisive clustering rounds can be given, otherwise 
+\item{train.k.nn.prop}{A numeric (higher than 0 and lower than 1) corresponding
+to the fraction of cells per cluster to use as \code{train.k.nn} nearest
+neighbors. If \code{NULL} the number of \code{train.k.nn} nearest neighbors
+is equal to \code{train.k.nn}. If given, \code{train.k.nn} parameter is ignored
+and \code{train.k.nn} is calculated based on \code{train.k.nn.prop}. By default
+\code{0.3} meaning that 30% of the cells are used. A vector with different
+proportions for the different divisive clustering rounds can be given, otherwise
 the same value is given for all.}
 
-\item{build.train.set}{Logical specifying if a training set should be built 
-from the data or the whole data should be used for training. By default 
+\item{build.train.set}{Logical specifying if a training set should be built
+from the data or the whole data should be used for training. By default
 \code{TRUE}.}
 
 \item{build.train.params}{A list of parameters to be passed to the function
 \code{AggregateDataByBatch()}. Only provided if \code{build.train.set} is \code{TRUE}.}
 
 \item{scale.by}{A character specifying if the data should be scaled by \code{cell}
-or by \code{feature} before training. Default is \code{NULL}, i.e., the data is 
+or by \code{feature} before training. Default is \code{NULL}, i.e., the data is
 not scaled before training.}
 
 \item{use.cluster.seed}{Should the same starting clustering result be provided
-to ensure more reproducible results (logical). If \code{FALSE}, each ICP run 
-starts with a total random clustering and, thus, independent clustering. By 
-default \code{TRUE}, i.e., the same clustering result is provided based on PCA 
+to ensure more reproducible results (logical). If \code{FALSE}, each ICP run
+starts with a total random clustering and, thus, independent clustering. By
+default \code{TRUE}, i.e., the same clustering result is provided based on PCA
 density sampling. If \code{batch.label} different than \code{NULL}, the PCA
 density sampling is performed in a batch wise manner.}
 
-\item{divisive.method}{Divisive method (character). One of \code{"random"} 
+\item{divisive.method}{Divisive method (character). One of \code{"random"}
 (randomly sample two clusters out of every cluster previously found),
-\code{"cluster"} or \code{"cluster.batch"} (sample two clusters out of every 
+\code{"cluster"} or \code{"cluster.batch"} (sample two clusters out of every
 cluster previously found based on the cluster probability distribution across
-batches or per batch). By default \code{"cluster.batch"}. If \code{batch.label} 
-is \code{NULL}, it is automatically set to \code{cluster}. It can be set to 
+batches or per batch). By default \code{"cluster.batch"}. If \code{batch.label}
+is \code{NULL}, it is automatically set to \code{cluster}. It can be set to
 \code{random} if explicitly provided.}
 
-\item{allow.free.k}{Allow free \code{k} (logical). Allow ICP algorithm to 
-decrease the \code{k} given in case it does not find \code{k} target clusters. 
+\item{allow.free.k}{Allow free \code{k} (logical). Allow ICP algorithm to
+decrease the \code{k} given in case it does not find \code{k} target clusters.
 By default \code{TRUE}.}
 
-\item{ari.cutoff}{Include ICP models and probability tables with an Adjusted 
+\item{ari.cutoff}{Include ICP models and probability tables with an Adjusted
 Rand Index higher than \code{ari.cutoff} (numeric). By default \code{0.3}. A
 value that can range between 0 (include all) and lower than 1.}
 
-\item{verbose}{A logical value to print verbose during the ICP run in case 
+\item{verbose}{A logical value to print verbose during the ICP run in case
 of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'.}
 }
 \value{
@@ -184,9 +184,13 @@ suppressPackageStartupMessages(library("SingleCellExperiment"))
 batches <- c("b1", "b2")
 set.seed(239)
 batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
-sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
-                            colData = DataFrame("Species" = iris$Species, 
-                                               "Batch" = batch))
+sce <- SingleCellExperiment(
+    assays = list(logcounts = t(iris[, 1:4])),
+    colData = DataFrame(
+        "Species" = iris$Species,
+        "Batch" = batch
+    )
+)
 colnames(sce) <- paste0("samp", 1:ncol(sce))
 
 # Prepare SCE object for analysis
@@ -194,22 +198,31 @@ sce <- PrepareData(sce)
 
 # Multi-level integration (just for highlighting purposes; use default parameters)
 set.seed(123)
-sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", 
-                              k = 2, L = 25, C = 1, train.k.nn = 10, 
-                              train.k.nn.prop = NULL, use.cluster.seed = FALSE,
-                              build.train.set = FALSE, ari.cutoff = 0.1, 
-                              threads = 2)
+sce <- RunParallelDivisiveICP(
+    object = sce, batch.label = "Batch",
+    k = 2, L = 25, C = 1, train.k.nn = 10,
+    train.k.nn.prop = NULL, use.cluster.seed = FALSE,
+    build.train.set = FALSE, ari.cutoff = 0.1,
+    threads = 2
+)
 
 # Integrated PCA
 set.seed(125) # to ensure reproducibility for the default 'irlba' method
 sce <- RunPCA(object = sce, assay.name = "joint.probability", p = 10)
 
-# Plot result 
-cowplot::plot_grid(PlotDimRed(object = sce, color.by = "Batch", 
-                              legend.nrow = 1),
-                   PlotDimRed(object = sce, color.by = "Species", 
-                              legend.nrow = 1), ncol = 2)
-                   
+# Plot result
+cowplot::plot_grid(
+    PlotDimRed(
+        object = sce, color.by = "Batch",
+        legend.nrow = 1
+    ),
+    PlotDimRed(
+        object = sce, color.by = "Species",
+        legend.nrow = 1
+    ),
+    ncol = 2
+)
+
 }
 \keyword{ICP}
 \keyword{LIBLINEAR}

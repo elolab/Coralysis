@@ -9,10 +9,10 @@ ClusterCells(object, nclusters = 500, use.emb = TRUE, emb.name = "PCA")
 \arguments{
 \item{object}{An object of \code{SingleCellExperiment} class.}
 
-\item{nclusters}{Cluster the cells into n clusters. Ignored if the number of 
+\item{nclusters}{Cluster the cells into n clusters. Ignored if the number of
 cells in \code{object} is lower or equal to \code{nclusters}.}
 
-\item{use.emb}{Should the embedding be used to cluster or the log-transformed 
+\item{use.emb}{Should the embedding be used to cluster or the log-transformed
 data. By default \code{TRUE}.}
 
 \item{emb.name}{Which embedding to use. By default \code{"PCA"}.}

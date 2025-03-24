@@ -29,15 +29,15 @@ PlotClusterTree.SingleCellExperiment(
 \arguments{
 \item{object}{An object of \code{SingleCellExperiment} class.}
 
-\item{icp.run}{ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}. 
-By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to 
+\item{icp.run}{ICP run(s) to retrieve from \code{metadata(object)$coralysis$joint.probability}.
+By default \code{NULL}, i.e., all are retrieved. Specify a numeric vector to
 retrieve a specific set of tables.}
 
-\item{color.by}{Categorical variable available in \code{colData(object)} to 
-plot. If \code{NULL} the cluster probability is represented instead. 
+\item{color.by}{Categorical variable available in \code{colData(object)} to
+plot. If \code{NULL} the cluster probability is represented instead.
 By default \code{NULL}.}
 
-\item{use.color}{Character specifying the colors. By default \code{NULL}, i.e., 
+\item{use.color}{Character specifying the colors. By default \code{NULL}, i.e.,
 colors are randomly chosen based on the seed given at \code{seed.color}.}
 
 \item{seed.color}{Seed to randomly select colors. By default \code{123}.}
@@ -45,7 +45,7 @@ colors are randomly chosen based on the seed given at \code{seed.color}.}
 \item{legend.title}{Legend title. By default the same as given at \code{color.by}.
 Ignored if \code{color.by} is \code{NULL}.}
 
-\item{return.data}{Return data frame used to plot. Logical. By default \code{FALSE}, 
+\item{return.data}{Return data frame used to plot. Logical. By default \code{FALSE},
 i.e., only the plot is returned.}
 }
 \value{
@@ -62,9 +62,13 @@ suppressPackageStartupMessages(library("SingleCellExperiment"))
 batches <- c("b1", "b2")
 set.seed(239)
 batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
-sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
-                            colData = DataFrame("Species" = iris$Species, 
-                                                "Batch" = batch))
+sce <- SingleCellExperiment(
+    assays = list(logcounts = t(iris[, 1:4])),
+    colData = DataFrame(
+        "Species" = iris$Species,
+        "Batch" = batch
+    )
+)
 colnames(sce) <- paste0("samp", 1:ncol(sce))
 
 # Prepare SCE object for analysis
@@ -72,10 +76,12 @@ sce <- PrepareData(sce)
 
 # Multi-level integration (just for highlighting purposes; use default parameters)
 set.seed(123)
-sce <- RunParallelDivisiveICP(object = sce, batch.label = "Batch", k = 4, 
-                              L = 25, C = 1, d = 0.5, train.with.bnn = FALSE, 
-                              use.cluster.seed = FALSE, build.train.set = FALSE, 
-                              ari.cutoff = 0.1, threads = 2)
+sce <- RunParallelDivisiveICP(
+    object = sce, batch.label = "Batch", k = 4,
+    L = 25, C = 1, d = 0.5, train.with.bnn = FALSE,
+    use.cluster.seed = FALSE, build.train.set = FALSE,
+    ari.cutoff = 0.1, threads = 2
+)
 
 # Plot probability
 PlotClusterTree(object = sce, icp.run = 2)

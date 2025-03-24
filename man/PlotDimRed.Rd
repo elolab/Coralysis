@@ -47,7 +47,7 @@ PlotDimRed.SingleCellExperiment(
 \arguments{
 \item{object}{An object of \code{SingleCellExperiment} class.}
 
-\item{color.by}{Categorical variable available in \code{colData(object)} to 
+\item{color.by}{Categorical variable available in \code{colData(object)} to
 plot.}
 
 \item{dimred}{Dimensional reduction available in \code{ReducedDimNames(object)}
@@ -55,7 +55,7 @@ to plot. By default the last dimensional reduction in the object is used.}
 
 \item{dims}{Dimensions from the dimensional reduction embedding to plot.}
 
-\item{use.color}{Character specifying the colors. By default \code{NULL}, i.e., 
+\item{use.color}{Character specifying the colors. By default \code{NULL}, i.e.,
 colors are randomly chosen based on the seed given at \code{seed.color}.}
 
 \item{point.size}{Size of points. By default \code{1}.}
@@ -66,15 +66,15 @@ colors are randomly chosen based on the seed given at \code{seed.color}.}
 
 \item{seed.color}{Seed to randomly select colors. By default \code{123}.}
 
-\item{label}{Logical to add or not categorical labels to the centroid categories. 
+\item{label}{Logical to add or not categorical labels to the centroid categories.
 By default \code{FALSE}, i.e., labels are not added.}
 
 \item{plot.theme}{Plot theme available in \code{ggplot2}. By default \code{theme_classic()}.}
 
-\item{rasterise}{Logical specifying if points should be rasterised or not. By 
+\item{rasterise}{Logical specifying if points should be rasterised or not. By
 default \code{TRUE}, if more than 3e4 cells, otherwise \code{FALSE}.}
 
-\item{rasterise.dpi}{In case \code{rasterise = TRUE}, DPI to use. By default 
+\item{rasterise.dpi}{In case \code{rasterise = TRUE}, DPI to use. By default
 \code{300}.}
 
 \item{legend.justification}{Legend justification. By default \code{"center"}.}
@@ -97,21 +97,29 @@ suppressPackageStartupMessages(library("SingleCellExperiment"))
 batches <- c("b1", "b2")
 set.seed(239)
 batch <- sample(x = batches, size = nrow(iris), replace = TRUE)
-sce <- SingleCellExperiment(assays = list(logcounts = t(iris[,1:4])),  
-                         colData = DataFrame("Species" = iris$Species, 
-                                             "Batch" = batch))
+sce <- SingleCellExperiment(
+    assays = list(logcounts = t(iris[, 1:4])),
+    colData = DataFrame(
+        "Species" = iris$Species,
+        "Batch" = batch
+    )
+)
 colnames(sce) <- paste0("samp", 1:ncol(sce))
 
-# Compute dimensional reduction 
-sce <- RunPCA(object = sce, assay.name = "logcounts", p = 4, 
-            pca.method = "stats")
+# Compute dimensional reduction
+sce <- RunPCA(
+    object = sce, assay.name = "logcounts", p = 4,
+    pca.method = "stats"
+)
 
-# Plot batch 
+# Plot batch
 PlotDimRed(object = sce, color.by = "Batch", dimred = "PCA", legend.nrow = 1)
 
 # Plot cell type annotations
-PlotDimRed(object = sce, color.by = "Species", legend.nrow = 1, 
-          dimred = "PCA", label = TRUE)
+PlotDimRed(
+    object = sce, color.by = "Species", legend.nrow = 1,
+    dimred = "PCA", label = TRUE
+)
 
 }
 \keyword{Dimensional}
