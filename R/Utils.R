@@ -144,7 +144,7 @@ Scale <- function(x, center = TRUE, scale = TRUE, scale.by = "col") {
         x <- x / s
     }
     # Convert to sparse format
-    x <- Matrix::Matrix(x, sparse = T)
+    x <- Matrix::Matrix(x, sparse = TRUE)
     return(x)
 }
 

@@ -188,7 +188,9 @@ HeatmapFeatures.SingleCellExperiment <- function(object, clustering.label, featu
         color.palettes <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == "qual", ]
         color.palette <- unlist(mapply(RColorBrewer::brewer.pal, color.palettes$maxcolors, rownames(color.palettes)))
         ngroups <- nlevels(clustering)
-        set.seed(seed.color)
+        if (!is.null(seed.color)) {
+          set.seed(seed.color)
+        }
         use.color <- sample(color.palette, ngroups)
     }
     names(use.color) <- levels(clustering)
@@ -414,7 +416,9 @@ PlotDimRed.SingleCellExperiment <- function(object, color.by, dimred, dims, use.
         color.palette <- unlist(mapply(RColorBrewer::brewer.pal, color.palettes$maxcolors, rownames(color.palettes)))
         data.plot[, color.by] <- as.factor(data.plot[, color.by])
         ngroups <- nlevels(data.plot[, color.by, drop = TRUE])
-        set.seed(seed.color)
+        if (!is.null(seed.color)) {
+          set.seed(seed.color)
+        }
         use.color <- sample(color.palette, ngroups)
     }
     if (label) {
@@ -648,11 +652,11 @@ PlotClusterTree.SingleCellExperiment <- function(object, icp.run, color.by, use.
         if (i == 1) {
             node.pos[[i]] <- 1:k.rounds.inverted[i]
         } else {
-            node.pos[[i]] <- node.pos[[ii]][c(T, F)] + value
+            node.pos[[i]] <- node.pos[[ii]][c(TRUE, FALSE)] + value
         }
         ii <- i
         value <- diff(node.pos[[ii]][1:2]) / 2
-        node.seg[[i]] <- sort(c(node.pos[[ii]][c(T, F)] + value, node.pos[[ii]][c(F, T)] - value))
+        node.seg[[i]] <- sort(c(node.pos[[ii]][c(TRUE, FALSE)] + value, node.pos[[ii]][c(FALSE, TRUE)] - value))
     }
     node.pos <- rev(node.pos)
     node.seg <- rev(node.seg)
@@ -671,8 +675,8 @@ PlotClusterTree.SingleCellExperiment <- function(object, icp.run, color.by, use.
     for (i in icp.round) {
         df.list[[i]] <- data.frame(
             "K" = as.factor(i),
-            "k" = as.numeric(cell.clusters[, col.names[c(T, F)][i]]),
-            "p" = cell.clusters[, col.names[c(F, T)][i]]
+            "k" = as.numeric(cell.clusters[, col.names[c(TRUE, FALSE)][i]]),
+            "p" = cell.clusters[, col.names[c(FALSE, TRUE)][i]]
         )
         df.list[[i]][, "start"] <- node.pos[[i]][df.list[[i]][, "k"]]
         df.list[[i]][, "end"] <- node.seg[[i]][df.list[[i]][, "k"]]
@@ -739,7 +743,9 @@ PlotClusterTree.SingleCellExperiment <- function(object, icp.run, color.by, use.
             color.palettes <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == "qual", ]
             color.palette <- unlist(mapply(RColorBrewer::brewer.pal, color.palettes$maxcolors, rownames(color.palettes)))
             ngroups <- nlevels(object[[color.by]])
-            set.seed(seed.color)
+            if (!is.null(seed.color)) {
+              set.seed(seed.color)
+            }
             use.color <- sample(color.palette, ngroups)
         }
         p <- ggplot(data = df) +

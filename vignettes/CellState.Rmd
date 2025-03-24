@@ -113,14 +113,11 @@ Multi-level integration can be performed with `Coralysis` by running the functio
 
 ```{r multi-level integration, warning=FALSE}
 # Perform multi-level integration
-start <- Sys.time()
 set.seed(123)
 sce <- RunParallelDivisiveICP(object = sce, L = 25, 
                               icp.batch.size = 1000,
                               build.train.set = FALSE,
                               threads = 2)
-stop <- Sys.time()
-stop - start
 ```
 
 `Coralysis` returns a list of cell cluster probabilities saved at `metadata(sce)$coralysis$joint.probability` of length equal to the number of icp runs, i.e., `L` (by default `L=20`), times the number of icp rounds, i.e., log2(`k`) (by default `k=16`, thus 4 rounds of divisive icp). 
@@ -254,7 +251,7 @@ positive.coeff <- (rowSums(gene.coeff$icp_28 > 0) > 0)
 heat <- ComplexHeatmap::Heatmap(
     matrix = as.matrix(gene.coeff$icp_28)[positive.coeff, ],
     name = "Gene coef.",
-    cluster_columns = FALSE, show_row_dend = F, show_row_names = T,
+    cluster_columns = FALSE, show_row_dend = FALSE, show_row_names = TRUE,
     row_names_gp = grid::gpar(fontsize = 7)
 )
 print(heat)
@@ -439,11 +436,11 @@ gene <- "Glycam1"
 cowplot::plot_grid(
     PlotExpression(sce,
         color.by = gene, point.size = 0.5,
-        point.stroke = 0.5, scale.values = T
+        point.stroke = 0.5, scale.values = TRUE
     ),
     PlotExpression(sce.bins,
         color.by = gene, point.size = 1,
-        point.stroke = 1, scale.values = T
+        point.stroke = 1, scale.values = TRUE
     ),
     ncol = 2
 )
