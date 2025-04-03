@@ -1,7 +1,7 @@
 ---
-title: "Get started"
+title: "Coralysis: sensitive integration of single-cell data"
 date: "Compiled: `r format(Sys.Date(), '%d/%m/%Y')`"
-output: rmarkdown::html_vignette
+output: BiocStyle::html_document
 vignette: >
   %\VignetteIndexEntry{Get started}
   %\VignetteEngine{knitr::rmarkdown}
@@ -22,13 +22,58 @@ ___
 
 <br>
 
+## Introduction
+
+<br>
+
+`Coralysis` is an R package for sensitive integration, reference-mapping and cell-state identification of single-cell data (Sousa et al., 2025). It relies on an adapted version of our previously introduced Iterative Clustering Projection (ICP) algorithm (Smolander et al., 2021) to identify shared cell clusters across heterogeneous datasets by leveraging multiple rounds of divisive clustering. 
+
+Inspired by the process of assembling a puzzle - where one begins by grouping pieces based on low-to high-level features, such as color and shading, before looking into shape and patterns - this multi-level integration algorithm progressively blends the batch effects while separating cell types across multiple runs of divisive clustering. The trained ICP models can then be used for various purposes, including prediction of cluster identities of related, unannotated single-cell datasets through reference-mapping, and inference of cell states and their differential expression programs using the cell cluster probabilities that represent the likelihood of each cell belonging to each cluster. 
+
+While state-of-the-art single-cell integration methods often struggle with imbalanced cell types across heterogeneous datasets, `Coralysis` effectively differentiates similar yet unshared cell types across batches (Sousa et al., 2025). 
+
+<br>
+
+<br>
+
+___
+
+<br>
+
+<br>
+
+## Installation
+
+<br>
+
+`Coralysis` can be installed from `Bioconductor` by running the following commands: 
+
+```{r installation, eval=FALSE}
+# Installation
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("Coralysis")
+```
+
+
+<br>
+
+<br>
+
+___
+
+<br>
+
+<br>
+
 ## Dataset
 
 <br>
 
-To quickly illustrate the multi-level integration algorithm, this vignette highlights the integration of two brain datasets: **zeisel** (Zeisel et al., 2018) and **romanov** (Romanov et al., 2017). These datasets have been imported as `SingleCellExperiment` objects via the `scRNAseq` `R` package using the functions `ZeiselBrainData()` and `RomanovBrainData()`. Additionally, both datasets were normalized with the `scater` function `logNormCounts()`. The datasets were first merged based on shared genes and later subset to 2,000 highly variable genes with the `scran` function `getTopHVGs()`. Cell type labels correspond to level 1 class annotations provided in both `SingleCellExperiment` objects.  
+To quickly demonstrate the ability of `Coralysis`'s multi-level integration algorithm to integrate data that is unevenly distributed across batches or completely absent from some datasets, we selected two brain datasets — **zeisel** (Zeisel et al., 2018) and **romanov** (Romanov et al., 2017). These datasets share only a few cell types, with some similar yet distinct cell types across datasets, such as interneurons in **zeisel** and neurons in **romanov**. This makes them an ideal example to highlight the strengths of `Coralysis`. 
 
-Run the code below to import the required `R` packages, load the data, and preprocess it to reproduce this vignette.  
+The **zeisel** (Zeisel et al., 2018) and **romanov** datasets can be imported as `SingleCellExperiment` objects via the `scRNAseq` `R` package using the functions `ZeiselBrainData()` and `RomanovBrainData()`. Run the R code below to load the packages `Coralysis`, `scRNAseq` and `SingleCellExperiment` as well as the datasets **zeisel** and **romanov**. 
 
 ```{r packages, message=FALSE, warning=FALSE}
 # Import packages
@@ -41,7 +86,25 @@ library("SingleCellExperiment")
 # Import data
 zeisel <- ZeiselBrainData()
 romanov <- RomanovBrainData()
+```
 
+<br>
+
+<br>
+
+___
+
+<br>
+
+<br>
+
+## Preprocess
+
+<br>
+
+The datasets were normalized with the `scater` function `logNormCounts()` below. Additionaly they were merged based on shared genes and later subset to 2,000 highly variable genes with the `scran` function `getTopHVGs()`. Cell type labels correspond to level 1 class annotations provided in both `SingleCellExperiment` objects. They were stored under `cell_type` in `colData(sce)`, while batch labels (i.e., `Zeisel et al.` or `Romanov et al.`) were saved under `batch` in `colData(sce)`.
+
+```{r preprocess}
 # Normalize
 zeisel <- scater::logNormCounts(zeisel)
 counts(zeisel) <- NULL
@@ -73,23 +136,9 @@ hvg <- scran::getTopHVGs(sce, n = 2000)
 sce <- sce[hvg, ]
 ```
 
-<br>
+The `PrepareData()` function checks whether a sparse matrix is available in the `logcounts` assay (which corresponds to log-normalized data) and removes non-expressed features preparing the object to run `RunParallelDivisiveICP()` next. 
 
-<br>
-
-___
-
-<br>
-
-<br>
-
-## Preprocess
-
-<br>
-
-The `PrepareData()` function checks whether a sparse matrix is available in the `logcounts` assay (which corresponds to log-normalized data) and removes non-expressed features.
-
-```{r preprocess}
+```{r prepare data}
 # Prepare data:
 # checks 'logcounts' format & removes non-expressed genes
 sce <- PrepareData(object = sce)
@@ -160,7 +209,7 @@ ___
 
 <br>
 
-## UMAP
+## Nonlinear dimensional reduction
 
 <br>
 
@@ -215,16 +264,16 @@ plots[[2]] + ggplot2::facet_grid(~batch)
 
 <br>
 
-Interestingly, `Coralysis` integrated VSM (Vascular Smooth Muscle) cells from Romanov et al., 2017 with a subset of endothelial mural cells from Zeisel et al., 2018. Gene expression visualization of cell type markers for VSM ( _Acta2_, _Myh11_, _Tagln_ ) and endothelial ( _Cdh5_, _Pecam1_ ) cells support this integration. 
+Interestingly, `Coralysis` integrated VSM (Vascular Smooth Muscle) cells from Romanov et al., 2017 with a subset of endothelial mural cells from Zeisel et al., 2018. Gene expression visualization of cell type markers for VSM — _Acta2_, _Myh11_, _Tagln_ — and endothelial — _Cdh5_, _Pecam1_ — cells support this integration. 
 
-```{r viz gene exp markers, fig.width=15, fig.height=5}
+```{r viz gene exp markers, fig.width=8.5, fig.height=6}
 # Visualization of gene expression markers
 markers <- c("Acta2", "Myh11", "Tagln", "Cdh5", "Pecam1")
 plot.markers <- lapply(markers, function(x) {
     PlotExpression(sce, color.by = x, point.size = 0.5, point.stroke = 0.5) +
         ggplot2::facet_grid(~batch)
 })
-cowplot::plot_grid(plotlist = plot.markers, ncol = 3)
+cowplot::plot_grid(plotlist = plot.markers, ncol = 2)
 ```
 
 <br>
@@ -264,7 +313,7 @@ plots[[3]]
 
 <br>
 
-Compare the cell type annotations with the clustering result by batch. 
+The comparison below highlights the original cell type annotations and Louvain clustering obtained with the `Coralysis` integrated embedding, allowing us to assess the extent of cell population overlap between datasets. For instance, `Coralysis` integrated shared populations (e.g., clusters 6, 11, and 12), identified similar but unshared cell populations (e.g., clusters 5 and 10), and preserved unique populations specific to each dataset (e.g., clusters 7 and 14). 
 
 ```{r viz clustering by batch, fig.width=8, fig.height=10.5}
 cowplot::plot_grid(
@@ -288,7 +337,9 @@ ___
 
 <br>
 
-Gene coefficients can be obtained for a given cell label through majority voting with the function `MajorityVotingFeatures()`. The majority voting is performed by searching for the most representative cluster for a given cell label across all possible clusters (i.e., across all icp runs and rounds). The most representative cluster corresponds to the cluster with the highest majority voting score. This corresponds to the geometric mean between the proportion of cells from the given label intersected with a cluster and the proportion of cells from that same cluster that intersected with the cells from the given label. The higher the score the better. A cluster that scores 1 indicates that all its cells correspond to the assigned label, and vice versa; i.e., all the cells with the assigned label belong to this cluster. For example, `MajorityVotingFeatures()` by providing the `colData` variable `"cluster"` (i.e., `label="cluster"`).
+Next, we can examine the gene coefficients from the ICP models that best explain the clusters identified above, allowing us to explore the expression of genes that most strongly support these clusters. Below we will look into the identified similar but unshared cell clusters 5 and 10. 
+
+Gene coefficients can be obtained for the `cluster` label through majority voting with the function `MajorityVotingFeatures()`. The majority voting is performed by searching for the most representative cluster for a given cell label across all possible clusters (i.e., across all icp runs and rounds). The most representative cluster corresponds to the cluster with the highest majority voting score. This corresponds to the geometric mean between the proportion of cells from the given label intersected with a cluster and the proportion of cells from that same cluster that intersected with the cells from the given label. The higher the score the better. A cluster that scores 1 indicates that all its cells correspond to the assigned label, and vice versa; i.e., all the cells with the assigned label belong to this cluster. For example, `MajorityVotingFeatures()` by providing the `colData` variable `"cluster"` (i.e., `label="cluster"`).
 
 ```{r gene coefficients, message=FALSE, warning=FALSE}
 # Get label gene coefficients by majority voting
@@ -300,19 +351,42 @@ clts.gene.coeff$summary
 
 <br>
 
-Visualize below the expression for the top positive coefficients of cluster 9 corresponding to a population of oligodendrocytes shared between datasets.  
+Visualize below the expression for the top 6 positive coefficients for the identified similar but unshared cell populations: clusters 5 and 10.
 
-```{r viz top coefficients clt9, fig.width=15, fig.height=5}
-## Visualize top coefficients for cluster 9
-top.markers <- clts.gene.coeff$feature_coeff$`9`
-top.markers <- top.markers[order(top.markers$coeff_clt7, decreasing = TRUE), ]
-top.markers <- top.markers[1:5, "feature"]
-plot.coeff.markers <- lapply(top.markers, function(x) {
-    PlotExpression(sce, color.by = x, point.size = 0.5, point.stroke = 0.5) +
-        ggplot2::facet_grid(~batch)
-})
-cowplot::plot_grid(plotlist = plot.coeff.markers, ncol = 3)
+```{r viz top coefficients}
+## Visualize top coefficients for cluster 5, 10 
+clts <- c("5", "10")
+plot.coeff.markers <- list()
+for (i in clts) {
+  top.markers <- clts.gene.coeff$feature_coeff[[i]]
+  top.markers <- top.markers[order(top.markers[,2], decreasing = TRUE), ]
+  top.markers <- top.markers[1:6, "feature"]
+  plot.coeff.markers[[i]] <- lapply(top.markers, function(x) {
+      PlotExpression(sce, color.by = x, point.size = 0.3, point.stroke = 0.5) +
+          ggplot2::facet_grid(~batch)
+  })
+}
 ```
+
+Visualize the expression of the top 6 positive coefficients for cluster 5. The genes _Klk6_ and _Pmp22_ are very specific to cluster 5. Interestingly both genes are are involved in myelination in oligodendrocytes.
+
+```{r viz - cluster 5, fig.width=9.5, fig.height=3.5}
+# Cluster 5
+cowplot::plot_grid(plotlist = plot.coeff.markers[[1]], ncol = 3)
+```
+
+<br>
+
+Visualize the expression of the top 6 positive coefficients for cluster 10. Among the positive coefficients, genes _Slc17a6_ and _Nrn1_ seem quite specific to cluster 10 with _Slc17a6_ known as a marker for glutamatergic neurons. 
+
+```{r viz - cluster 10, fig.width=9.5, fig.height=3.5}
+# Cluster 10
+cowplot::plot_grid(plotlist = plot.coeff.markers[[2]], ncol = 3)
+```
+
+<br>
+
+Overall, ICP gene coefficients supported, to some extent, the identification of similar but unshared cell populations (clusters 5 and 10) with `Coralysis`.
 
 <br>
 
@@ -348,6 +422,8 @@ ___
 <br>
 
 Amezquita R, Lun A, Becht E, Carey V, Carpp L, Geistlinger L, Marini F, Rue-Albrecht K, Risso D, Soneson C, Waldron L, Pages H, Smith M, Huber W, Morgan M, Gottardo R, Hicks S (2020). "Orchestrating single-cell analysis with Bioconductor." _Nature Methods_, *17*, 137-145. [https://www.nature.com/articles/s41592-019-0654-x](https://www.nature.com/articles/s41592-019-0654-x).
+
+Smolander J, Junttila S, Venäläinen MS, Elo LL (2021) "ILoReg: a tool for high-resolution cell population identification from single-cell RNA-seq data." _Bioinformatics_, *37(8)*, 1107–1114. [https://doi.org/10.1093/bioinformatics/btaa919](https://doi.org/10.1093/bioinformatics/btaa919)
 
 Lun ATL, McCarthy DJ, Marioni JC (2016). "A step-by-step workflow for low-level analysis of single-cell RNA-seq data with Bioconductor." _F1000Res._, *5*, 2122. [doi:10.12688/f1000research.9501.2](https://doi.org/10.12688/f1000research.9501.2).
 

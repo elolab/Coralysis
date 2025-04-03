@@ -1,7 +1,7 @@
 ---
 title: "Integration"
 date: "Compiled: `r format(Sys.Date(), '%d/%m/%Y')`"
-output: rmarkdown::html_vignette
+output: BiocStyle::html_document
 vignette: >
   %\VignetteIndexEntry{Integration}
   %\VignetteEngine{knitr::rmarkdown}
