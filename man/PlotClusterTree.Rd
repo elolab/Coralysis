@@ -80,7 +80,7 @@ sce <- RunParallelDivisiveICP(
     object = sce, batch.label = "Batch", k = 4,
     L = 25, C = 1, d = 0.5, train.with.bnn = FALSE,
     use.cluster.seed = FALSE, build.train.set = FALSE,
-    ari.cutoff = 0.1, threads = 2
+    ari.cutoff = 0.1, threads = 2, RNGseed = 1024
 )
 
 # Plot probability

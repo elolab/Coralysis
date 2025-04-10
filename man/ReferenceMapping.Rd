@@ -95,7 +95,7 @@ ref <- RunParallelDivisiveICP(
     train.k.nn = 10, train.k.nn.prop = NULL,
     use.cluster.seed = FALSE,
     build.train.set = FALSE, ari.cutoff = 0.1,
-    threads = 2
+    threads = 2, RNGseed = 1024
 )
 # 2) Compute reference PCA & UMAP
 ref <- RunPCA(ref, p = 5, return.model = TRUE, pca.method = "stats")

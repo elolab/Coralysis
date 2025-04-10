@@ -60,7 +60,7 @@ sce <- RunParallelDivisiveICP(
     train.with.bnn = FALSE,
     use.cluster.seed = FALSE,
     build.train.set = FALSE, ari.cutoff = 0.1,
-    threads = 2
+    threads = 2, RNGseed = 1024
 )
 
 
