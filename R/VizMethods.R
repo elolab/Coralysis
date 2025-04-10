@@ -546,8 +546,8 @@ PlotExpression.SingleCellExperiment <- function(object, color.by, dimred, scale.
         data.plt <- cbind(data.plt, "color_by" = values)
         colnames(data.plt)[colnames(data.plt) == "color_by"] <- color.by
     }
-    dim.red <- reducedDim(object, type = dimred)[, 1:2]
-    axes <- paste0(dimred, 1:2)
+    dim.red <- reducedDim(object, type = dimred)[, c(1, 2)]
+    axes <- paste0(dimred, c(1, 2))
     colnames(dim.red) <- axes
     data.plt <- cbind(data.plt, dim.red) %>%
         arrange(.data[[color.by]])
@@ -642,20 +642,21 @@ PlotClusterTree.SingleCellExperiment <- function(object, icp.run, color.by, use.
     divisive.icp <- metadata(object)$coralysis$divisive.icp
     stopifnot(divisive.icp)
     k <- metadata(object)$coralysis$k
-    icp.round <- 1:log2(k)
+    icp.round <- seq_len(log2(k))
     probs <- GetCellClusterProbability(object = object, icp.run = icp.run, icp.round = icp.round, concatenate = FALSE)
 
     # Parse data to plot
     k.rounds.inverted <- rev(2**icp.round)
-    node.pos <- node.seg <- list()
+    node.pos <- vector("list", length(k.rounds.inverted))
+    node.seg <- vector("list", length(k.rounds.inverted))
     for (i in seq_along(k.rounds.inverted)) {
         if (i == 1) {
-            node.pos[[i]] <- 1:k.rounds.inverted[i]
+            node.pos[[i]] <- seq_len(k.rounds.inverted[i])
         } else {
             node.pos[[i]] <- node.pos[[ii]][c(TRUE, FALSE)] + value
         }
         ii <- i
-        value <- diff(node.pos[[ii]][1:2]) / 2
+        value <- diff(node.pos[[ii]][c(1, 2)]) / 2
         node.seg[[i]] <- sort(c(node.pos[[ii]][c(TRUE, FALSE)] + value, node.pos[[ii]][c(FALSE, TRUE)] - value))
     }
     node.pos <- rev(node.pos)
@@ -670,7 +671,7 @@ PlotClusterTree.SingleCellExperiment <- function(object, icp.run, color.by, use.
     )
 
     # Parse data
-    df.list <- list()
+    df.list <- vector("list", length(icp.round))
     col.names <- colnames(cell.clusters)
     for (i in icp.round) {
         df.list[[i]] <- data.frame(

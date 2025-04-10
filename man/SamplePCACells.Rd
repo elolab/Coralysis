@@ -24,7 +24,7 @@ the cells are sampled in a batch wise manner, otherwise the cells are sampled
 without any grouping factor. By default is \code{NULL}.}
 
 \item{q.split}{Split (cell) batch principal component distribution by this
-quantile (numeric). By default {0.5}, i.e., median.}
+quantile (numeric). By default \code{0.5}, i.e., median.}
 
 \item{p}{Number of principal components to compute (integer). By default
 \code{30}.}

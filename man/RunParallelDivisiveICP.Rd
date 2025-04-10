@@ -4,6 +4,7 @@
 \alias{RunParallelDivisiveICP}
 \alias{RunParallelDivisiveICP.SingleCellExperiment}
 \alias{RunParallelDivisiveICP,SingleCellExperiment-method}
+\alias{RunBPParallelDivisiveICP}
 \title{Multi-level integration}
 \usage{
 RunParallelDivisiveICP.SingleCellExperiment(
@@ -28,7 +29,9 @@ RunParallelDivisiveICP.SingleCellExperiment(
   divisive.method,
   allow.free.k,
   ari.cutoff,
-  verbose
+  verbose,
+  RNGseed,
+  BPPARAM
 )
 
 \S4method{RunParallelDivisiveICP}{SingleCellExperiment}(
@@ -53,7 +56,9 @@ RunParallelDivisiveICP.SingleCellExperiment(
   divisive.method = "cluster.batch",
   allow.free.k = TRUE,
   ari.cutoff = 0.3,
-  verbose = FALSE
+  verbose = FALSE,
+  RNGseed = 123,
+  BPPARAM = NULL
 )
 }
 \arguments{
@@ -77,9 +82,7 @@ leads greadually to smaller cell populations diversity.
 Default is \code{0.3}.}
 
 \item{L}{A positive integer greater than \code{1} denoting the number of
-the ICP runs to run. Default is \code{50}. Increasing recommended with
-a significantly larger sample size (tens of thousands of cells).
-Default is \code{200}.}
+the ICP runs to run. Default is \code{50}.}
 
 \item{r}{A positive integer that denotes the number of reiterations
 performed until the ICP algorithm stops.
@@ -105,9 +108,10 @@ the number of reiterations (\code{r=5}) terminates the algorithm.
 Default is \code{200}.}
 
 \item{threads}{A positive integer that specifies how many logical processors
-(threads) to use in parallel computation.
-Set \code{1} to disable parallelism altogether or \code{0} to use all
-available threas except one. Default is \code{0}.}
+(threads) to use in parallel computation. Set \code{1} to disable parallelism 
+altogether or \code{0} to use all available threads except one. Default is 
+\code{0}. This argument is ignored if \code{BPPARAM} is provided as threads 
+should be given directly to the \code{BiocParallelParam} object.}
 
 \item{icp.batch.size}{A positive integer that specifies how many cells
 to randomly select. It behaves differently depending on \code{build.train.set}.
@@ -167,8 +171,19 @@ By default \code{TRUE}.}
 Rand Index higher than \code{ari.cutoff} (numeric). By default \code{0.3}. A
 value that can range between 0 (include all) and lower than 1.}
 
-\item{verbose}{A logical value to print verbose during the ICP run in case
-of parallelization, i.e., 'threads' different than \code{1}. Default 'FALSE'.}
+\item{verbose}{A logical value to print verbose during the ICP run in case. 
+Default is \code{FALSE}. Verbose might help debugging errors by printing 
+intermediate ICP projection results.}
+
+\item{RNGseed}{Seed number passed to the parallel backend via \code{BiocParallel} 
+to ensure reproducibility. Defaults to \code{123}. If the \code{BPPARAM} parameter 
+is provided, \code{RNGseed} is ignored and should be set within \code{BPPARAM}.}
+
+\item{BPPARAM}{A \code{BiocParallelParam} object specifying the parallel backend 
+to use. This controls how tasks are distributed across workers. Use 
+\code{MulticoreParam} (for Unix-like systems) and \code{SnowParam} (for Windows or 
+cross-platform). If not specified, i.e., \code{NULL}, the default backend uses 
+\code{MulticoreParam} for Unix-like systems and \code{SnowParam} for Windows.}
 }
 \value{
 A \code{SingleCellExperiment} object.

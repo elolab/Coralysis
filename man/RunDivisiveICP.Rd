@@ -20,7 +20,8 @@ RunDivisiveICP(
   cluster.seed = NULL,
   divisive.method = "random",
   allow.free.k = FALSE,
-  ari.cutoff = 0.5
+  ari.cutoff = 0.5,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -92,6 +93,10 @@ By default \code{FALSE}.}
 \item{ari.cutoff}{Include ICP models and probability tables with an Adjusted
 Rand Index higher than \code{ari.cutoff} (numeric). By default \code{0.5}. A
 value that can range between 0 (include all) and lower than 1.}
+
+\item{verbose}{A logical value to print verbose during the ICP run in case. 
+Default is \code{TRUE}. Verbose might help debugging errors by printing 
+intermediate ICP projection results.}
 }
 \value{
 A list that includes the probability matrix and the clustering

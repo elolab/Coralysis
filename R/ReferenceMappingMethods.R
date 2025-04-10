@@ -141,7 +141,7 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
     # Get model data
     if (is.null(select.icp.models)) {
         n.icps <- length(metadata(ref)$coralysis$joint.probability)
-        select.icp.models <- 1:n.icps
+        select.icp.models <- seq_len(n.icps)
         select.icp.tables <- metadata(ref)$coralysis$pca.params$select.icp.tables
     } else {
         select.icp.tables <- seq_along(metadata(ref)$coralysis$pca.params$select.icp.tables)
@@ -160,7 +160,7 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
         }
     }
     colnames(query.data) <- paste0("W", pick.genes)
-    query.probs <- list()
+    query.probs <- vector("list", length(models))
     for (m in seq_along(models)) {
         models[[m]]$W <- models[[m]]$W[, c(colnames(query.data), "Bias"), drop = FALSE]
         pred <- predict(models[[m]], query.data, proba = TRUE)

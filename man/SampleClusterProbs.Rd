@@ -12,7 +12,7 @@ SampleClusterProbs(cluster, probs, q.split = 0.5)
 \item{probs}{Clustering probabilities predicted by ICP (matrix).}
 
 \item{q.split}{Split (cell) batch principal component distribution by this
-quantile (numeric). By default {0.5}, i.e., median.}
+quantile (numeric). By default \code{0.5}, i.e., median.}
 }
 \value{
 A factor with cell cluster identities.

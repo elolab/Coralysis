@@ -178,25 +178,27 @@ setGeneric("MajorityVotingFeatures",
 
 #' @export
 setGeneric("RunParallelDivisiveICP",
-    signature = "object",
-    function(object, batch.label = NULL,
-             k = 16, d = 0.3, L = 50,
-             r = 5, C = 0.3, reg.type = "L1",
-             max.iter = 200, threads = 0,
-             icp.batch.size = Inf,
-             train.with.bnn = TRUE,
-             train.k.nn = 10,
-             train.k.nn.prop = 0.3,
-             build.train.set = TRUE,
-             build.train.params = list(),
-             scale.by = NULL,
-             use.cluster.seed = TRUE,
-             divisive.method = "cluster.batch",
-             allow.free.k = TRUE,
-             ari.cutoff = 0.3,
-             verbose = FALSE) {
-        standardGeneric("RunParallelDivisiveICP")
-    }
+           signature = "object",
+           function(object, batch.label = NULL,
+                    k = 16, d = 0.3, L = 50,
+                    r = 5, C = 0.3, reg.type = "L1",
+                    max.iter = 200, threads = 0,
+                    icp.batch.size = Inf,
+                    train.with.bnn = TRUE,
+                    train.k.nn = 10,
+                    train.k.nn.prop = 0.3,
+                    build.train.set = TRUE,
+                    build.train.params = list(),
+                    scale.by = NULL,
+                    use.cluster.seed = TRUE,
+                    divisive.method = "cluster.batch",
+                    allow.free.k = TRUE,
+                    ari.cutoff = 0.3,
+                    verbose = FALSE, 
+                    RNGseed = 123,
+                    BPPARAM = NULL) {
+             standardGeneric("RunParallelDivisiveICP")
+           }
 )
 
 #' @export

@@ -14,7 +14,7 @@ SampleClusterBatchProbs(cluster, probs, batch, q.split = 0.5)
 \item{batch}{Batch labels for the corresponding clusters (character or factor).}
 
 \item{q.split}{Split (cell) batch principal component distribution by this
-quantile (numeric). By default {0.5}, i.e., median.}
+quantile (numeric). By default \code{0.5}, i.e., median.}
 }
 \value{
 A factor with cell cluster identities.

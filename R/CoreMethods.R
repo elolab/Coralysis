@@ -230,7 +230,7 @@ RunPCA.SingleCellExperiment <- function(object, assay.name, p, scale, center, th
         # Get ICP tables
         n.icps <- length(metadata(object)$coralysis$joint.probability)
         if (is.null(select.icp.tables)) {
-            select.icp.tables <- 1:n.icps
+            select.icp.tables <- seq_len(n.icps)
             divisive.icp <- metadata(object)$coralysis$divisive.icp
             if (!is.null(divisive.icp)) {
                 L <- metadata(object)$coralysis$L
@@ -244,7 +244,7 @@ RunPCA.SingleCellExperiment <- function(object, assay.name, p, scale, center, th
             X <- do.call(cbind, metadata(object)$coralysis$joint.probability[select.icp.tables])
         } else {
             icp_runs_logical <- unlist(lapply(metadata(object)$coralysis$metrics, function(x) x["ARI", ])) >= threshold
-            icp_runs_logical <- (icp_runs_logical & ((1:n.icps) %in% select.icp.tables))
+            icp_runs_logical <- (icp_runs_logical & (seq_len(n.icps) %in% select.icp.tables))
             X <- do.call(cbind, metadata(object)$coralysis$joint.probability[icp_runs_logical])
         }
     } else { # select assay from 'assayNames(object)'
@@ -686,7 +686,8 @@ FindAllClusterMarkers.SingleCellExperiment <- function(object,
     }
 
     # Compare cells from each cluster against all other clusters
-    results_list <- list()
+    results_list <- vector("list", length(clusters))
+    names(results_list) <- names(results_list)
     for (cluster in clusters) {
         cat("-----------------------------------\n")
         cat(paste0("testing cluster ", cluster, "\n"))
@@ -1372,7 +1373,7 @@ GetFeatureCoefficients.SingleCellExperiment <- function(object, icp.run = NULL, 
     }
     models <- metadata(object)$coralysis$models[pick.icp]
     feature2coeff <- row.names(object)
-    names(feature2coeff) <- paste0("W", 1:length(feature2coeff))
+    names(feature2coeff) <- paste0("W", seq_along(feature2coeff))
     feature.coeffs <- lapply(X = models, FUN = function(x) {
         apply(X = x$W[, -ncol(x$W), drop = FALSE], MARGIN = 1, FUN = function(y) {
             idx <- which(y != 0)
@@ -1467,9 +1468,13 @@ MajorityVotingFeatures.SingleCellExperiment <- function(object, label) {
     geometric_mean <- function(x) exp(mean(log(x)))
     labels <- names(clts.label.counts)
     out <- data.frame("label" = labels, "icp_run" = 0, "icp_round" = 0, "cluster" = "", score = 0)
-    res <- clts.label.score <- list()
+    res <- vector("list", length(clts.label.counts))
+    names(res) <- names(clts.label.counts)
+    clts.label.score <- vector("list", length(clts.label.counts))
+    names(clts.label.score) <- names(clts.label.counts)
     for (cell in names(clts.label.counts)) {
-        clts.label.score[[cell]] <- list()
+        clts.label.score[[cell]] <- vector("list", length(cell.clts.counts))
+        names(clts.label.score[[cell]]) <- names(cell.clts.counts)
         for (icp in names(cell.clts.counts)) {
             tmp <- clts.label.counts[[cell]][[icp]]
             pick.clts <- names(tmp)

@@ -245,7 +245,8 @@ FindBatchKNN <- function(idx, group, prob, k = 10) {
     comb.groups <- comb.groups[comb.groups$Var1 != comb.groups$Var2, ]
     comb.groups <- data.frame(t(comb.groups))
     obs.groups <- unlist(lapply(X = prob.idx, FUN = function(x) length(x)))
-    knn.idx <- list()
+    knn.idx <- vector("list", length(comb.groups))
+    names(knn.idx) <- apply(X = comb.groups, MARGIN = 2, FUN = function(x) paste(x, collapse = "_"))
     j <- 0
     for (pair in comb.groups) {
         j <- j + 1
@@ -266,7 +267,8 @@ FindBatchKNN <- function(idx, group, prob, k = 10) {
                 tmp.knn.idx <- sample(x = idx, size = k, replace = TRUE)
             }
         }
-        knn.idx[[paste(comb.groups[, j], collapse = "_")]] <- tmp.knn.idx
+        pair.name <- paste(comb.groups[, j], collapse = "_")
+        knn.idx[[pair.name]] <- tmp.knn.idx
     }
     return(knn.idx)
 }
@@ -294,9 +296,9 @@ FindBatchKNN <- function(idx, group, prob, k = 10) {
 #'
 FindClusterBatchKNN <- function(preds, probs, batch, k = 10, k.prop = NULL) {
     clts <- ncol(probs)
-    clt.knn <- list()
+    clt.knn <- vector("list", clts)
     nbatches <- length(unique(as.character(batch)))
-    for (clt in 1:clts) {
+    for (clt in seq_len(clts)) {
         idx <- which(preds == clt)
         group <- batch[idx]
         prob <- probs[idx, clt]
@@ -456,6 +458,9 @@ LogisticRegression <- function(training.sparse.matrix = NULL,
 #' @param ari.cutoff Include ICP models and probability tables with an Adjusted
 #' Rand Index higher than \code{ari.cutoff} (numeric). By default \code{0.5}. A
 #' value that can range between 0 (include all) and lower than 1.
+#' @param verbose A logical value to print verbose during the ICP run in case. 
+#' Default is \code{TRUE}. Verbose might help debugging errors by printing 
+#' intermediate ICP projection results. 
 #'
 #' @return A list that includes the probability matrix and the clustering
 #' similarity measures: ARI, NMI, etc.
@@ -473,7 +478,8 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
                            icp.batch.size = Inf, train.with.bnn = TRUE,
                            train.k.nn = 10, train.k.nn.prop = NULL,
                            cluster.seed = NULL, divisive.method = "random",
-                           allow.free.k = FALSE, ari.cutoff = 0.5) {
+                           allow.free.k = FALSE, ari.cutoff = 0.5, 
+                           verbose = TRUE) {
     metrics <- NULL
     idents <- list()
     iterations <- 1
@@ -495,9 +501,9 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
         normalized.data <- normalized.data[randinds_batch, ]
     }
 
-    probs <- res_model <- res_metrics <- preds <- list()
-    i <- 0
     Ks <- 2^seq(from = 1, to = log2(k), by = 1)
+    probs <- res_model <- res_metrics <- preds <- vector("list", length(Ks))
+    i <- 0
     if (length(train.k.nn.prop) == 1) {
         train.k.nn.prop <- rep(train.k.nn.prop, length(Ks))
     }
@@ -561,7 +567,7 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
             names(res_prediction$predictions) <- row.names(normalized.data)
             rownames(res_prediction$probabilities) <- row.names(normalized.data)
 
-            message(paste0("probability matrix dimensions = ", paste(dim(res_prediction$probabilities), collapse = " ")))
+            if (verbose) message(paste0("probability matrix dimensions = ", paste(dim(res_prediction$probabilities), collapse = " ")))
 
             # Projected clusters
             ident_2 <- res_prediction$predictions
@@ -571,16 +577,18 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
             # the down- and oversampling approach is used for the balancing training data.
             if (nlevels(factor(as.character(ident_2))) < k) {
                 if (allow.free.k & (nlevels(factor(as.character(ident_2))) > 3)) {
-                    message(paste("k", k, "decreased to", nlevels(factor(as.character(ident_2)))))
+                    if (verbose) message(paste("k", k, "decreased to", nlevels(factor(as.character(ident_2)))))
                     k <- nlevels(factor(as.character(ident_2)))
                 } else {
-                    message(paste0(
+                    if (verbose) {
+                      message(paste0(
                         "k decreased, starting from the beginning... ",
                         "consider increasing d to 0.5 and C to 1 ",
                         "or increasing the ICP batch size ",
                         "and check the input data ",
                         "(scaled dense data might cause problems)"
-                    ))
+                      ))
+                    }
                     first_round <- TRUE
                     metrics <- NULL
                     idents <- list()
@@ -590,9 +598,11 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
             }
 
             # Step 3: compare clustering similarity between clustering and projection
-            message(paste0("EPOCH: ", iterations))
-            message(paste0("current clustering = ", paste(table(ident_1), collapse = " ")))
-            message(paste0("projected clustering = ", paste(table(ident_2), collapse = " ")))
+            if (verbose) {
+              message(paste0("EPOCH: ", iterations))
+              message(paste0("current clustering = ", paste(table(ident_1), collapse = " ")))
+              message(paste0("projected clustering = ", paste(table(ident_2), collapse = " ")))
+            }
 
             comp_clust <- clustComp(c1 = ident_1, c2 = ident_2)
 
@@ -605,7 +615,7 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
                 reiterations <- reiterations + 1
             } else { # Step 3.2: If ARI increased, proceed to next iteration round
                 # Update clustering to the predicted clusters
-                message(paste0("ARI=", as.character(comp_clust$ARI)))
+              if (verbose) message(paste0("ARI=", as.character(comp_clust$ARI)))
                 ident_1 <- ident_2
                 first_round <- FALSE
                 metrics <- cbind(metrics, comp_clust)
@@ -636,13 +646,13 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
         iterations <- 1
     }
 
-    message("ICP converged at EPOCH ", iterations, ".\nMaximum ARI reached: ", as.character(ari), ".")
+    if (verbose) message("ICP converged at EPOCH ", iterations, ".\nMaximum ARI reached: ", as.character(ari), ".")
     if (is.infinite(icp.batch.size)) {
         # Step 5: Return result
         return(list(probabilities = probs, metrics = res_metrics, model = res_model))
     } else {
-        cat("projecting the whole data set...")
-        colnames(normalized_data_whole) <- paste0("W", 1:ncol(normalized_data_whole))
+        if (verbose) cat("projecting the whole data set...")
+        colnames(normalized_data_whole) <- paste0("W", seq_len(ncol(normalized_data_whole)))
         probs <- lapply(res_model, function(x) {
           predict(x, normalized_data_whole, proba = TRUE)$probabilities
         })
@@ -669,7 +679,7 @@ RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
 #' @keywords internal
 #'
 RandomlyDivisiveClustering <- function(cluster, k, cluster.names = NULL) {
-    clt.len <- 1:length(cluster)
+    clt.len <- seq_along(cluster)
     clt.idx <- split(x = clt.len, f = cluster)
     clt.list <- lapply(X = clt.idx, function(x) {
         factor(sample(seq_len(k), length(x), replace = TRUE))
@@ -702,7 +712,7 @@ RandomlyDivisiveClustering <- function(cluster, k, cluster.names = NULL) {
 #' the cells are sampled in a batch wise manner, otherwise the cells are sampled
 #' without any grouping factor. By default is \code{NULL}.
 #' @param q.split Split (cell) batch principal component distribution by this
-#' quantile (numeric). By default {0.5}, i.e., median.
+#' quantile (numeric). By default \code{0.5}, i.e., median.
 #' @param p Number of principal components to compute (integer). By default
 #' \code{30}.
 #' @param use.pc Which principal component should be used for sampling cells per
@@ -736,7 +746,7 @@ SamplePCACells <- function(data, batch = NULL, q.split = 0.5, p = 30, use.pc = "
     pc <- pca$x[, use.pc]
     names(pc) <- cell.names
     # Index by batch labels
-    cell.batch <- split(x = 1:length(batch), f = batch)
+    cell.batch <- split(x = seq_along(batch), f = batch)
     pc.batch <- split(x = pc, f = batch)
     # Split PC by quantile - median by default
     batch.names <- names(cell.batch)
@@ -754,7 +764,7 @@ SamplePCACells <- function(data, batch = NULL, q.split = 0.5, p = 30, use.pc = "
     # Clustering
     first.half.batch <- unlist(first.half.batch)
     second.half.batch <- unlist(second.half.batch)
-    cluster <- factor(rep(1:2, c(length(first.half.batch), length(second.half.batch))))
+    cluster <- factor(rep(c(1, 2), c(length(first.half.batch), length(second.half.batch))))
     names(cluster) <- c(first.half.batch, second.half.batch)
     cluster <- factor(cluster[cell.names])
     return(cluster)
@@ -769,7 +779,7 @@ SamplePCACells <- function(data, batch = NULL, q.split = 0.5, p = 30, use.pc = "
 #' @param cluster Clustering cell labels predicted by ICP (factor).
 #' @param probs Clustering probabilities predicted by ICP (matrix).
 #' @param q.split Split (cell) batch principal component distribution by this
-#' quantile (numeric). By default {0.5}, i.e., median.
+#' quantile (numeric). By default \code{0.5}, i.e., median.
 
 #' @return A factor with cell cluster identities.
 #'
@@ -781,7 +791,7 @@ SampleClusterProbs <- function(cluster, probs, q.split = 0.5) {
     # Split cells & probs by cluster/prediction
     clts <- as.character(unique(cluster))
     names(clts) <- clts
-    cell.idx <- 1:length(cluster)
+    cell.idx <- seq_along(cluster)
     clt.cell.idx <- split(x = cell.idx, f = cluster)
     max.probs <- apply(X = probs, MARGIN = 1, FUN = function(x) max(x))
     clt.probs <- split(x = max.probs, f = cluster)
@@ -816,7 +826,7 @@ SampleClusterProbs <- function(cluster, probs, q.split = 0.5) {
 #' @param probs Clustering probabilities predicted by ICP (matrix).
 #' @param batch Batch labels for the corresponding clusters (character or factor).
 #' @param q.split Split (cell) batch principal component distribution by this
-#' quantile (numeric). By default {0.5}, i.e., median.
+#' quantile (numeric). By default \code{0.5}, i.e., median.
 
 #' @return A factor with cell cluster identities.
 #'
@@ -830,7 +840,7 @@ SampleClusterBatchProbs <- function(cluster, probs, batch, q.split = 0.5) {
     names(clts) <- clts
     batches <- unique(as.character(batch))
     names(batches) <- batches
-    cell.idx <- 1:length(cluster)
+    cell.idx <- seq_along(cluster)
     clt.cell.idx <- split(x = cell.idx, f = cluster)
     max.probs <- apply(X = probs, MARGIN = 1, FUN = function(x) max(x))
     clt.probs <- split(x = max.probs, f = cluster)
