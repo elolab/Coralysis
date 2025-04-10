@@ -1,8 +1,13 @@
 Package: Coralysis
 Type: Package
 Title: Coralysis sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration
-Version: 0.99.3
-Description: Coralysis is an R package featuring a multi-level integration algorithm for sensitive integration, reference-mapping, and cell state identification in single-cell data.
+Version: 0.99.4
+Description: Coralysis is an R package featuring a multi-level integration algorithm for sensitive integration, 
+            reference-mapping, and cell-state identification in single-cell data. The multi-level integration 
+            algorithm is inspired by the process of assembling a puzzle - where one begins by grouping pieces 
+            based on low-to high-level features, such as color and shading, before looking into shape and patterns. 
+            This approach progressively blends the batch effects and separates cell types across multiple rounds 
+            of divisive clustering.
 Authors@R: c(person("António", "Sousa",
              email = "aggode@utu.fi",
              role=c("cre", "aut"), 
@@ -19,8 +24,6 @@ Authors@R: c(person("António", "Sousa",
 License: GPL-3
 Imports: 
     Matrix, 
-    parallel, 
-    foreach, 
     aricode, 
     LiblineaR, 
     SparseM, 
@@ -30,13 +33,11 @@ Imports:
     pheatmap, 
     reshape2, 
     dplyr, 
-    doRNG, 
     SingleCellExperiment, 
     SummarizedExperiment, 
     S4Vectors, 
     methods, 
     stats,
-    doSNOW, 
     utils, 
     RANN, 
     sparseMatrixStats, 
@@ -52,21 +53,23 @@ Imports:
     RColorBrewer,
     ggrastr,
     ggrepel, 
-    RSpectra
+    RSpectra, 
+    BiocParallel
 Depends: 
     R (>= 4.2.0)
 Suggests: 
-    knitr, 
+    knitr,
     rmarkdown,
     bluster,
-    ComplexHeatmap, 
-    circlize, 
-    pak, 
-    scater, 
-    viridis, 
-    scRNAseq, 
-    SingleR, 
-    MouseGastrulationData
+    ComplexHeatmap,
+    circlize,
+    scater,
+    viridis,
+    scRNAseq,
+    SingleR,
+    MouseGastrulationData,
+    testthat (>= 3.0.0), 
+    BiocStyle
 Encoding: UTF-8
 RoxygenNote: 7.3.2
 VignetteBuilder: knitr
@@ -86,3 +89,4 @@ biocViews:
 NeedsCompilation: no
 URL: https://github.com/elolab/Coralysis, https://elolab.github.io/Coralysis/
 BugReports: https://github.com/elolab/Coralysis/issues
+Config/testthat/edition: 3

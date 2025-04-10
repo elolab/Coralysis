@@ -1,4 +1,13 @@
-# Coralysis 1.0.0
+# Coralysis 0.99.4
+
+- Main changes: 
+
+    - `RunParallelDivisiveICP()`: adopting `BiocParallel` interface for parallelization
+    
+    - `RunParallelDivisiveICP()`: added the `RNGseed` parameter (set to `123` by default) to ensure reproducibility during parallelization via `BiocParallel`
+    
+
+# Coralysis 0.99.0
 
 First release 🎉
 
@@ -29,3 +38,4 @@ First release 🎉
 - Vignettes:
     - [Integration](https://elolab.github.io/Coralysis/articles/01_Integration.html)
     - [Reference-mapping](https://elolab.github.io/Coralysis/articles/02_RefMap.html)
+    - [Cell States](https://elolab.github.io/Coralysis/articles/CellState.html)
