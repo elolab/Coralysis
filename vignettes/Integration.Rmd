@@ -343,17 +343,17 @@ ___
 
 <br>
 
-Differential gene expression (DGE) between cluster 3 and 5  corresponding roughly to `Visceral endoderm` and `ExE endoderm`, respectively.
+Differential gene expression (DGE) between cluster 3 and 6 corresponding roughly to `Visceral endoderm` and `ExE endoderm`, respectively. The genes _Ttr_, _Rbp4_, _Apoa1_, _Apom_ and _Ctsl_ are upregulated in cluster 6, while _Tmsb10_ is upregulated in cluster 3. 
 
 ```{r dge, fig.width=9, fig.height=4.5}
-# DGE analysis: cluster 3 vs 5
-dge.clt3vs5 <- FindClusterMarkers(sce,
+# DGE analysis: cluster 3 vs 6
+dge.clt3vs6 <- FindClusterMarkers(sce,
     clustering.label = "cluster",
     clusters.1 = "3",
-    clusters.2 = "5"
+    clusters.2 = "6"
 )
-head(dge.clt3vs5[order(abs(dge.clt3vs5$log2FC), decreasing = TRUE), ])
-top6.degs <- head(dge.clt3vs5[order(abs(dge.clt3vs5$log2FC),
+head(dge.clt3vs6[order(abs(dge.clt3vs6$log2FC), decreasing = TRUE), ])
+top6.degs <- head(dge.clt3vs6[order(abs(dge.clt3vs6$log2FC),
     decreasing = TRUE
 ), "marker"])
 exp.plots <- lapply(X = top6.degs, FUN = function(x) {

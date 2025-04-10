@@ -190,7 +190,7 @@ ___
 
 <br>
 
-Below, `SingleR` is run with the `ref`erence to predict the cell type labels for the `query`, in order to compare with the `Coralysis` predictions, since the `query` dataset used does not provide cell type labels. The accuracy of `Coralysis` reference-mapping method is presented below together with a confusion matrix between the predicted (rows) versus ground-truth cell type labels (columns). 
+Below, `SingleR` is run with the `ref`erence to predict the cell type labels for the `query`, in order to compare with the `Coralysis` predictions, since the `query` dataset used does not provide cell type labels. The accuracy of `Coralysis` reference-mapping method is presented below together with a confusion matrix between the predicted `Coralysis` labels (rows) versus predicted `SingleR` labels (columns). 
 
 <br>
 
@@ -227,11 +227,14 @@ The accuracy of `Coralysis` reference-mapping method was `r round(acc*100, 1)`%.
 
 <br>
 
-Visualize below the query cells projected onto reference UMAP and how well the predictions match the query ground-truth. The `coral_probability` is a prediction confidence score. Predictions with low scores (<0.5) should be carefully inspected.   
+Visualize below the query cells projected onto reference UMAP and how well the predictions match the query ground-truth. The `coral_probability` is a prediction confidence score. Predictions with low scores (<0.5) should be carefully inspected.
 
 ```{r prediction viz, fig.width=7.5, fig.height=7.25}
 # Plot query and reference UMAP side-by-side
 # with ground-truth & predicted cell labels
+use.color <- c("acinar" = "#FF7F00", "alpha" = "#CCCCCC", "beta" = "#FDCDAC", 
+               "delta" = "#E6F5C9", "duct" = "#E31A1C", "endothelial" = "#377EB8", 
+               "epsilon" = "#7FC97F", "mesenchymal" = "#F0027F", "pp" = "#B3CDE3")
 query.singler.plot <- PlotDimRed(
     object = query,
     color.by = "labels",
@@ -239,7 +242,7 @@ query.singler.plot <- PlotDimRed(
     point.size = 0.25,
     point.stroke = 0.25,
     legend.nrow = 3,
-    seed.color = 17
+    use.color = use.color
 ) +
     ggtitle("Query: SingleR predictions")
 query.predicted.plot <- PlotDimRed(
@@ -249,7 +252,7 @@ query.predicted.plot <- PlotDimRed(
     point.size = 0.25,
     point.stroke = 0.25,
     legend.nrow = 3,
-    seed.color = 17
+    use.color = use.color
 ) +
     ggtitle("Query: Coralysis predictions")
 query.confidence.plot <- PlotExpression(

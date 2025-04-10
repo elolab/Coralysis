@@ -217,7 +217,7 @@ ___
 
 <br>
 
-The ICP clusters corresponding to the ICP probability table with the highest standard deviation (i.e., 7) for the last clustering round (i.e., 4) was obtained below (`"icp_run_round_7_4_clusters"`) and the respective clusters highlighted in UMAP plot. 
+The ICP clusters corresponding to the ICP probability table with the highest standard deviation (i.e., 14) for the last clustering round (i.e., 4) was obtained below (`"icp_run_round_14_4_clusters"`) and the respective clusters highlighted in UMAP plot. 
 
 ```{r icp clusters, fig.width=5, fig.height=6}
 # ICP clusters: identify the ICP probability table with the highest standard deviation
@@ -238,18 +238,18 @@ PlotDimRed(sce,
 
 <br>
 
-The gene coefficients for the above ICP clusters corresponding to the ICP run no. 7 and clustering round 4 can be retrieved with the function `GetFeatureCoefficients()`. The positive coefficients at least for one of the clusters were represented in the heatmap plot below.  
+The gene coefficients for the above ICP clusters corresponding to the ICP run no. 14 and clustering round 4 can be retrieved with the function `GetFeatureCoefficients()`. The positive coefficients at least for one of the clusters were represented in the heatmap plot below.  
 
 ```{r gene coefficients, message=FALSE, warning=FALSE, fig.width = 5.5, fig.height=14}
 # Get gene coefficients
 gene.coeff <- GetFeatureCoefficients(sce, icp.run = icp.run, icp.round = 4)
-row.names(gene.coeff$icp_28) <- gene.coeff$icp_28$feature
-gene.coeff$icp_28 <- gene.coeff$icp_28[, -1]
+row.names(gene.coeff$icp_56) <- gene.coeff$icp_56$feature
+gene.coeff$icp_56 <- gene.coeff$icp_56[, -1]
 
 # Plot top positive coefficients in heatmap
-positive.coeff <- (rowSums(gene.coeff$icp_28 > 0) > 0)
+positive.coeff <- (rowSums(gene.coeff$icp_56 > 0) > 0)
 heat <- ComplexHeatmap::Heatmap(
-    matrix = as.matrix(gene.coeff$icp_28)[positive.coeff, ],
+    matrix = as.matrix(gene.coeff$icp_56)[positive.coeff, ],
     name = "Gene coef.",
     cluster_columns = FALSE, show_row_dend = FALSE, show_row_names = TRUE,
     row_names_gp = grid::gpar(fontsize = 7)
@@ -261,14 +261,14 @@ print(heat)
 
 <br>
 
-One of the largest population of luminal cells is constituted by three ICP clusters (2, 6, 11), one could check below the main coefficients for each one of these clusters. 
+One of the largest population of luminal cells is constituted by three ICP clusters (3, 11, 12), one could check below the main coefficients for each one of these clusters. 
 
 ```{r gene coefficients per luminal cluster, fig.width=20, fig.height=10}
-# Check top gene coefficients per basal cluster: 12-14
-gene.coeff.basal <- gene.coeff$icp_28[positive.coeff, ] %>%
+# Check top gene coefficients per basal cluster: 3, 11, 12
+gene.coeff.basal <- gene.coeff$icp_56[positive.coeff, ] %>%
     mutate("gene" = row.names(.)) 
 top5.luminal <- top5.luminal.plts <- list()
-for (i in as.character(c(2, 6, 11))) {
+for (i in as.character(c(3, 11, 12))) {
     clt.no <- paste0("clt", i)
     top5.luminal[[clt.no]] <- gene.coeff.basal %>%
         dplyr::select(all_of(c("gene", paste0("coeff_", clt.no)))) %>%
@@ -398,7 +398,7 @@ The correlation between cell cluster probability bins from cluster 10 and averag
 corr.features <- CellBinsFeatureCorrelation(object = sce.bins, labels = "10")
 top30.corr.clt10 <- corr.features %>%
     arrange(desc(abs(`10`))) %>%
-    head(30) # Cited1    0.9090848
+    head(30)
 
 # Heatmap of top 30 genes with the highest absolute Pearson correlation
 pick.genes <- row.names(top30.corr.clt10)
@@ -428,20 +428,29 @@ print(heat.diff.exp)
 
 <br>
 
-For example, the expression of the gene _Glycam1_ (glycosylation-dependent cell adhesion molecule 1) is almost restricted to cluster 10, and it exhibits a gradient that correlates with both transient and steady-state cells. 
+For example, the expression of the gene _Glycam1_ (glycosylation-dependent cell adhesion molecule 1) or _Fabp3_ (fatty acid binding protein 3) are almost restricted to cluster 10, and they exhibit a gradient that correlates with both transient and steady-state cells. 
 
-```{r cited1 expression, fig.width=12, fig.height=5}
+```{r plot expression, fig.width=12, fig.height=10}
 # Look into Cited1 expression
-gene <- "Glycam1"
+genes <- c("Glycam1", "Fabp3")
 cowplot::plot_grid(
     PlotExpression(sce,
-        color.by = gene, point.size = 0.5,
+        color.by = genes[1], point.size = 0.5,
         point.stroke = 0.5, scale.values = TRUE
     ),
     PlotExpression(sce.bins,
-        color.by = gene, point.size = 1,
+        color.by = genes[1], point.size = 1,
         point.stroke = 1, scale.values = TRUE
     ),
+    PlotExpression(sce,
+        color.by = genes[2], point.size = 0.5,
+        point.stroke = 0.5, scale.values = TRUE
+    ),
+    PlotExpression(sce.bins,
+        color.by = genes[2], point.size = 1,
+        point.stroke = 1, scale.values = TRUE
+    ),
+    
     ncol = 2
 )
 ```

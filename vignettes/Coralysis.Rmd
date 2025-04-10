@@ -162,18 +162,19 @@ The multi-level integration algorithm is implemented in the `RunParallelDivisive
 
 To perform integration across a batch, a `batch.label` available in `colData(sce)` must be provided. In this case, it is `"batch"`, created above to hold the information about the brain dataset origin, i.e., _Zeisel et al._ or _Romanov et al._. The ensemble algorithm runs 50 times by default, but for illustrative purposes, this has been reduced to 10 (`L=10`). 
 
-Two threads are allocated to speed up the process (`threads=2`), though by default, the function uses all available system threads. Specify one thread if you prefer not to use any additional threads. In addition, the cells are downsampled to 1,000 cells per batch to speed up the process (`icp.batch.size = 1000`). 
+Two threads are allocated to speed up the process (`threads=2`), though by default, the function uses all available system threads. Specify one thread if you prefer not to use any additional threads. In addition, the cells are downsampled to 1,000 cells per batch to speed up the process (`icp.batch.size = 1000`). The seed provided in `set.seed` is required to ensure the reproducibility of the sampling taken before parallelization. To ensure reproducibility during parallelization, the `RNGseed` parameter is set to `123` by default.
 
 The result consists of a set of models and their respective probability matrices (n = 40; log2(`k`) * `L`), stored in `metadata(sce)$coralysis$models` and `metadata(sce)$coralysis$joint.probability`, respectively.
 
 ```{r integration}
 # Multi-level integration
-set.seed(123)
+set.seed(4591) # reproducibility of downsampling - 'icp.batch.size'
 sce <- RunParallelDivisiveICP(
     object = sce,
     batch.label = "batch",
     icp.batch.size = 1000,
-    L = 10, threads = 2
+    L = 10, threads = 2,  
+    RNGseed = 123
 )
 ```
 
@@ -313,7 +314,7 @@ plots[[3]]
 
 <br>
 
-The comparison below highlights the original cell type annotations and Louvain clustering obtained with the `Coralysis` integrated embedding, allowing us to assess the extent of cell population overlap between datasets. For instance, `Coralysis` integrated shared populations (e.g., clusters 6, 11, and 12), identified similar but unshared cell populations (e.g., clusters 5 and 10), and preserved unique populations specific to each dataset (e.g., clusters 7 and 14). 
+The comparison below highlights the original cell type annotations and Louvain clustering obtained with the `Coralysis` integrated embedding, allowing us to assess the extent of cell population overlap between datasets. For instance, `Coralysis` integrated shared populations (e.g., clusters 11, 12 and 14), identified similar but unshared cell populations (e.g., clusters 10 versus 12), and preserved unique populations specific to each dataset (e.g., clusters 7 and 13). 
 
 ```{r viz clustering by batch, fig.width=8, fig.height=10.5}
 cowplot::plot_grid(
@@ -337,7 +338,7 @@ ___
 
 <br>
 
-Next, we can examine the gene coefficients from the ICP models that best explain the clusters identified above, allowing us to explore the expression of genes that most strongly support these clusters. Below we will look into the identified similar but unshared cell clusters 5 and 10. 
+Next, we can examine the gene coefficients from the ICP models that best explain the clusters identified above, allowing us to explore the expression of genes that most strongly support these clusters. Below we will look into the identified similar but unshared cell clusters 10 and 12. 
 
 Gene coefficients can be obtained for the `cluster` label through majority voting with the function `MajorityVotingFeatures()`. The majority voting is performed by searching for the most representative cluster for a given cell label across all possible clusters (i.e., across all icp runs and rounds). The most representative cluster corresponds to the cluster with the highest majority voting score. This corresponds to the geometric mean between the proportion of cells from the given label intersected with a cluster and the proportion of cells from that same cluster that intersected with the cells from the given label. The higher the score the better. A cluster that scores 1 indicates that all its cells correspond to the assigned label, and vice versa; i.e., all the cells with the assigned label belong to this cluster. For example, `MajorityVotingFeatures()` by providing the `colData` variable `"cluster"` (i.e., `label="cluster"`).
 
@@ -351,11 +352,11 @@ clts.gene.coeff$summary
 
 <br>
 
-Visualize below the expression for the top 6 positive coefficients for the identified similar but unshared cell populations: clusters 5 and 10.
+Visualize below the expression for the top 6 positive coefficients for the identified similar but unshared cell populations: clusters 10 and 12.
 
 ```{r viz top coefficients}
-## Visualize top coefficients for cluster 5, 10 
-clts <- c("5", "10")
+## Visualize top coefficients for cluster 10 and 12
+clts <- c("10", "12")
 plot.coeff.markers <- list()
 for (i in clts) {
   top.markers <- clts.gene.coeff$feature_coeff[[i]]
@@ -368,25 +369,25 @@ for (i in clts) {
 }
 ```
 
-Visualize the expression of the top 6 positive coefficients for cluster 5. The genes _Klk6_ and _Pmp22_ are very specific to cluster 5. Interestingly both genes are are involved in myelination in oligodendrocytes.
+Visualize the expression of the top 6 positive coefficients for cluster 10. The top 6 positive coefficients identified are highly specific to cluster 10.
 
-```{r viz - cluster 5, fig.width=9.5, fig.height=3.5}
-# Cluster 5
+```{r viz - cluster 10, fig.width=9.5, fig.height=3.5}
+# Cluster 10
 cowplot::plot_grid(plotlist = plot.coeff.markers[[1]], ncol = 3)
 ```
 
 <br>
 
-Visualize the expression of the top 6 positive coefficients for cluster 10. Among the positive coefficients, genes _Slc17a6_ and _Nrn1_ seem quite specific to cluster 10 with _Slc17a6_ known as a marker for glutamatergic neurons. 
+Visualize the expression of the top six positive coefficients for cluster 12. Among the highly specific positive coefficients, myelination-related genes _Ptgds_ and _Mal_ are enriched in cluster 12 compared to cluster 10, where they are practically absent. This suggests that cluster 12 represents a mature, myelinating oligodendrocyte population, in contrast to the more immature cluster 10.
 
-```{r viz - cluster 10, fig.width=9.5, fig.height=3.5}
-# Cluster 10
+```{r viz - cluster 12, fig.width=9.5, fig.height=3.5}
+# Cluster 12
 cowplot::plot_grid(plotlist = plot.coeff.markers[[2]], ncol = 3)
 ```
 
 <br>
 
-Overall, ICP gene coefficients supported, to some extent, the identification of similar but unshared cell populations (clusters 5 and 10) with `Coralysis`.
+Overall, ICP gene coefficients supported, to some extent, the identification of similar but unshared cell populations (clusters 10 and 12) with `Coralysis`.
 
 <br>
 
