@@ -110,10 +110,7 @@
 #'
 #' @importFrom BiocParallel bpworkers bplapply bpstop SnowParam MulticoreParam
 #' @importFrom S4Vectors metadata metadata<-
-#' @import Matrix
-#' @import aricode
-#' @import LiblineaR
-#' @import SparseM
+#' @importFrom Matrix Matrix
 #' @importFrom SingleCellExperiment logcounts
 #' @importFrom methods is
 #'
@@ -383,7 +380,7 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
   if (!is.null(scale.by)) {
     message(cat("Scaling data by", scale.by, ".\n"))
     if (scale.by == "cell") {
-      dataset <- Scale(x = as(dataset, "sparseMatrix"), scale.by = "row")
+      dataset <- Scale(x = Matrix(dataset, sparse = TRUE), scale.by = "row")
     }
     if (scale.by == "feature") {
       dataset <- ScaleByBatch(x = dataset, batch = batch.label)
@@ -460,7 +457,7 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
     colnames(test.data) <- paste0("W", seq_len(ncol(test.data)))
     if (!is.null(scale.by)) {
       if (scale.by == "cell") {
-        test.data <- Scale(x = as(test.data, "sparseMatrix"), scale.by = "row")
+        test.data <- Scale(x = Matrix(test.data, sparse = TRUE), scale.by = "row")
       }
       if (scale.by == "feature") {
         batch.label <- as.character(object[[batch.name]])

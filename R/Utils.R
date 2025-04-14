@@ -348,7 +348,6 @@ FindClusterBatchKNN <- function(preds, probs, batch, k = 10, k.prop = NULL) {
 #'
 #' @keywords internal
 #'
-#' @import Matrix
 #' @import SparseM
 #' @importFrom methods as
 #' @importFrom LiblineaR LiblineaR
@@ -467,10 +466,7 @@ LogisticRegression <- function(training.sparse.matrix = NULL,
 #'
 #' @keywords internal
 #'
-#' @import Matrix
 #' @importFrom aricode clustComp
-#' @import LiblineaR
-#' @import SparseM
 #'
 RunDivisiveICP <- function(normalized.data = NULL, batch.label = NULL,
                            k = 16, d = 0.3, r = 5, C = 5,

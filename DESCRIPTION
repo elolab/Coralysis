@@ -1,7 +1,7 @@
 Package: Coralysis
 Type: Package
 Title: Coralysis sensitive identification of imbalanced cell types and states in single-cell data via multi-level integration
-Version: 0.99.4
+Version: 0.99.5
 Description: Coralysis is an R package featuring a multi-level integration algorithm for sensitive integration, 
             reference-mapping, and cell-state identification in single-cell data. The multi-level integration 
             algorithm is inspired by the process of assembling a puzzle - where one begins by grouping pieces 
@@ -54,7 +54,8 @@ Imports:
     ggrastr,
     ggrepel, 
     RSpectra, 
-    BiocParallel
+    BiocParallel, 
+    withr
 Depends: 
     R (>= 4.2.0)
 Suggests: 
