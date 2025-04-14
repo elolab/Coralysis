@@ -732,8 +732,7 @@ PlotClusterTree.SingleCellExperiment <- function(object, icp.run, color.by, use.
         df[is.na(df)] <- 0
         object[[color.by]] <- as.factor(object[[color.by]])
         if (is.null(use.color)) {
-            data.plot[, color.by] <- as.factor(data.plot[, color.by])
-            ngroups <- nlevels(data.plot[, color.by, drop = TRUE])
+            ngroups <- nlevels(object[[color.by]])
             use.color <- suppressWarnings(with_seed(seed.color, .randomColors(ncolors = ngroups)))
         }
         p <- ggplot(data = df) +
