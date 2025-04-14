@@ -130,6 +130,7 @@ setMethod(
 #' @importFrom S4Vectors metadata
 #' @import pheatmap
 #' @importFrom SingleCellExperiment logcounts
+#' @importFrom withr with_seed
 #' @examples
 #' # Import package
 #' suppressPackageStartupMessages(library("SingleCellExperiment"))
@@ -185,13 +186,7 @@ HeatmapFeatures.SingleCellExperiment <- function(object, clustering.label, featu
     # Generate column annotations
     annotation <- data.frame(cluster = sort(clustering))
     if (is.null(use.color)) {
-        color.palettes <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == "qual", ]
-        color.palette <- unlist(mapply(RColorBrewer::brewer.pal, color.palettes$maxcolors, rownames(color.palettes)))
-        ngroups <- nlevels(clustering)
-        if (!is.null(seed.color)) {
-          set.seed(seed.color)
-        }
-        use.color <- sample(color.palette, ngroups)
+        use.color <- suppressWarnings(with_seed(seed.color, .randomColors(ncolors = nlevels(clustering))))
     }
     names(use.color) <- levels(clustering)
     use.color <- list(cluster = use.color)
@@ -411,15 +406,11 @@ PlotDimRed.SingleCellExperiment <- function(object, color.by, dimred, dims, use.
     axes <- paste0(dimred, dims)
     colnames(data.plot) <- axes
     data.plot <- cbind(data.plot, colData(object))
+    
     if (is.null(use.color)) {
-        color.palettes <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == "qual", ]
-        color.palette <- unlist(mapply(RColorBrewer::brewer.pal, color.palettes$maxcolors, rownames(color.palettes)))
         data.plot[, color.by] <- as.factor(data.plot[, color.by])
         ngroups <- nlevels(data.plot[, color.by, drop = TRUE])
-        if (!is.null(seed.color)) {
-          set.seed(seed.color)
-        }
-        use.color <- sample(color.palette, ngroups)
+        use.color <- suppressWarnings(with_seed(seed.color, .randomColors(ncolors = ngroups)))
     }
     if (label) {
         data.plot <- data.plot %>%
@@ -741,13 +732,9 @@ PlotClusterTree.SingleCellExperiment <- function(object, icp.run, color.by, use.
         df[is.na(df)] <- 0
         object[[color.by]] <- as.factor(object[[color.by]])
         if (is.null(use.color)) {
-            color.palettes <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == "qual", ]
-            color.palette <- unlist(mapply(RColorBrewer::brewer.pal, color.palettes$maxcolors, rownames(color.palettes)))
-            ngroups <- nlevels(object[[color.by]])
-            if (!is.null(seed.color)) {
-              set.seed(seed.color)
-            }
-            use.color <- sample(color.palette, ngroups)
+            data.plot[, color.by] <- as.factor(data.plot[, color.by])
+            ngroups <- nlevels(data.plot[, color.by, drop = TRUE])
+            use.color <- suppressWarnings(with_seed(seed.color, .randomColors(ncolors = ngroups)))
         }
         p <- ggplot(data = df) +
             geom_segment(

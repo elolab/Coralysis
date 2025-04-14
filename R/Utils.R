@@ -883,3 +883,20 @@ SampleClusterBatchProbs <- function(cluster, probs, batch, q.split = 0.5) {
     new.clt <- factor(new.clt[order(new.idx)])
     return(new.clt)
 }
+
+#' @title Random colors
+#'
+#' @description The function returns a group of random colors.
+#'
+#' @param ncolors Integer. Number of colors to generate randomly.  
+#'
+#' @return Random colors. 
+#'
+#' @keywords internal
+#'
+.randomColors <- function(ncolors) {
+  color.palettes <- RColorBrewer::brewer.pal.info[RColorBrewer::brewer.pal.info$category == "qual", ]
+  color.palette <- unlist(mapply(RColorBrewer::brewer.pal, color.palettes$maxcolors, rownames(color.palettes)))
+  use.color <- sample(color.palette, ncolors)
+  return(use.color)
+}
