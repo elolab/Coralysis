@@ -4,7 +4,6 @@
 \alias{RunParallelDivisiveICP}
 \alias{RunParallelDivisiveICP.SingleCellExperiment}
 \alias{RunParallelDivisiveICP,SingleCellExperiment-method}
-\alias{RunBPParallelDivisiveICP}
 \title{Multi-level integration}
 \usage{
 RunParallelDivisiveICP.SingleCellExperiment(

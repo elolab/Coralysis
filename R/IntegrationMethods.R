@@ -479,7 +479,7 @@ RunParallelDivisiveICP.SingleCellExperiment <- function(object, batch.label,
   return(object)
 }
 #' @rdname RunParallelDivisiveICP
-#' @aliases RunBPParallelDivisiveICP
+#' @aliases RunParallelDivisiveICP
 setMethod(
   "RunParallelDivisiveICP", signature(object = "SingleCellExperiment"),
   RunParallelDivisiveICP.SingleCellExperiment
