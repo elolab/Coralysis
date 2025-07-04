@@ -8,3 +8,4 @@ _pkgdown.yml
 .git
 .github
 .Rbuildignore
+README.Rmd
