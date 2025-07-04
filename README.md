@@ -407,7 +407,7 @@ design.
 
 <br>
 
-![](man/figures/funding_logos.png)
+<img src="man/figures/funding_logos" width="100%" />
 
 <br>
 
