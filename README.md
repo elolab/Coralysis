@@ -6,7 +6,7 @@
 <!-- badges -->
 
 [![](https://img.shields.io/badge/release%20version-0.99.6-green.svg)](https://www.bioconductor.org/packages/Coralysis)
-[![](https://img.shields.io/badge/devel%20version-0.99.6-orange.svg)](https://github.com/elolab/Coralysis)
+[![](https://img.shields.io/badge/devel%20version-0.99.7-orange.svg)](https://github.com/elolab/Coralysis)
 [![](https://img.shields.io/badge/download-475/total-blue.svg)](https://bioconductor.org/packages/stats/bioc/Coralysis)
 [![](https://img.shields.io/badge/doi-10.1101/2025.02.07.637023-yellow.svg)](https://doi.org/10.1101/2025.02.07.637023)
 
@@ -394,6 +394,20 @@ If you use `Coralysis` in your work, please cite the following preprint:
 A special thanks to [Paulina
 Frolovaitė](https://www.linkedin.com/in/paufrol) for the beautiful logo
 design.
+
+<br>
+
+<br>
+
+## :classical_building: Funding
+
+> This project has received funding from the European Union’s Horizon
+> 2020 research and innovation programme under the Marie
+> Skłodowska-Curie grant agreement no.: 955321.
+
+<br>
+
+![](man/figures/funding_logos.png)
 
 <br>
 
