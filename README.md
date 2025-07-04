@@ -1,12 +1,12 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# Coralysis <a href="https://elolab.github.io/Coralysis"><img src="man/figures/Coralysis_logo.png" align="right" height="30%" alt="Coralysis website" /></a>
+# Coralysis <a href="https://elolab.github.io/Coralysis"><img src="man/figures/Coralysis_logo.png" align="right" height="150" alt="Coralysis website" /></a>
 
 <!-- badges -->
 
 [![](https://img.shields.io/badge/release%20version-0.99.6-green.svg)](https://www.bioconductor.org/packages/Coralysis)
-[![](https://img.shields.io/badge/devel%20version-0.99.7-orange.svg)](https://github.com/elolab/Coralysis)
+[![](https://img.shields.io/badge/devel%20version-0.99.8-orange.svg)](https://github.com/elolab/Coralysis)
 [![](https://img.shields.io/badge/download-475/total-blue.svg)](https://bioconductor.org/packages/stats/bioc/Coralysis)
 [![](https://img.shields.io/badge/doi-10.1101/2025.02.07.637023-yellow.svg)](https://doi.org/10.1101/2025.02.07.637023)
 
