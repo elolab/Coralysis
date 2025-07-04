@@ -19,9 +19,13 @@ enables sensitive identification of imbalanced cell types and states in
 single-cell data via multi-level
 integration”](https://doi.org/10.1101/2025.02.07.637023)*.
 
+<p align="center">
+
 <p style="text-align:center;">
 
 <img src="man/figures/Coralysis_applications.png" width="90%" />
+</p>
+
 </p>
 
 Coralysis relies on an adapted version of our previously introduced
@@ -47,27 +51,35 @@ with imbalanced cell types across heterogeneous datasets, Coralysis
 effectively differentiates similar yet unshared cell types across
 batches.
 
+<p align="center">
+
 <p style="text-align:center;">
 
 <img src="man/figures/Coralysis_flowchart.png" width="90%" />
 </p>
 
-<font size="2"> <b>Coralysis integration flowchart.</b> (<b>A</b>) An
-input of heterogeneous single-cell datasets are overclustered batch wise
-into a training set modelled through the Iterative Clustering Projection
-(ICP) algorithm in order to predict the cell cluster probabilities and
-obtain an integrated embedding. Adaptations to the original ICP
-algorithm (Smolander et al., 2021): (<b>B</b>) batch wise cluster
-assignment at start, dependent on the cell distribution across Principal
-Component 1 (median as cutoff); (<b>C</b>) training cells selected from
-batch k nearest neighbours of the cell with the highest probability for
-every batch per cluster; and, (<b>D</b>) upon ICP clustering
-convergence, each cluster is further divided into two for the next
-clustering round, dependent on the batch wise cluster probability
-distribution (median as cutoff). (<b>E</b>) Multi-level integration is
-achieved through multiple divisive clustering rounds, blending the batch
-effect and highlighting the biological signal incrementally. Shapes
-represent cell types and colours batches. </font>
+</p>
+
+> **Coralysis integration flowchart**.</b> (<b>A</b>) An input of
+> heterogeneous single-cell datasets are overclustered batch wise into a
+> training set modelled through the Iterative Clustering Projection
+> (ICP) algorithm in order to predict the cell cluster probabilities and
+> obtain an integrated embedding. Adaptations to the original ICP
+> algorithm (Smolander et al., 2021): (<b>B</b>) batch wise cluster
+> assignment at start, dependent on the cell distribution across
+> Principal Component 1 (median as cutoff); (<b>C</b>) training cells
+> selected from batch k nearest neighbours of the cell with the highest
+> probability for every batch per cluster; and, (<b>D</b>) upon ICP
+> clustering convergence, each cluster is further divided into two for
+> the next clustering round, dependent on the batch wise cluster
+> probability distribution (median as cutoff). (<b>E</b>) Multi-level
+> integration is achieved through multiple divisive clustering rounds,
+> blending the batch effect and highlighting the biological signal
+> incrementally. Shapes represent cell types and colours batches.
+
+<br>
+
+<br>
 
 ## :package: Installation
 
@@ -90,6 +102,10 @@ GitHub using the [`devtools`](https://devtools.r-lib.org/) R package.
 ``` r
 devtools::install_github("elolab/Coralysis")
 ```
+
+<br>
+
+<br>
 
 ## :hammer_and_wrench: Usage
 
@@ -307,6 +323,10 @@ ifnb <- RunUMAP(ifnb, dims = 1:30, reduction = "integrated.coralysis",
 
 </details>
 
+<br>
+
+<br>
+
 ## :bookmark_tabs: Vignettes
 
 - Bioconductor vignettes:
@@ -338,6 +358,10 @@ ifnb <- RunUMAP(ifnb, dims = 1:30, reduction = "integrated.coralysis",
   - [Running `Coralysis` integration on `Seurat`
     Objects](https://htmlpreview.github.io/?https://github.com/elolab/seurat-wrappers/blob/CoralysisIntegration/docs/coralysis.html)
 
+<br>
+
+<br>
+
 ## :question: Getting help
 
 Check the reference
@@ -347,11 +371,33 @@ or [website](https://elolab.github.io/Coralysis/reference/index.html).
 If you have questions related to `Coralysis`, please contact us
 [here](https://github.com/elolab/Coralysis/issues).
 
+<br>
+
+<br>
+
+## :memo: Citation
+
+If you use `Coralysis` in your work, please cite the following preprint:
+
+> **António GG Sousa, Johannes Smolander, Sini Junttila, Laura L Elo**
+> (2025).  
+> *Coralysis enables sensitive identification of imbalanced cell types
+> and states in single-cell data via multi-level integration.*
+> *bioRxiv*. <https://doi.org/10.1101/2025.02.07.637023>
+
+<br>
+
+<br>
+
 ## :tada: Acknowledgements
 
 A special thanks to [Paulina
 Frolovaitė](https://www.linkedin.com/in/paufrol) for the beautiful logo
 design.
+
+<br>
+
+<br>
 
 ## :books: References
 
