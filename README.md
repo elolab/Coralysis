@@ -1,13 +1,13 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# Coralysis <a href="https://elolab.github.io/Coralysis"><img src="man/figures/Coralysis_logo.png" align="right" height="150" alt="Coralysis website" /></a>
+# Coralysis <a href="https://elolab.github.io/Coralysis"><img src="man/figures/Coralysis_logo.png" align="right" width="120" alt="Coralysis website" /></a>
 
 <!-- badges -->
 
 [![](https://img.shields.io/badge/release%20version-0.99.6-green.svg)](https://www.bioconductor.org/packages/Coralysis)
 [![](https://img.shields.io/badge/devel%20version-0.99.8-orange.svg)](https://github.com/elolab/Coralysis)
-[![](https://img.shields.io/badge/download-475/total-blue.svg)](https://bioconductor.org/packages/stats/bioc/Coralysis)
+[![](https://img.shields.io/badge/download-495/total-blue.svg)](https://bioconductor.org/packages/stats/bioc/Coralysis)
 [![](https://img.shields.io/badge/doi-10.1101/2025.02.07.637023-yellow.svg)](https://doi.org/10.1101/2025.02.07.637023)
 
 ## :book: Overview
@@ -21,11 +21,7 @@ integration”](https://doi.org/10.1101/2025.02.07.637023)*.
 
 <p align="center">
 
-<p style="text-align:center;">
-
-<img src="man/figures/Coralysis_applications.png" width="90%" />
-</p>
-
+<img src="man/figures/Coralysis_applications.png" width="90%" alt="Coralysis applications" />
 </p>
 
 Coralysis relies on an adapted version of our previously introduced
@@ -53,11 +49,7 @@ batches.
 
 <p align="center">
 
-<p style="text-align:center;">
-
-<img src="man/figures/Coralysis_flowchart.png" width="90%" />
-</p>
-
+<img src="man/figures/Coralysis_flowchart.png" width="90%" alt="Coralysis flowchart" />
 </p>
 
 > **Coralysis integration flowchart**.</b> (<b>A</b>) An input of
@@ -407,7 +399,10 @@ design.
 
 <br>
 
-<img src="man/figures/funding_logos.png" width="100%" />
+<p align="center">
+
+<img src="man/figures/funding_logos.png" width="90%" alt="Funding logos" />
+</p>
 
 <br>
 
@@ -415,13 +410,12 @@ design.
 
 ## :books: References
 
-1.  Johannes Smolander, Sini Junttila, Mikko S Venäläinen, Laura L Elo
-    (2021). “ILoReg: a tool for high-resolution cell population
-    identification from single-cell RNA-seq data”. *Bioinformatics*,
-    37(8), 1107-1114, <https://doi.org/10.1093/bioinformatics/btaa919>.
+1.  Smolander J, Junttila S, Venäläinen MS, Elo LL (2021). “ILoReg: a
+    tool for high-resolution cell population identification from
+    single-cell RNA-seq data”. *Bioinformatics*, 37(8), 1107-1114,
+    <https://doi.org/10.1093/bioinformatics/btaa919>.
 
-2.  António GG Sousa, Johannes Smolander, Sini Junttila, Laura L Elo
-    (2025). “Coralysis enables sensitive identification of imbalanced
-    cell types and states in single-cell data via multi-level
-    integration”. *bioRxiv*,
+2.  Sousa AGG, Smolander J, Junttila S, Elo LL (2025). “Coralysis
+    enables sensitive identification of imbalanced cell types and states
+    in single-cell data via multi-level integration”. *bioRxiv*,
     <https://doi.org/10.1101/2025.02.07.637023>.
