@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# Coralysis <a href="https://elolab.github.io/Coralysis"><img src="man/figures/Coralysis_logo.png" align="right" width="120" alt="Coralysis website" /></a>
+# Coralysis <a href="https://elolab.github.io/Coralysis"><img src="man/figures/Coralysis_logo.png" align="right" width="150" alt="Coralysis website" /></a>
 
 <!-- badges -->
 
