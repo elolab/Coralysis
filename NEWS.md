@@ -1,3 +1,10 @@
+# Coralysis 0.99.10
+
+- Main changes: 
+
+    - `ReferenceMapping()`: implementing the `label.prune.cutoff` parameter to prune low-confidence predicted cell labels based on the confidence probability scores
+    
+
 # Coralysis 0.99.4
 
 - Main changes: 

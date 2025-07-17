@@ -164,7 +164,7 @@ ___
 
 <br>
 
-Perform reference-mapping with `Coralysis` by running the function `ReferenceMapping`. This requires to provide the trained reference (`ref`) with cell type annotations intended for the prediction (`ref.label = "label"`) and the query dataset (`query`). The label in the reference aimed to be used for prediction needs to be available on `colData(ref)`. In this case, we are providing the cell type labels from the column `label` available in the reference `ref`. Since we want to project the query onto the reference UMAP, set `project.umap` as `TRUE`. The argument `dimred.name.prefix` just sets the name given as prefix of the low dimensional embeddings stored in `reducedDimNames(map)`. The `SingleCellExperiment` object `query` will contain the same information as `query`, with the predictions and embeddings mapped onto the reference. The predictions consist in `coral_labels` and `coral_probability` stored in `colData(query)`. The `coral_labels` correspond to the cell type predictions obtained against the reference. The `coral_probability` represents the proportion of _K_ neighbors from the winning class (`k.nn` was set to 5 - default 10); the higher the value, the better.   
+Perform reference-mapping with `Coralysis` by running the function `ReferenceMapping`. This requires to provide the trained reference (`ref`) with cell type annotations intended for the prediction (`ref.label = "label"`) and the query dataset (`query`). The label in the reference aimed to be used for prediction needs to be available on `colData(ref)`. In this case, we are providing the cell type labels from the column `label` available in the reference `ref`. Since we want to project the query onto the reference UMAP, set `project.umap` as `TRUE`. The argument `dimred.name.prefix` just sets the name given as prefix of the low dimensional embeddings stored in `reducedDimNames(map)`. The `SingleCellExperiment` object `query` will contain the same information as `query`, with the predictions and embeddings mapped onto the reference. The predictions consist in `coral_probability`, `coral_labels`, and `pruned_coral_labels` stored in `colData(query)`. The `coral_labels` correspond to the cell type predictions obtained against the reference. The `coral_probability` represents the proportion of _K_ neighbors from the winning class (`k.nn` was set to 5 - default 10); the higher the value, the better. The `pruned_coral_labels` corresponds to the pruned low-confidence predicted cell labels based on the confidence probability scores, i.e., predicted cell labels with confidence scores less than or equal to 0.5 (`label.prune.cutoff = 0.5`) are considered unclassified and set to `NA`.
 
 ```{r reference-mapping}
 # Reference-mapping
@@ -172,7 +172,7 @@ set.seed(1024)
 query <- ReferenceMapping(
     ref = ref, query = query, ref.label = "label",
     project.umap = TRUE, dimred.name.prefix = "ref",
-    k.nn = 5
+    k.nn = 5, label.prune.cutoff = 0.5
 )
 ```
 
@@ -200,15 +200,15 @@ Below, `SingleR` is run with the `ref`erence to predict the cell type labels for
 
 <br>
 
-```{r prediction accuracy scores}
+```{r prediction accuracy scores - coral_labels}
 # Compare against SingleR
 preds.singler <- SingleR(test = query, ref = ref, labels = ref$label, de.method = "wilcox")
 colData(query) <- cbind(colData(query), preds.singler)
 
-# Confusion matrix
+# Confusion matrix 'coral_labels'
 preds_x_truth <- table(query$coral_labels, query$labels)
 
-# Accuracy
+# Accuracy for 'coral_labels'
 acc <- sum(diag(preds_x_truth)) / sum(preds_x_truth)
 
 # Print confusion matrix
@@ -221,6 +221,26 @@ The accuracy of `Coralysis` reference-mapping method was `r round(acc*100, 1)`%.
 
 <br>
 
+The accuracy is higher for the pruned `Coralysis` cell labels, as the low-confidence cell labels were removed. See below the confusion matrix between the pruned `Coralysis` labels (rows) versus predicted `SingleR` labels (columns) and respective accuracy. 
+
+```{r prediction accuracy scores - pruned_coral_labels}
+# Confusion matrix for 'pruned_coral_labels'
+pruned_preds_x_truth <- table(query$pruned_coral_labels, query$labels)
+
+
+# Accuracy for 'pruned_coral_labels'
+pruned_acc <- sum(diag(pruned_preds_x_truth)) / sum(pruned_preds_x_truth)
+
+# Print confusion matrix
+pruned_preds_x_truth
+```
+
+<br>
+
+The accuracy of `Coralysis` reference-mapping method using the pruned cell labels was `r round(pruned_acc*100, 1)`%. The accuracy is higher using the pruned labels as expected once the low-confidence cell predictions were removed.
+
+<br>
+
 <br>
 
 ### DimRed
@@ -229,8 +249,8 @@ The accuracy of `Coralysis` reference-mapping method was `r round(acc*100, 1)`%.
 
 Visualize below the query cells projected onto reference UMAP and how well the predictions match the query ground-truth. The `coral_probability` is a prediction confidence score. Predictions with low scores (<0.5) should be carefully inspected.
 
-```{r prediction viz, fig.width=7.5, fig.height=7.25}
-# Plot query and reference UMAP side-by-side
+```{r prediction viz, fig.width=7.5, fig.height=10}
+# Plot query and reference UMAP side-by-side # fig.height=7.25
 # with ground-truth & predicted cell labels
 use.color <- c("acinar" = "#FF7F00", "alpha" = "#CCCCCC", "beta" = "#FDCDAC", 
                "delta" = "#E6F5C9", "duct" = "#E31A1C", "endothelial" = "#377EB8", 
@@ -255,6 +275,16 @@ query.predicted.plot <- PlotDimRed(
     use.color = use.color
 ) +
     ggtitle("Query: Coralysis predictions")
+query.pruned.plot <- PlotDimRed(
+    object = query,
+    color.by = "pruned_coral_labels",
+    dimred = "refUMAP",
+    point.size = 0.25,
+    point.stroke = 0.25,
+    legend.nrow = 3,
+    use.color = use.color
+) +
+    ggtitle("Query: Coralysis predictions pruned")
 query.confidence.plot <- PlotExpression(
     object = query,
     color.by = "coral_probability",
@@ -265,7 +295,8 @@ query.confidence.plot <- PlotExpression(
 ) +
     ggtitle("Query: Coralysis confidence")
 cowplot::plot_grid(ref.celltype.plot, query.singler.plot,
-    query.predicted.plot, query.confidence.plot,
+    query.predicted.plot, query.pruned.plot,
+    query.confidence.plot,
     ncol = 2, align = "vh"
 )
 ```

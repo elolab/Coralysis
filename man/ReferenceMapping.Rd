@@ -10,6 +10,7 @@ ReferenceMapping.SingleCellExperiment(
   ref,
   query,
   ref.label,
+  label.prune.cutoff,
   scale.query.by,
   project.umap,
   select.icp.models,
@@ -21,6 +22,7 @@ ReferenceMapping.SingleCellExperiment(
   ref,
   query,
   ref.label,
+  label.prune.cutoff = 0.5,
   scale.query.by = NULL,
   project.umap = FALSE,
   select.icp.models = metadata(ref)$coralysis$pca.params$select.icp.tables,
@@ -37,6 +39,13 @@ and after running \code{RunPCA(..., return.model = TRUE)} function.}
 
 \item{ref.label}{A character cell metadata column name from the \code{ref}
 object to transfer to the queries.}
+
+\item{label.prune.cutoff}{A numeric cutoff value used to prune low-confidence 
+predicted cell labels, based on the confidence probability scores stored in the 
+\code{coral_probability} column of \code{colData}. By default is \code{0.5}, i.e., 
+cell labels with confidence scores less than or equal to 0.5 are considered 
+unclassified and set to \code{NA}. The resulting pruned cell labels are stored in 
+\code{pruned_coral_labels}. Set to \code{0} to ignore it.}
 
 \item{scale.query.by}{Should the query data be scaled by \code{cell} or by
 \code{feature}. By default is \code{NULL}, i.e., is not scaled. Scale it if

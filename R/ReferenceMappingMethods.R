@@ -9,6 +9,12 @@
 #' \code{ref}.
 #' @param ref.label A character cell metadata column name from the \code{ref}
 #' object to transfer to the queries.
+#' @param label.prune.cutoff A numeric cutoff value used to prune low-confidence 
+#' predicted cell labels, based on the confidence probability scores stored in the 
+#' \code{coral_probability} column of \code{colData}. By default is \code{0.5}, i.e., 
+#' cell labels with confidence scores less than or equal to 0.5 are considered 
+#' unclassified and set to \code{NA}. The resulting pruned cell labels are stored in 
+#' \code{pruned_coral_labels}. Set to \code{0} to ignore it. 
 #' @param scale.query.by Should the query data be scaled by \code{cell} or by
 #' \code{feature}. By default is \code{NULL}, i.e., is not scaled. Scale it if
 #' reference was scaled.
@@ -107,6 +113,7 @@
 #' )
 #'
 ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
+                                                  label.prune.cutoff,
                                                   scale.query.by, project.umap,
                                                   select.icp.models, k.nn,
                                                   dimred.name.prefix) {
@@ -115,7 +122,8 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
         is(ref, "SingleCellExperiment"), is(query, "SingleCellExperiment"),
         (ref.label %in% colnames(colData(ref))), any(is.null(scale.query.by), (scale.query.by %in% c("cell", "feature"))),
         is.logical(project.umap), any(is.null(select.icp.models), is.numeric(select.icp.models)),
-        all(is.numeric(k.nn), (length(k.nn) == 1)), is.character(dimred.name.prefix)
+        all(is.numeric(k.nn), (length(k.nn) == 1)), is.character(dimred.name.prefix), 
+        all(is.numeric(label.prune.cutoff), (length(label.prune.cutoff) == 1))
     )
     if (is.null(metadata(ref)$coralysis$pca.model)) {
         stop("PCA model does not exist. Run 'RunPCA(...)' with 'return.model = TRUE'.")
@@ -182,8 +190,12 @@ ReferenceMapping.SingleCellExperiment <- function(ref, query, ref.label,
     metadata(query)$coralysis <- list()
     metadata(query)$coralysis$joint.probability <- query.probs
     reducedDim(x = query, type = paste0(dimred.name.prefix, "PCA")) <- query.pca
-    query[["coral_labels"]] <- preds.labels
     query[["coral_probability"]] <- attr(preds.labels, "prob")
+    query[["coral_labels"]] <- preds.labels
+    if (label.prune.cutoff>0) { # apply prunning if cutoff is higher than zero
+      query[["pruned_coral_labels"]] <- query[["coral_labels", drop = TRUE]]
+      query[["pruned_coral_labels"]][ query[["coral_probability", drop = TRUE]] <= label.prune.cutoff ] <- NA
+    }
 
     # Project data onto ref UMAP
     if (project.umap) {
