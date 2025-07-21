@@ -5,9 +5,9 @@
 
 <!-- badges -->
 
-[![](https://img.shields.io/badge/release%20version-0.99.6-green.svg)](https://www.bioconductor.org/packages/Coralysis)
-[![](https://img.shields.io/badge/devel%20version-0.99.8-orange.svg)](https://github.com/elolab/Coralysis)
-[![](https://img.shields.io/badge/download-495/total-blue.svg)](https://bioconductor.org/packages/stats/bioc/Coralysis)
+[![](https://img.shields.io/badge/release%20version-0.99.10-green.svg)](https://www.bioconductor.org/packages/Coralysis)
+[![](https://img.shields.io/badge/devel%20version-0.99.10-orange.svg)](https://github.com/elolab/Coralysis)
+[![](https://img.shields.io/badge/download-604/total-blue.svg)](https://bioconductor.org/packages/stats/bioc/Coralysis)
 [![](https://img.shields.io/badge/doi-10.1101/2025.02.07.637023-yellow.svg)](https://doi.org/10.1101/2025.02.07.637023)
 
 ## :book: Overview
